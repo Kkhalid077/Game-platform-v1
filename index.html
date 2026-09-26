@@ -2,88 +2,148 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-<title>منصة الألعاب - التصويت</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>منصة الألعاب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
-<!-- Firebase -->
+<!-- Firebase (compat build, no bundler needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 
 <style>
   :root{
-    --bg:#0f0c29;
+    --bg:#14131c;
     --surface:#1e1c2a;
-    --accent:#667eea;
+    --surface-2:#26243590;
+    --accent:#ffb627;
     --accent-2:#ff4d6d;
     --text:#f5f1e8;
     --text-dim:#a8a3b8;
-    --green:#00b894;
   }
   *{box-sizing:border-box;}
-  html,body{height:100%; touch-action: manipulation;}
+  html,body{height:100%;}
   body{
-    margin:0; background: var(--bg); color:var(--text); font-family:'Tajawal',sans-serif; min-height:100vh;
+    margin:0;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(255,182,39,.16), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
   }
+  .display{font-family:'Cairo',sans-serif;}
   #app{min-height:100vh; display:flex; flex-direction:column;}
-  
-  /* Shared */
-  .brand{ text-align:center; padding:18px 0 6px; font-size:15px; color:var(--text-dim); }
+
+  /* ---------- shared ---------- */
+  .brand{
+    text-align:center;
+    padding:18px 0 6px;
+    font-size:15px;
+    color:var(--text-dim);
+    letter-spacing:.5px;
+  }
   .brand b{color:var(--accent); font-family:'Cairo',sans-serif;}
   .btn{
-    font-family:'Cairo',sans-serif; font-weight:800; font-size:17px;
-    border:none; border-radius:14px; padding:12px 24px; cursor:pointer;
-    color:#fff; background:var(--accent); box-shadow:0 6px 0 #4a5db5;
+    font-family:'Cairo',sans-serif;
+    font-weight:800;
+    font-size:17px;
+    border:none;
+    border-radius:14px;
+    padding:15px 28px;
+    cursor:pointer;
+    color:#1a1420;
+    background:var(--accent);
+    box-shadow:0 6px 0 #b5811b;
     transition:transform .08s ease;
   }
-  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #4a5db5;}
-  .btn:disabled{ background:#4a4658; color:#87829a; box-shadow:0 6px 0 #322f3d; cursor:default; }
-  
+  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #b5811b;}
+  .btn:disabled{
+    background:#4a4658; color:#87829a; box-shadow:0 6px 0 #322f3d; cursor:default;
+  }
+  .btn-ghost{
+    background:transparent; color:var(--text); box-shadow:none;
+    border:2px solid #3a3650; font-weight:700; font-size:14px; padding:10px 18px;
+  }
   input[type=text]{
-    font-family:'Tajawal',sans-serif; font-size:18px; padding:14px 16px;
-    border-radius:12px; border:2px solid #3a3650; background:#100f17;
-    color:var(--text); width:100%; outline:none; text-align:center;
+    font-family:'Tajawal',sans-serif;
+    font-size:18px;
+    padding:14px 16px;
+    border-radius:12px;
+    border:2px solid #3a3650;
+    background:#100f17;
+    color:var(--text);
+    width:100%;
+    outline:none;
   }
+  input[type=text]:focus{border-color:var(--accent);}
 
-  /* Games Grid */
-  .games-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 15px; width: 100%; max-width: 600px; margin-top: 20px;
+  /* ---------- HOST STAGE ---------- */
+  .stage{flex:1; display:flex; flex-direction:column; align-items:center; padding:24px 16px 40px; text-align:center;}
+  .code-wrap{margin-top:18px;}
+  .code-label{color:var(--text-dim); font-size:15px; margin-bottom:6px;}
+  .room-code{
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:clamp(48px,9vw,88px);
+    letter-spacing:14px;
+    color:var(--accent);
+    text-shadow:0 0 40px rgba(255,182,39,.55);
+    margin:0;
   }
-  .game-card {
-    background: var(--surface); border: 2px solid #3a3650; border-radius: 16px;
-    padding: 20px 10px; text-align: center; cursor: pointer; position: relative;
-    transition: all 0.2s ease;
+  .join-row{
+    margin-top:22px;
+    display:flex;
+    gap:22px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:center;
+    background:var(--surface);
+    padding:18px 22px;
+    border-radius:18px;
   }
-  .game-card.disabled { opacity: 0.5; cursor: not-allowed; }
-  .game-card.disabled:hover { transform: none; border-color: #3a3650; }
-  .game-card:hover:not(.disabled) { border-color: var(--accent); transform: translateY(-3px); }
-  .game-card.selected { border-color: var(--green); background: rgba(0, 184, 148, 0.1); }
-  
-  .game-icon { font-size: 40px; margin-bottom: 10px; }
-  .game-title { font-family: 'Cairo', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 5px; }
-  
-  .vote-badge {
-    background: var(--accent); color: #fff; font-size: 12px; font-weight: bold;
-    padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 10px;
-  }
-  .coming-soon { color: var(--accent-2); font-size: 12px; font-weight: bold; margin-top: 10px; }
-
-  /* HOST */
-  .stage{flex:1; display:flex; flex-direction:column; align-items:center; padding:24px 16px; text-align:center;}
-  .room-code{ font-family:'Cairo',sans-serif; font-weight:900; font-size:48px; color:var(--accent); margin:0; }
-  .join-row{ margin-top:22px; display:flex; gap:22px; align-items:center; background:var(--surface); padding:18px; border-radius:18px; }
   #qr{background:#fff; padding:8px; border-radius:10px; line-height:0;}
-  .players-box{margin-top:30px; width:100%; max-width:600px;}
-  .chip{ background:var(--surface); border:1px solid #3a3650; padding:9px 18px; border-radius:999px; font-weight:700; display:inline-block; margin:5px;}
-  
-  /* PLAYER */
+  .link-col{text-align:right; max-width:280px;}
+  .link-text{
+    direction:ltr; text-align:left; font-size:14px; color:var(--text-dim);
+    word-break:break-all; margin-bottom:8px;
+  }
+  .players-box{margin-top:30px; width:100%; max-width:720px;}
+  .players-title{font-family:'Cairo',sans-serif; font-weight:700; font-size:16px; color:var(--text-dim); margin-bottom:12px;}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; min-height:44px;}
+  .chip{
+    background:var(--surface); border:1px solid #3a3650;
+    padding:9px 18px; border-radius:999px; font-weight:700;
+    animation:pop .28s ease;
+  }
+  @keyframes pop{from{transform:scale(.6); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .empty-hint{color:var(--text-dim); font-size:14px;}
+  .start-btn{margin-top:34px;}
+  .game-screen{margin-top:60px; font-family:'Cairo',sans-serif; font-size:26px;}
+
+  /* ---------- PLAYER ---------- */
   .phone{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px;}
-  .card{ background:var(--surface); border-radius:20px; padding:30px 24px; width:100%; max-width:400px; text-align:center; }
-  .muted{color:var(--text-dim); font-size:14px; margin-top:10px;}
+  .card{
+    background:var(--surface); border-radius:20px; padding:28px 24px;
+    width:100%; max-width:360px; text-align:center;
+  }
+  .card h2{font-family:'Cairo',sans-serif; margin:0 0 18px; font-size:22px;}
+  .dot{
+    width:14px; height:14px; border-radius:50%; background:var(--accent);
+    margin:18px auto; animation:pulse 1.2s infinite ease-in-out;
+  }
+  @keyframes pulse{0%,100%{opacity:.35; transform:scale(.85);} 50%{opacity:1; transform:scale(1.1);}}
+  .muted{color:var(--text-dim); font-size:14px; margin-top:4px;}
+  .error-card{border:1px solid var(--accent-2);}
+  .error-card h2{color:var(--accent-2);}
+
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){ }
+  }
 </style>
 </head>
 <body>
@@ -91,7 +151,8 @@
 
 <script>
 /* =========================================================
-   1) إعدادات Firebase 
+   1) FIREBASE CONFIG — استبدل القيم التالية بمعلومات مشروعك
+   من Firebase Console → إعدادات المشروع → عام → تطبيقات الويب
    ========================================================= */
 const firebaseConfig = {
  apiKey: "AIzaSyBwU4coCgrk1kkzQUfj2vFh5kzoUlFzDnY",
@@ -108,205 +169,179 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const app = document.getElementById('app');
 
-// قائمة الألعاب المتاحة والمستقبلية
-const GAMES_LIST = [
-  { id: 'mafia', title: 'من هم المافيا؟', icon: '🕵️', available: true },
-  { id: 'clicker', title: 'أسرع ضغطة', icon: '⚡', available: true },
-  { id: 'draw', title: 'ارسم وخمن', icon: '🎨', available: false },
-  { id: 'trivia', title: 'أسئلة وتحديات', icon: '🧠', available: false }
-];
-
-function makeRoomCode() { return String(Math.floor(1000 + Math.random()*9000)); }
-function joinUrl(code) { return location.origin + location.pathname + '?room=' + code; }
+function makeRoomCode(){
+  return String(Math.floor(1000 + Math.random()*9000));
+}
+function joinUrl(code){
+  const u = new URL(location.href);
+  u.search = '?room=' + code;
+  return u.toString();
+}
 
 const params = new URLSearchParams(location.search);
 const roomParam = params.get('room');
 
-if (!roomParam) { renderHost(); } else { renderPlayer(roomParam.trim()); }
+if (!roomParam) {
+  renderHost();
+} else {
+  renderPlayer(roomParam.trim());
+}
 
-/* ================= HOST (المنظم) ================= */
+/* ================= HOST ================= */
 function renderHost(){
   const code = makeRoomCode();
   const roomRef = db.ref('rooms/' + code);
-  
-  // إنشاء الغرفة بوضع "التصويت"
-  roomRef.set({ status: 'voting', players: {}, votes: {} });
+
+  roomRef.set({
+    status: 'lobby',
+    createdAt: Date.now(),
+    players: {}
+  });
 
   app.innerHTML = `
     <div class="brand">منصة <b>الألعاب</b></div>
     <div class="stage">
-      <p style="margin:0; color:var(--text-dim);">رمز الغرفة</p>
-      <p class="room-code">${code}</p>
-      <div class="join-row"><div id="qr"></div></div>
-      
-      <div class="players-box">
-        <h3 style="font-family:'Cairo';">الألعاب المتاحة للتصويت</h3>
-        <div class="games-grid" id="hostGamesList"></div>
+      <div class="code-wrap">
+        <div class="code-label">رمز الغرفة</div>
+        <p class="room-code">${code.split('').join(' ')}</p>
       </div>
 
-      <div class="players-box" style="margin-top:20px;">
-        <h3 style="font-family:'Cairo';">اللاعبون (<span id="count">0</span>)</h3>
-        <div id="chips"></div>
+      <div class="join-row">
+        <div id="qr"></div>
+        <div class="link-col">
+          <div class="link-text" id="linkText">${joinUrl(code)}</div>
+          <button class="btn btn-ghost" id="copyBtn">نسخ الرابط</button>
+        </div>
       </div>
+
+      <div class="players-box">
+        <div class="players-title">اللاعبون المنضمون (<span id="count">0</span>)</div>
+        <div class="chips" id="chips"><span class="empty-hint">شارك الرابط أو الرمز مع اللاعبين للانضمام…</span></div>
+      </div>
+
+      <button class="btn start-btn" id="startBtn" disabled>ابدأ اللعبة</button>
     </div>
   `;
-  new QRCode(document.getElementById('qr'), { text: joinUrl(code), width: 120, height: 120 });
 
-  // مراقبة اللاعبين
+  new QRCode(document.getElementById('qr'), {
+    text: joinUrl(code), width: 140, height: 140
+  });
+
+  document.getElementById('copyBtn').onclick = () => {
+    navigator.clipboard.writeText(joinUrl(code)).then(()=>{
+      const b = document.getElementById('copyBtn');
+      b.textContent = 'تم النسخ ✓';
+      setTimeout(()=> b.textContent = 'نسخ الرابط', 1500);
+    });
+  };
+
+  const chipsEl = document.getElementById('chips');
+  const countEl = document.getElementById('count');
+  const startBtn = document.getElementById('startBtn');
+
   roomRef.child('players').on('value', snap => {
     const players = snap.val() || {};
-    const keys = Object.keys(players);
-    document.getElementById('count').textContent = keys.length;
-    document.getElementById('chips').innerHTML = keys.map(k => `<span class="chip">${players[k].name}</span>`).join('');
+    const names = Object.values(players).map(p => p.name);
+    countEl.textContent = names.length;
+    startBtn.disabled = names.length === 0;
+    chipsEl.innerHTML = names.length
+      ? names.map(n => `<span class="chip">${escapeHtml(n)}</span>`).join('')
+      : '<span class="empty-hint">شارك الرابط أو الرمز مع اللاعبين للانضمام…</span>';
   });
 
-  // مراقبة التصويت وعرض الألعاب للمنظم
-  roomRef.child('votes').on('value', snap => {
-    const votes = snap.val() || {};
-    // حساب عدد الأصوات لكل لعبة
-    const voteCounts = {};
-    Object.values(votes).forEach(gameId => {
-      voteCounts[gameId] = (voteCounts[gameId] || 0) + 1;
-    });
-
-    const gamesContainer = document.getElementById('hostGamesList');
-    gamesContainer.innerHTML = GAMES_LIST.map(game => {
-      const vCount = voteCounts[game.id] || 0;
-      if (game.available) {
-        return `
-          <div class="game-card">
-            <div class="game-icon">${game.icon}</div>
-            <div class="game-title">${game.title}</div>
-            <div class="vote-badge">${vCount} أصوات</div>
-            <button class="btn" style="padding:6px 12px; font-size:14px; margin-top:10px; width:100%;" onclick="startSelectedGame('${game.id}', '${code}')">ابدأ اللعبة</button>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="game-card disabled">
-            <div class="game-icon">${game.icon}</div>
-            <div class="game-title">${game.title}</div>
-            <div class="coming-soon">قريباً</div>
-          </div>
-        `;
-      }
-    }).join('');
-  });
-}
-
-// دالة لبدء اللعبة التي يختارها المنظم
-window.startSelectedGame = function(gameId, code) {
-  const roomRef = db.ref('rooms/' + code);
-  roomRef.child('status').set('playing_' + gameId);
-  
-  // تغيير شاشة المنظم حسب اللعبة
-  document.querySelector('.stage').innerHTML = `
-    <h2 style="font-family:'Cairo'; color:var(--accent); font-size:40px; margin-top:50px;">🎮 اللعبة بدأت!</h2>
-    <p>يتم الآن تشغيل: ${GAMES_LIST.find(g => g.id === gameId).title}</p>
-    <div class="muted">هنا ستظهر شاشة التحكم الخاصة باللعبة</div>
-    <button class="btn btn-ghost" onclick="location.reload()" style="margin-top:40px;">إنهاء الجلسة</button>
-  `;
-};
-
-/* ================= PLAYER (اللاعب) ================= */
-function renderPlayer(code){
-  const roomRef = db.ref('rooms/' + code);
-  let myId = localStorage.getItem('player_id_' + code);
-
-  if(!myId) {
-    app.innerHTML = `
-      <div class="phone">
-        <div class="card">
-          <h2 style="font-family:'Cairo';">انضم للغرفة</h2>
-          <input type="text" id="nameInput" placeholder="اكتب اسمك" maxlength="15" autofocus />
-          <button class="btn" id="joinBtn" style="width:100%; margin-top:15px;">دخول</button>
-        </div>
-      </div>
+  startBtn.onclick = () => {
+    roomRef.child('status').set('playing');
+    document.querySelector('.stage').innerHTML += `
+      <div class="game-screen">🎮 بدأت اللعبة — الألعاب ستظهر هنا بمجرد إضافتها</div>
     `;
-    document.getElementById('joinBtn').onclick = () => {
-      const name = document.getElementById('nameInput').value.trim();
-      if(name){
-        myId = roomRef.child('players').push().key;
-        roomRef.child('players/' + myId).set({ name: name });
-        localStorage.setItem('player_id_' + code, myId);
-        showPlayerVoting(code, roomRef, myId, name);
-      }
-    };
-  } else {
-    roomRef.child('players/' + myId).once('value', snap => {
-      if(snap.exists()) showPlayerVoting(code, roomRef, myId, snap.val().name);
-      else localStorage.removeItem('player_id_' + code); // الغرفة انتهت
-    });
-  }
+    startBtn.remove();
+  };
 }
 
-function showPlayerVoting(code, roomRef, myId, name){
-  // الاستماع لحالة الغرفة
-  roomRef.on('value', snap => {
-    const room = snap.val();
-    if(!room) return;
-    
-    // شاشة التصويت
-    if(room.status === 'voting'){
-      const myVote = room.votes ? room.votes[myId] : null;
-      
-      const gamesHtml = GAMES_LIST.map(game => {
-        if(game.available) {
-          const isSelected = myVote === game.id ? 'selected' : '';
-          return `
-            <div class="game-card ${isSelected}" onclick="castVote('${code}', '${myId}', '${game.id}')">
-              <div class="game-icon">${game.icon}</div>
-              <div class="game-title">${game.title}</div>
-              ${isSelected ? '<div class="vote-badge" style="background:var(--green);">صوتك ✓</div>' : '<div class="vote-badge" style="background:#3a3650;">صوّت</div>'}
-            </div>
-          `;
-        } else {
-          return `
-            <div class="game-card disabled">
-              <div class="game-icon">${game.icon}</div>
-              <div class="game-title">${game.title}</div>
-              <div class="coming-soon">قريباً</div>
-            </div>
-          `;
-        }
-      }).join('');
+/* ================= PLAYER ================= */
+function renderPlayer(code){
+  if (!/^\d{4}$/.test(code)) {
+    return showError('رمز الغرفة غير صالح', 'تأكد من الرابط أو اطلب من المضيف رابطًا جديدًا.');
+  }
+  const roomRef = db.ref('rooms/' + code);
 
-      app.innerHTML = `
-        <div class="phone">
-          <div class="card" style="max-width:500px;">
-            <h2 style="font-family:'Cairo';">أهلاً ${name} 👋</h2>
-            <p style="color:var(--text-dim); margin-bottom:20px;">اختر اللعبة التي تود لعبها لتصوت لها:</p>
-            <div class="games-grid">
-              ${gamesHtml}
-            </div>
-            <div class="muted" style="margin-top:20px;">بانتظار المنظم لبدء اللعبة...</div>
-          </div>
-        </div>
-      `;
-    } 
-    // شاشة اللعب (تتغير حسب اللعبة المختارة)
-    else if (room.status.startsWith('playing_')) {
-      const gameId = room.status.split('_')[1];
-      const gameTitle = GAMES_LIST.find(g => g.id === gameId)?.title;
-      
-      app.innerHTML = `
-        <div class="phone">
-          <div class="card">
-            <h2 style="font-family:'Cairo'; color:var(--accent);">🎮 ${gameTitle}</h2>
-            <p>انظر إلى شاشة المنظم!</p>
-            <div class="muted">سيتم برمجة أزرار هذه اللعبة لاحقاً</div>
-          </div>
-        </div>
-      `;
+  roomRef.once('value', snap => {
+    if (!snap.exists()) {
+      return showError('لم يتم العثور على الغرفة', 'قد تكون اللعبة انتهت. اطلب من المضيف رابطًا جديدًا.');
+    }
+    const storageKey = 'playerId_room_' + code;
+    let playerId = localStorage.getItem(storageKey);
+
+    const savedName = playerId ? sessionStorage.getItem('playerName_' + code) : null;
+    if (playerId && savedName) {
+      showWaiting(code, roomRef, playerId, savedName);
+    } else {
+      showNameForm(code, roomRef, storageKey);
     }
   });
 }
 
-// دالة إرسال التصويت لقاعدة البيانات
-window.castVote = function(code, myId, gameId) {
-  const roomRef = db.ref('rooms/' + code);
-  roomRef.child('votes/' + myId).set(gameId);
-};
+function showNameForm(code, roomRef, storageKey){
+  app.innerHTML = `
+    <div class="phone">
+      <div class="card">
+        <h2>انضمام إلى اللعبة</h2>
+        <input type="text" id="nameInput" placeholder="اكتب اسمك" maxlength="20" autofocus />
+        <button class="btn" id="joinBtn" style="margin-top:16px; width:100%;">انضمام</button>
+      </div>
+    </div>
+  `;
+  const input = document.getElementById('nameInput');
+  const doJoin = () => {
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    const playerId = roomRef.child('players').push().key;
+    roomRef.child('players/' + playerId).set({ name, joinedAt: Date.now() });
+    localStorage.setItem(storageKey, playerId);
+    sessionStorage.setItem('playerName_' + code, name);
+    showWaiting(code, roomRef, playerId, name);
+  };
+  document.getElementById('joinBtn').onclick = doJoin;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+}
+
+function showWaiting(code, roomRef, playerId, name){
+  app.innerHTML = `
+    <div class="phone">
+      <div class="card">
+        <h2>أهلاً ${escapeHtml(name)} 👋</h2>
+        <div class="dot"></div>
+        <div id="statusText">بانتظار بدء اللعبة…</div>
+        <div class="muted" id="playerCount"></div>
+      </div>
+    </div>
+  `;
+  roomRef.child('players').on('value', snap => {
+    const n = Object.keys(snap.val() || {}).length;
+    document.getElementById('playerCount').textContent = 'اللاعبون في الغرفة: ' + n;
+  });
+  roomRef.child('status').on('value', snap => {
+    if (snap.val() === 'playing') {
+      document.getElementById('statusText').textContent = '🎮 بدأت اللعبة!';
+      document.querySelector('.dot').style.display = 'none';
+    }
+  });
+}
+
+function showError(title, msg){
+  app.innerHTML = `
+    <div class="phone">
+      <div class="card error-card">
+        <h2>${title}</h2>
+        <div class="muted">${msg}</div>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 </script>
 </body>
 </html>
