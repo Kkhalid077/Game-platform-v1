@@ -153,13 +153,14 @@ const GAMES_LIST = [
   },
   {
     id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4,
-    desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد الشكل ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم.',
+    desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد شكلًا ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
     rules: [
       'ينقسم اللاعبون تلقائيًا إلى فريقين: A و B.',
-      'بكل فريق شخص "الموجّه" يشاهد شكلًا سريًا، والآخر "الرسام" يرسم بدون رؤية الشكل.',
+      'بكل فريق شخص "الموجّه" يشاهد شكلًا توضيحيًا وكلمة سرية، والآخر "الرسام" يرسم بدون رؤية أي منهما.',
       'الموجّه يدل صديقه بالإشارة فقط (ممنوع الكلام نهائيًا) حتى يرسم الشكل الصحيح.',
+      'الرسام يكتب تخمينه لما يرسمه في أي وقت؛ إذا خمّن الكلمة الصحيحة يفوز فريقه بنقطة فورًا.',
       'الرسام يملك 3 محاولات فقط للتراجع عن آخر خط رسمه إن أخطأ.',
-      'الحكم يقارن رسمة كل فريق بالشكل الأصلي؛ أول فريق يصيب 3 مرات يفوز باللعبة!'
+      'أول فريق يخمّن 3 كلمات صحيحة يفوز باللعبة!'
     ]
   },
   { id: 'clicker', title: 'أسرع ضغطة',     icon: '⚡', available: false, minPlayers: 2, desc: '', rules: [] },
@@ -173,7 +174,18 @@ const ROLE_META = {
   citizen: { name:'مواطن',  icon:'🙂', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
 };
 
-const DRAW_WORDS = ['تفاحة','شمس','قطة','كلب','سيارة','بيت','شجرة','كرة','ساعة','مظلة','ثلاجة','هاتف','نظارة','سمكة','طائرة','جبل','نجمة','قلب','وردة','حذاء','مفتاح','كتاب','قلم','كرسي','باب','نافذة','قمر','سحابة','مروحة','دراجة','قهوة','بيتزا','موزة','بطة','فيل','أسد','ثعبان','عنكبوت','مصباح','تلفاز'];
+const WORD_BANK = [
+  {w:'تفاحة', e:'🍎'}, {w:'موزة', e:'🍌'}, {w:'شمس', e:'☀️'}, {w:'قمر', e:'🌙'},
+  {w:'نجمة', e:'⭐'}, {w:'قطة', e:'🐱'}, {w:'كلب', e:'🐶'}, {w:'أسد', e:'🦁'},
+  {w:'فيل', e:'🐘'}, {w:'بطة', e:'🦆'}, {w:'سمكة', e:'🐟'}, {w:'ثعبان', e:'🐍'},
+  {w:'عنكبوت', e:'🕷️'}, {w:'سيارة', e:'🚗'}, {w:'طائرة', e:'✈️'}, {w:'دراجة', e:'🚲'},
+  {w:'بيت', e:'🏠'}, {w:'شجرة', e:'🌳'}, {w:'وردة', e:'🌹'}, {w:'مظلة', e:'☂️'},
+  {w:'كرة', e:'⚽'}, {w:'ساعة', e:'⏰'}, {w:'نظارة', e:'👓'}, {w:'هاتف', e:'📱'},
+  {w:'مفتاح', e:'🔑'}, {w:'كتاب', e:'📖'}, {w:'قلم', e:'✏️'}, {w:'كرسي', e:'🪑'},
+  {w:'باب', e:'🚪'}, {w:'قهوة', e:'☕'}, {w:'بيتزا', e:'🍕'}, {w:'حذاء', e:'👟'},
+  {w:'قلب', e:'❤️'}, {w:'مصباح', e:'💡'}, {w:'تلفاز', e:'📺'}, {w:'سحابة', e:'☁️'},
+  {w:'جبل', e:'⛰️'}
+];
 
 /* =====================================================================
    SECTION 3 — SHARED UTILITIES
@@ -182,7 +194,14 @@ function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){ const j=Math
 function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinUrl(code){ return location.origin + location.pathname + '?room=' + code; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function pickRandomWord(){ return shuffle(DRAW_WORDS)[0]; }
+function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
+function emojiFor(word){ const found = WORD_BANK.find(x => x.w === word); return found ? found.e : '❓'; }
+function normalizeAr(s){
+  return String(s).trim().toLowerCase()
+    .replace(/[\u064B-\u065F\u0610-\u061A\u06D6-\u06ED]/g,'')
+    .replace(/[إأآا]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
+    .replace(/\s+/g,'');
+}
 function drawSegment(ctx, canvas, s){
   if (!s || !s.points || s.points.length < 2) return;
   ctx.strokeStyle = s.color; ctx.lineWidth = s.size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -653,7 +672,7 @@ window.startSilentDrawGame = function(code){
         teams:{ A:teamA, B:teamB },
         guideOf:{ A:teamA[0], B:teamB[0] },
         drawerOf:{ A:teamA[1], B:teamB[1] },
-        words:{ A: pickRandomWord(), B: pickRandomWord() },
+        words:{ A: pickRandomWordPair().w, B: pickRandomWordPair().w },
         undosLeft:{ A:3, B:3 },
         correctCount:{ A:0, B:0 },
         results:{ A:null, B:null },
@@ -667,20 +686,42 @@ window.silentDrawBeginDrawing = function(code){
   db.ref('rooms/'+code+'/silentdraw').update({ phase:'drawing', timerEnd: Date.now()+90000, results:{A:null,B:null} });
 };
 
-window.silentDrawJudge = function(code, team, verdict){
-  db.ref('rooms/'+code+'/silentdraw/results/'+team).set(verdict);
-};
-
 window.silentDrawFinishRound = function(code){
   const sdRef = db.ref('rooms/'+code+'/silentdraw');
   sdRef.once('value', snap => {
     const sd = snap.val(); if (!sd) return;
-    if (!sd.results.A || !sd.results.B) { alert('حدد صحيح أو خطأ لكل فريق أولًا'); return; }
+    const results = { A: sd.results.A || 'wrong', B: sd.results.B || 'wrong' };
     const correctCount = {...sd.correctCount};
-    ['A','B'].forEach(t => { if (sd.results[t]==='correct') correctCount[t] = (correctCount[t]||0)+1; });
+    ['A','B'].forEach(t => { if (results[t]==='correct') correctCount[t] = (correctCount[t]||0)+1; });
     const winner = correctCount.A>=3 ? 'A' : (correctCount.B>=3 ? 'B' : null);
-    sdRef.update({ correctCount, phase: winner ? 'ended' : 'round_result', winner });
+    sdRef.update({ results, correctCount, phase: winner ? 'ended' : 'round_result', winner });
   });
+};
+
+window.silentDrawMarkCorrect = function(code, team){
+  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  sdRef.child('results/'+team).set('correct').then(() => {
+    sdRef.once('value', snap => {
+      const sd = snap.val(); if (!sd) return;
+      const other = team === 'A' ? 'B' : 'A';
+      if (sd.results[other] === 'correct') window.silentDrawFinishRound(code);
+    });
+  });
+};
+
+window.submitSilentGuess = function(code, team, actualWord){
+  const input = document.getElementById('guessInput');
+  if (!input) return;
+  const guess = input.value.trim();
+  if (!guess) return;
+  const fb = document.getElementById('guessFeedback');
+  if (normalizeAr(guess) === normalizeAr(actualWord)){
+    if (fb) fb.innerHTML = '<span style="color:var(--green); font-weight:700;">🎉 صحيح! أحسنت</span>';
+    window.silentDrawMarkCorrect(code, team);
+  } else {
+    if (fb) fb.innerHTML = '<span style="color:var(--accent-2);">❌ ليست الكلمة، حاول مرة أخرى</span>';
+  }
+  input.value = '';
 };
 
 window.silentDrawNextRound = function(code){
@@ -693,7 +734,7 @@ window.silentDrawNextRound = function(code){
       phase:'round_start', round:(sd.round||1)+1,
       guideOf:{ A: sd.drawerOf.A, B: sd.drawerOf.B },
       drawerOf:{ A: sd.guideOf.A, B: sd.guideOf.B },
-      words:{ A: pickRandomWord(), B: pickRandomWord() },
+      words:{ A: pickRandomWordPair().w, B: pickRandomWordPair().w },
       undosLeft:{ A:3, B:3 }, results:{ A:null, B:null }, timerEnd:null
     });
   });
@@ -749,6 +790,12 @@ function setupSilentCanvas(code, team){
   canvas.addEventListener('touchend', end);
 }
 
+function silentDrawRankingHtml(sd, players){
+  const teamLabel = t => sd.teams[t].map(id => players[id]?.name || '').join(' و ');
+  const ranked = ['A','B'].sort((a,b) => sd.correctCount[b] - sd.correctCount[a]);
+  return ranked.map((t,i) => `<div class="chip">${i+1}. فريق ${t} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
+}
+
 function renderSilentDrawHost(code, room){
   const sd = room.silentdraw; if (!sd) return;
   const players = room.players || {};
@@ -776,18 +823,14 @@ function renderSilentDrawHost(code, room){
         <h4 style="font-family:'Cairo';">فريق ${t} — ${escapeHtml(teamLabel(t))}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="340" height="300"></canvas></div>
         <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
-        ${sd.phase==='drawing' ? `
-          <button class="btn btn-ghost" onclick="silentDrawJudge('${code}','${t}','correct')">صحيح ✅</button>
-          <button class="btn btn-ghost" onclick="silentDrawJudge('${code}','${t}','wrong')">خطأ ❌</button>
-          <p class="muted">${sd.results[t] ? (sd.results[t]==='correct' ? 'تم القبول ✅' : 'تم الرفض ❌') : 'بانتظار تقييمك'}</p>
-        ` : ''}
+        <p class="muted">${sd.results[t]==='correct' ? '✅ خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? '⏳ ينتظرون التخمين' : '❌ لم يخمّنوا')}</p>
       </div>`).join('')}</div>`;
   }
 
   document.getElementById('stage').innerHTML = `
     <h2 style="font-family:'Cairo'; color:var(--accent);">الرسم الصامت 🤫</h2>
     <p class="narrator">${narrator}</p>
-    <p class="muted">النقاط: فريق A ${sd.correctCount.A} — فريق B ${sd.correctCount.B} (الفوز عند 3)</p>
+    <div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">الترتيب (الفوز عند 3 نقاط)</h3>${silentDrawRankingHtml(sd, players)}</div>
     ${boards}
     ${control}
   `;
@@ -817,23 +860,30 @@ function renderSilentDrawPlayer(code, myId, name, room){
     app.innerHTML = isGuide
       ? `<div class="phone"><div class="card">
           <h2 style="font-family:'Cairo';">أنت الموجّه 🤫</h2>
-          <p class="muted">الكلمة السرية:</p>
+          <div style="font-size:70px;">${emojiFor(sd.words[myTeam])}</div>
           <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
           <p class="muted">وضّح لـ ${escapeHtml(teammateName)} بالإشارة فقط، بدون أي كلام!</p>
         </div></div>`
       : `<div class="phone"><div class="card">
           <h2 style="font-family:'Cairo';">أنت الرسام 🎨</h2>
-          <p class="muted">${escapeHtml(teammateName)} يعرف الكلمة وسيوجهك بالإشارة فقط. انتبه جيدًا!</p>
+          <p class="muted">${escapeHtml(teammateName)} يعرف الشكل وسيوجهك بالإشارة فقط. راقبه جيدًا وحاول تكتشف ماذا ترسم!</p>
         </div></div>`;
     return;
   }
 
-  if (['drawing','round_result','ended'].includes(sd.phase)){
+  if (sd.phase==='drawing'){
     if (isGuide){
       app.innerHTML = `<div class="phone"><div class="card">
         <h2 style="font-family:'Cairo';">تذكير بالكلمة</h2>
+        <div style="font-size:70px;">${emojiFor(sd.words[myTeam])}</div>
         <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
         <p class="muted">بدون كلام! فقط إشارات لصديقك.</p>
+        <p class="muted">${sd.results[myTeam]==='correct' ? '🎉 صديقك خمّن الكلمة!' : ''}</p>
+      </div></div>`;
+    } else if (sd.results[myTeam] === 'correct') {
+      app.innerHTML = `<div class="phone"><div class="card">
+        <h2 style="font-family:'Cairo'; color:var(--green);">🎉 أحسنت! خمّنت صح</h2>
+        <p class="muted">بانتظار الفريق الآخر أو انتهاء الجولة…</p>
       </div></div>`;
     } else {
       app.innerHTML = `<div class="phone" style="padding:10px;">
@@ -843,10 +893,32 @@ function renderSilentDrawPlayer(code, myId, name, room){
             ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
           </div>
           <button class="btn btn-ghost" ${sd.undosLeft[myTeam]<=0?'disabled':''} onclick="silentDrawUndo('${code}','${myTeam}')" style="margin-top:10px;">تراجع (${sd.undosLeft[myTeam]} متبقية)</button>
+          <input type="text" id="guessInput" placeholder="ماذا ترسم؟ اكتب تخمينك" style="margin-top:14px;" />
+          <button class="btn" style="width:100%; margin-top:8px;" onclick="submitSilentGuess('${code}','${myTeam}','${escapeHtml(sd.words[myTeam])}')">تحقق ✅</button>
+          <div id="guessFeedback" class="muted" style="margin-top:8px;"></div>
         </div>
       </div>`;
-      if (sd.phase==='drawing') setupSilentCanvas(code, myTeam);
+      setupSilentCanvas(code, myTeam);
     }
+    return;
+  }
+
+  if (sd.phase==='round_result'){
+    app.innerHTML = `<div class="phone"><div class="card">
+      <h2 style="font-family:'Cairo';">نتيجة الجولة</h2>
+      <p class="muted">فريق A: ${sd.results.A==='correct'?'✅ صحيح':'❌ لم يخمّنوا'} — الكلمة: ${escapeHtml(sd.words.A)}</p>
+      <p class="muted">فريق B: ${sd.results.B==='correct'?'✅ صحيح':'❌ لم يخمّنوا'} — الكلمة: ${escapeHtml(sd.words.B)}</p>
+      <div class="players-box">${silentDrawRankingHtml(sd, players)}</div>
+      <p class="muted">الجولة التالية تبدأ قريبًا…</p>
+    </div></div>`;
+    return;
+  }
+
+  if (sd.phase==='ended'){
+    app.innerHTML = `<div class="phone"><div class="card">
+      <h2 style="font-family:'Cairo';">🏆 فاز الفريق ${sd.winner}!</h2>
+      <div class="players-box">${silentDrawRankingHtml(sd, players)}</div>
+    </div></div>`;
   }
 }
 
@@ -868,74 +940,4 @@ function renderPlayer(code){
     ACTIVE_ROOM_CODE = code;
     ACTIVE_PLAYER_ID = id;
     roomRef.on('value', snap => {
-      const room = snap.val();
-      if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الغرفة</h2><p class="muted">اطلب رابطًا جديدًا من المضيف.</p></div></div>`; return; }
-      dispatchPlayerRender(code, id, name, room);
-    });
-  }
-
-  if (!myId) {
-    app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">انضم للغرفة</h2>
-      <input type="text" id="nameInput" placeholder="اكتب اسمك" maxlength="15" autofocus />
-      <button class="btn" id="joinBtn" style="width:100%; margin-top:15px;">دخول</button>
-    </div></div>`;
-    document.getElementById('joinBtn').onclick = () => {
-      const name = document.getElementById('nameInput').value.trim();
-      if (!name) return;
-      const newId = roomRef.child('players').push().key;
-      roomRef.child('players/' + newId).set({ name });
-      localStorage.setItem('player_id_' + code, newId);
-      attach(newId, name);
-    };
-  } else {
-    roomRef.child('players/' + myId).once('value', snap => {
-      if (snap.exists()) attach(myId, snap.val().name);
-      else { localStorage.removeItem('player_id_' + code); renderPlayer(code); }
-    });
-  }
-}
-
-function dispatchPlayerRender(code, myId, name, room){
-  lastPlayerRoom = room;
-  if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);
-  else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
-  else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawPlayer(code, myId, name, room);
-  else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎮 اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
-}
-
-window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
-window.hideGameDetail = function(){ playerDetailGameId = null; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
-
-function renderPlayerVoting(code, myId, name, room){
-  if (playerDetailGameId){
-    const game = GAMES_LIST.find(g => g.id === playerDetailGameId);
-    app.innerHTML = gameDetailHtml(game, room, code, myId, false);
-    return;
-  }
-
-  const votes = room.votes || {};
-  const cardsHtml = GAMES_LIST.map(g => {
-    if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
-    const isReady = votes[myId] === g.id;
-    return `<div class="game-card ${isReady?'selected':''}" onclick="showGameDetail('${g.id}')">
-      <div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div>
-      ${isReady ? '<div class="vote-badge" style="background:var(--green);">أنت جاهز ✓</div>' : '<div class="vote-badge">التفاصيل</div>'}
-    </div>`;
-  }).join('');
-
-  app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
-    <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} 👋</h2>
-    <p class="muted">اختر لعبة لعرض شرحها والاستعداد لها:</p>
-    <div class="games-grid">${cardsHtml}</div>
-    <p class="muted">بانتظار المضيف لبدء اللعبة…</p>
-  </div></div>`;
-}
-
-/* ================= ENTRY POINT ================= */
-const params = new URLSearchParams(location.search);
-const roomParam = params.get('room');
-if (!roomParam) { renderHost(); } else { renderPlayer(roomParam.trim()); }
-</script>
-</body>
-</html>
+      const room 
