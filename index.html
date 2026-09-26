@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-<title>منصة الألعاب</title>
+<title>منصة الألعاب الجماعية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
@@ -58,6 +58,7 @@
   .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #40348f;}
   .btn:disabled{ background:#4a4658; color:#87829a; box-shadow:0 6px 0 #322f3d; cursor:default; }
   .btn-ghost{ background:transparent; box-shadow:none; border:2px solid #3a3650; font-size:13px; padding:8px 16px; }
+  .btn-danger{ background:linear-gradient(135deg, #e74c3c, #c0392b); box-shadow:0 6px 0 #962d22; }
 
   input[type=text]{
     font-family:'Tajawal',sans-serif; font-size:18px; padding:14px 16px;
@@ -114,6 +115,17 @@
   .detail-icon{ font-size:60px; text-align:center; margin-bottom:4px; }
   .rules-list{ text-align:right; padding-inline-start:22px; margin:14px 0; line-height:1.9; font-size:14px; }
   .rules-list li{ margin-bottom:6px; }
+
+  .illustration-img{
+    max-width: 140px;
+    max-height: 140px;
+    object-fit: contain;
+    margin: 12px auto;
+    display: block;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    padding: 8px;
+  }
 </style>
 </head>
 <body>
@@ -138,7 +150,7 @@ const db = firebase.database();
 const app = document.getElementById('app');
 
 /* =====================================================================
-   SECTION 2 — GAME CATALOG
+   SECTION 2 — GAME CATALOG & WORD BANK WITH IMAGE SUPPORT
    ===================================================================== */
 const GAMES_LIST = [
   {
@@ -153,10 +165,10 @@ const GAMES_LIST = [
   },
   {
     id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4,
-    desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد شكلًا ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
+    desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد صورة توضيحية ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
     rules: [
       'ينقسم اللاعبون تلقائيًا إلى فريقين: A و B.',
-      'بكل فريق شخص "الموجّه" يشاهد شكلًا توضيحيًا وكلمة سرية، والآخر "الرسام" يرسم بدون رؤية أي منهما.',
+      'بكل فريق شخص "الموجّه" يشاهد صورة توضيحية وكلمة سرية، والآخر "الرسام" يرسم بدون رؤية أي منهما.',
       'الموجّه يدل صديقه بالإشارة فقط (ممنوع الكلام نهائيًا) حتى يرسم الشكل الصحيح.',
       'الرسام يكتب تخمينه لما يرسمه في أي وقت؛ إذا خمّن الكلمة الصحيحة يفوز فريقه بنقطة فورًا.',
       'الرسام يملك 3 محاولات فقط للتراجع عن آخر خط رسمه إن أخطأ.',
@@ -174,17 +186,24 @@ const ROLE_META = {
   citizen: { name:'مواطن',  icon:'🙂', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
 };
 
+// بنك الكلمات والصور (يمكنك إدخال رابط صورة مباشرة عبر خاصية img)
 const WORD_BANK = [
-  {w:'تفاحة', e:'🍎'}, {w:'موزة', e:'🍌'}, {w:'شمس', e:'☀️'}, {w:'قمر', e:'🌙'},
-  {w:'نجمة', e:'⭐'}, {w:'قطة', e:'🐱'}, {w:'كلب', e:'🐶'}, {w:'أسد', e:'🦁'},
-  {w:'فيل', e:'🐘'}, {w:'بطة', e:'🦆'}, {w:'سمكة', e:'🐟'}, {w:'ثعبان', e:'🐍'},
-  {w:'عنكبوت', e:'🕷️'}, {w:'سيارة', e:'🚗'}, {w:'طائرة', e:'✈️'}, {w:'دراجة', e:'🚲'},
-  {w:'بيت', e:'🏠'}, {w:'شجرة', e:'🌳'}, {w:'وردة', e:'🌹'}, {w:'مظلة', e:'☂️'},
-  {w:'كرة', e:'⚽'}, {w:'ساعة', e:'⏰'}, {w:'نظارة', e:'👓'}, {w:'هاتف', e:'📱'},
-  {w:'مفتاح', e:'🔑'}, {w:'كتاب', e:'📖'}, {w:'قلم', e:'✏️'}, {w:'كرسي', e:'🪑'},
-  {w:'باب', e:'🚪'}, {w:'قهوة', e:'☕'}, {w:'بيتزا', e:'🍕'}, {w:'حذاء', e:'👟'},
-  {w:'قلب', e:'❤️'}, {w:'مصباح', e:'💡'}, {w:'تلفاز', e:'📺'}, {w:'سحابة', e:'☁️'},
-  {w:'جبل', e:'⛰️'}
+  {w:'تفاحة', img:'https://cdn-icons-png.flaticon.com/512/415/415733.png', e:'🍎'},
+  {w:'سيارة', img:'https://cdn-icons-png.flaticon.com/512/744/744465.png', e:'🚗'},
+  {w:'شمس',   img:'https://cdn-icons-png.flaticon.com/512/869/869869.png', e:'☀️'},
+  {w:'بيتza', img:'https://cdn-icons-png.flaticon.com/512/3595/3595455.png', e:'🍕'},
+  {w:'موزة',  img:'https://cdn-icons-png.flaticon.com/512/2909/2909761.png', e:'🍌'},
+  {w:'نجمة',  img:'https://cdn-icons-png.flaticon.com/512/1828/1828884.png', e:'⭐'},
+  {w:'قطة',   img:'https://cdn-icons-png.flaticon.com/512/616/616430.png', e:'🐱'},
+  {w:'كلب',   img:'https://cdn-icons-png.flaticon.com/512/616/616408.png', e:'🐶'},
+  {w:'طائرة', img:'https://cdn-icons-png.flaticon.com/512/789/789393.png', e:'✈️'},
+  {w:'بيت',   img:'https://cdn-icons-png.flaticon.com/512/619/619153.png', e:'🏠'},
+  {w:'مظلة',  img:'https://cdn-icons-png.flaticon.com/512/3208/3208726.png', e:'☂️'},
+  {w:'كرة',   img:'https://cdn-icons-png.flaticon.com/512/33/33736.png', e:'⚽'},
+  {w:'ساعة',  img:'https://cdn-icons-png.flaticon.com/512/2088/2088617.png', e:'⏰'},
+  {w:'هاتف',  img:'https://cdn-icons-png.flaticon.com/512/15/15874.png', e:'📱'},
+  {w:'مفتاح', img:'https://cdn-icons-png.flaticon.com/512/807/807241.png', e:'🔑'},
+  {w:'قهوة',  img:'https://cdn-icons-png.flaticon.com/512/751/751621.png', e:'☕'}
 ];
 
 /* =====================================================================
@@ -195,7 +214,16 @@ function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinUrl(code){ return location.origin + location.pathname + '?room=' + code; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
-function emojiFor(word){ const found = WORD_BANK.find(x => x.w === word); return found ? found.e : '❓'; }
+
+// دالة لعرض الصورة أو الرمز التوضيحي للكلمة
+function renderIllustration(wordText){
+  const found = WORD_BANK.find(x => x.w === wordText);
+  if (found && found.img) {
+    return `<img src="${found.img}" class="illustration-img" alt="${escapeHtml(wordText)}" />`;
+  }
+  return `<div style="font-size:70px;">${found ? found.e : '❓'}</div>`;
+}
+
 function normalizeAr(s){
   return String(s).trim().toLowerCase()
     .replace(/[\u064B-\u065F\u0610-\u061A\u06D6-\u06ED]/g,'')
@@ -234,7 +262,7 @@ let currentColor = '#000000';
 window.setDrawColor = function(c){ currentColor = c; };
 
 /* =====================================================================
-   SECTION 4 — GAME DETAIL / READY PANEL (shared by host & player)
+   SECTION 4 — GAME DETAIL / READY PANEL
    ===================================================================== */
 function gameDetailHtml(game, room, code, myId, isHost){
   const votes = room.votes || {};
@@ -270,7 +298,7 @@ window.toggleReady = function(code, myId, gameId){
 };
 
 /* =====================================================================
-   SECTION 5 — HOST CONTROLLER
+   SECTION 5 — HOST CONTROLLER (WITH INSTANT END GAME CONTROL)
    ===================================================================== */
 let ACTIVE_HOST_CODE = null;
 let lastHostRoom = null;
@@ -380,7 +408,7 @@ function renderHostGenericPlaceholder(code, room){
   document.getElementById('stage').innerHTML = `
     <h2 style="font-family:'Cairo'; color:var(--accent);">🎮 ${g ? g.title : ''}</h2>
     <p class="muted">هذه اللعبة قيد التطوير حاليًا.</p>
-    <button class="btn" onclick="resetToLobby('${code}')">رجوع لقائمة الألعاب</button>
+    <button class="btn btn-danger" onclick="resetToLobby('${code}')">🛑 إنهاء اللعبة والعودة للرئيسية</button>
   `;
 }
 
@@ -390,6 +418,8 @@ window.startGame = function(gameId, code){
   if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
+
+// إنهاء أي لعبة من قِبل المنظم والعودة للوحة الشاشة الرئيسية فوراً
 window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, silentdraw:null });
   db.ref('strokes/'+code+'_A').set(null);
@@ -537,6 +567,9 @@ function renderMafiaHost(code, room){
   }).join('');
 
   document.getElementById('stage').innerHTML = `
+    <div style="margin-bottom:15px;">
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')">🛑 إنهاء اللعبة والعودة للوحة التحكم</button>
+    </div>
     <h2 style="font-family:'Cairo'; color:var(--accent);">من هم المافيا؟ 🕵️</h2>
     <p class="narrator">${narrator}</p>
     ${control}
@@ -603,7 +636,7 @@ function renderMafiaPlayer(code, myId, name, room){
         <div class="target-list">${targets.map(id=>`
           <button class="target-btn ${myResult && myResult.targetId===id?'picked':''}" onclick="policeInvestigate('${code}','${myId}','${id}')">${escapeHtml(players[id].name)}</button>
         `).join('')}</div>
-        ${myResult ? `<p class="muted" style="font-size:16px; font-weight:700;">${escapeHtml(players[myResult.targetId].name)} ${myResult.isMafia ? 'هو من المافيا 🔴' : 'ليس من المافيا 🟢'}</p>` : ''}
+        ${myResult ? `<p class="muted" style="font-size:16px; font-weight:700;">${escapeHtml(players[myResult.targetId].name)}${myResult.isMafia ? 'هو من المافيا 🔴' : 'ليس من المافيا 🟢'}</p>` : ''}
       </div></div>`;
     } else {
       app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🌙 أغلق عينيك</h2><p class="muted">الشرطي يحقق الآن…</p></div></div>`;
@@ -654,7 +687,7 @@ function renderMafiaPlayer(code, myId, name, room){
 }
 
 /* =====================================================================
-   SECTION 7 — SILENT DRAW MODULE (2 teams of 2, first to 3 points wins)
+   SECTION 7 — SILENT DRAW MODULE
    ===================================================================== */
 window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
@@ -804,7 +837,7 @@ function renderSilentDrawHost(code, room){
   const showBoards = ['drawing','round_result','ended'].includes(sd.phase);
 
   if (sd.phase==='round_start'){
-    narrator = `الجولة ${sd.round} — الموجّهون يشاهدون كلماتهم الآن سرًا.`;
+    narrator = `الجولة ${sd.round} — الموجّهون يشاهدون صور أشكالهم الآن سرًا.`;
     control = `<button class="btn" onclick="silentDrawBeginDrawing('${code}')">ابدأ الرسم 🎨</button>`;
   } else if (sd.phase==='drawing'){
     narrator = `⏱️ <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
@@ -820,7 +853,7 @@ function renderSilentDrawHost(code, room){
   if (showBoards){
     boards = `<div class="draw-layout">${['A','B'].map(t => `
       <div class="team-board">
-        <h4 style="font-family:'Cairo';">فريق ${t} — ${escapeHtml(teamLabel(t))}</h4>
+        <h4 style="font-family:'Cairo';">فريق ${t} —${escapeHtml(teamLabel(t))}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="340" height="300"></canvas></div>
         <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
         <p class="muted">${sd.results[t]==='correct' ? '✅ خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? '⏳ ينتظرون التخمين' : '❌ لم يخمّنوا')}</p>
@@ -828,6 +861,9 @@ function renderSilentDrawHost(code, room){
   }
 
   document.getElementById('stage').innerHTML = `
+    <div style="margin-bottom:15px;">
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')">🛑 إنهاء اللعبة والعودة للوحة التحكم</button>
+    </div>
     <h2 style="font-family:'Cairo'; color:var(--accent);">الرسم الصامت 🤫</h2>
     <p class="narrator">${narrator}</p>
     <div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">الترتيب (الفوز عند 3 نقاط)</h3>${silentDrawRankingHtml(sd, players)}</div>
@@ -860,7 +896,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
     app.innerHTML = isGuide
       ? `<div class="phone"><div class="card">
           <h2 style="font-family:'Cairo';">أنت الموجّه 🤫</h2>
-          <div style="font-size:70px;">${emojiFor(sd.words[myTeam])}</div>
+          ${renderIllustration(sd.words[myTeam])}
           <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
           <p class="muted">وضّح لـ ${escapeHtml(teammateName)} بالإشارة فقط، بدون أي كلام!</p>
         </div></div>`
@@ -874,8 +910,8 @@ function renderSilentDrawPlayer(code, myId, name, room){
   if (sd.phase==='drawing'){
     if (isGuide){
       app.innerHTML = `<div class="phone"><div class="card">
-        <h2 style="font-family:'Cairo';">تذكير بالكلمة</h2>
-        <div style="font-size:70px;">${emojiFor(sd.words[myTeam])}</div>
+        <h2 style="font-family:'Cairo';">تذكير بالمطلوب</h2>
+        ${renderIllustration(sd.words[myTeam])}
         <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
         <p class="muted">بدون كلام! فقط إشارات لصديقك.</p>
         <p class="muted">${sd.results[myTeam]==='correct' ? '🎉 صديقك خمّن الكلمة!' : ''}</p>
@@ -890,7 +926,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
         <div class="card" style="max-width:100%;">
           <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
           <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-            ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
+            ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50\%; background:${c}; border:2px solid #fff;"></button>`).join('')}
           </div>
           <button class="btn btn-ghost" ${sd.undosLeft[myTeam]<=0?'disabled':''} onclick="silentDrawUndo('${code}','${myTeam}')" style="margin-top:10px;">تراجع (${sd.undosLeft[myTeam]} متبقية)</button>
           <input type="text" id="guessInput" placeholder="ماذا ترسم؟ اكتب تخمينك" style="margin-top:14px;" />
@@ -923,7 +959,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
 }
 
 /* =====================================================================
-   SECTION 8 — PLAYER CONTROLLER (lobby + game routing)
+   SECTION 8 — PLAYER CONTROLLER
    ===================================================================== */
 let CURRENT_PLAYER_NAME = '';
 let ACTIVE_ROOM_CODE = null;
@@ -1011,4 +1047,3 @@ if (!roomParam) { renderHost(); } else { renderPlayer(roomParam.trim()); }
 </script>
 </body>
 </html>
-
