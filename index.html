@@ -66,11 +66,10 @@
   }
   input[type=text]:focus{ border-color:var(--accent); }
 
-  .games-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; width:100%; max-width:640px; margin-top:18px; }
+  .games-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; width:100%; max-width:640px; margin-top:18px; }
   .game-card{ background:var(--surface); border:2px solid #322f47; border-radius:18px; padding:20px 10px; text-align:center; cursor:pointer; transition:all .18s ease; box-shadow:0 8px 20px rgba(0,0,0,.25); }
   .game-card.disabled{ opacity:.5; cursor:not-allowed; }
   .game-card:hover:not(.disabled){ border-color:var(--accent); transform:translateY(-4px); box-shadow:0 14px 28px rgba(124,108,240,.25); }
-  .game-card.selected{ border-color:var(--green); background:rgba(0,208,156,.1); }
   .game-icon-badge{ width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 10px; background:var(--surface-2); }
   .game-title{ font-family:'Cairo',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; }
   .vote-badge{ background:var(--accent); color:#fff; font-size:12px; font-weight:bold; padding:3px 10px; border-radius:20px; display:inline-block; margin-top:8px; }
@@ -85,7 +84,7 @@
   .players-box{ margin-top:26px; width:100%; max-width:640px; }
   .chip{ background:var(--surface); border:1px solid #3a3650; padding:8px 16px; border-radius:999px; font-weight:700; display:inline-block; margin:5px; font-size:14px; }
   .chip.dead{ opacity:.45; text-decoration:line-through; }
-  .narrator{ font-size:17px; line-height:1.7; max-width:540px; margin:10px auto; }
+  .narrator{ font-size:17px; line-height:1.7; max-width:560px; margin:10px auto; }
   .top-bar{ position:absolute; top:10px; left:10px; }
 
   .phone{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
@@ -108,21 +107,22 @@
 
   .draw-layout{ display:flex; gap:20px; width:100%; max-width:920px; margin-top:14px; flex-wrap:wrap; justify-content:center; }
   .canvas-wrap{ background:#fff; border-radius:16px; padding:6px; box-shadow:0 10px 30px rgba(0,0,0,.3); }
-  #hostCanvas{ display:block; border-radius:10px; }
-  .guess-feed{ background:var(--surface); border-radius:16px; padding:14px; width:260px; max-height:400px; overflow-y:auto; text-align:right; box-shadow:0 10px 30px rgba(0,0,0,.25); }
-  .guess-line{ padding:6px 0; border-bottom:1px solid #3a3650; font-size:14px; }
-  .guess-line.correct{ color:var(--green); font-weight:700; }
-  .guess-feed-mini{ margin-top:14px; max-height:150px; overflow-y:auto; text-align:right; }
+  .team-board{ background:var(--surface); border-radius:16px; padding:16px; width:360px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
   .color-row button{ box-shadow:0 2px 6px rgba(0,0,0,.4); }
+
+  .game-detail{ max-width:520px; margin:0 auto; text-align:right; width:100%; }
+  .detail-icon{ font-size:60px; text-align:center; margin-bottom:4px; }
+  .rules-list{ text-align:right; padding-inline-start:22px; margin:14px 0; line-height:1.9; font-size:14px; }
+  .rules-list li{ margin-bottom:6px; }
 </style>
 </head>
 <body>
 <div id="app"></div>
 
 <script>
-/* =========================================================
-   1) إعدادات Firebase
-   ========================================================= */
+/* =====================================================================
+   SECTION 1 — FIREBASE CONFIGURATION
+   ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyBwU4coCgrk1kkzQUfj2vFh5kzoUlFzDnY",
   authDomain: "game-platform-v1.firebaseapp.com",
@@ -137,37 +137,126 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const app = document.getElementById('app');
 
+/* =====================================================================
+   SECTION 2 — GAME CATALOG
+   ===================================================================== */
 const GAMES_LIST = [
-  { id: 'mafia',   title: 'من هم المافيا؟', icon: '🕵️', available: true },
-  { id: 'draw',    title: 'ارسم وخمن',      icon: '🎨', available: true },
-  { id: 'clicker', title: 'أسرع ضغطة',      icon: '⚡', available: false },
-  { id: 'trivia',  title: 'أسئلة وتحديات',  icon: '🧠', available: false }
+  {
+    id: 'mafia', title: 'من هم المافيا؟', icon: '🕵️', available: true, minPlayers: 4,
+    desc: 'لعبة استنتاج اجتماعي: مافيا تتربص بالمجموعة، وشرطي وطبيب يحاولون حمايتها.',
+    rules: [
+      'كل لاعب يحصل على دور سري (مافيا، شرطي، طبيب، أو مواطن) يظهر على جواله فقط.',
+      'كل ليلة يغلق الجميع أعينهم: المافيا يختارون ضحية، ثم يحقق الشرطي، ثم يحمي الطبيب.',
+      'بالنهار يناقش الجميع بصوت عالٍ ثم يصوّتون لإخراج أحد المشتبه بهم.',
+      'تفوز المافيا إن تساووا عددًا مع الباقين، ويفوز المواطنون إن قُضي على كل المافيا.'
+    ]
+  },
+  {
+    id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4,
+    desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد الشكل ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم.',
+    rules: [
+      'ينقسم اللاعبون تلقائيًا إلى فريقين: A و B.',
+      'بكل فريق شخص "الموجّه" يشاهد شكلًا سريًا، والآخر "الرسام" يرسم بدون رؤية الشكل.',
+      'الموجّه يدل صديقه بالإشارة فقط (ممنوع الكلام نهائيًا) حتى يرسم الشكل الصحيح.',
+      'الرسام يملك 3 محاولات فقط للتراجع عن آخر خط رسمه إن أخطأ.',
+      'الحكم يقارن رسمة كل فريق بالشكل الأصلي؛ أول فريق يصيب 3 مرات يفوز باللعبة!'
+    ]
+  },
+  { id: 'clicker', title: 'أسرع ضغطة',     icon: '⚡', available: false, minPlayers: 2, desc: '', rules: [] },
+  { id: 'trivia',  title: 'أسئلة وتحديات', icon: '🧠', available: false, minPlayers: 2, desc: '', rules: [] }
 ];
+
 const ROLE_META = {
   mafia:   { name:'مافيا',  icon:'🔪', cls:'role-mafia',   desc:'تعرف على زملائك بالمافيا. كل ليلة تختارون معًا ضحية.' },
   police:  { name:'شرطي',   icon:'👮', cls:'role-police',  desc:'كل ليلة تحقق من شخص لتعرف إن كان مافيا.' },
   doctor:  { name:'طبيب',   icon:'⚕️', cls:'role-doctor',  desc:'كل ليلة تحمي شخصًا واحدًا من القتل.' },
   citizen: { name:'مواطن',  icon:'🙂', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
 };
+
 const DRAW_WORDS = ['تفاحة','شمس','قطة','كلب','سيارة','بيت','شجرة','كرة','ساعة','مظلة','ثلاجة','هاتف','نظارة','سمكة','طائرة','جبل','نجمة','قلب','وردة','حذاء','مفتاح','كتاب','قلم','كرسي','باب','نافذة','قمر','سحابة','مروحة','دراجة','قهوة','بيتزا','موزة','بطة','فيل','أسد','ثعبان','عنكبوت','مصباح','تلفاز'];
 
+/* =====================================================================
+   SECTION 3 — SHARED UTILITIES
+   ===================================================================== */
 function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]]; } return r; }
 function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinUrl(code){ return location.origin + location.pathname + '?room=' + code; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function normalizeAr(s){
-  return String(s).trim().toLowerCase()
-    .replace(/[\u064B-\u065F\u0610-\u061A\u06D6-\u06ED]/g,'')
-    .replace(/[إأآا]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
-    .replace(/\s+/g,'');
+function pickRandomWord(){ return shuffle(DRAW_WORDS)[0]; }
+function drawSegment(ctx, canvas, s){
+  if (!s || !s.points || s.points.length < 2) return;
+  ctx.strokeStyle = s.color; ctx.lineWidth = s.size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  s.points.forEach((p,i) => {
+    const x = p.x*canvas.width, y = p.y*canvas.height;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
 }
-function pickWordOptions(){ return shuffle(DRAW_WORDS).slice(0,3); }
+function mirrorCanvasFrom(strokeKey, canvasId){
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const sRef = db.ref('strokes/'+strokeKey);
+  sRef.off('child_added');
+  sRef.on('child_added', snap => drawSegment(ctx, canvas, snap.val()));
+}
+let hostTimerInterval = null;
+function startHostTimerWatch(timerEnd){
+  if (hostTimerInterval) clearInterval(hostTimerInterval);
+  hostTimerInterval = setInterval(() => {
+    const remaining = Math.max(0, Math.ceil((timerEnd - Date.now())/1000));
+    const el = document.getElementById('timerText');
+    if (el) el.textContent = remaining;
+  }, 500);
+}
+let currentColor = '#000000';
+window.setDrawColor = function(c){ currentColor = c; };
 
-const params = new URLSearchParams(location.search);
-const roomParam = params.get('room');
-if (!roomParam) { renderHost(); } else { renderPlayer(roomParam.trim()); }
+/* =====================================================================
+   SECTION 4 — GAME DETAIL / READY PANEL (shared by host & player)
+   ===================================================================== */
+function gameDetailHtml(game, room, code, myId, isHost){
+  const votes = room.votes || {};
+  const players = room.players || {};
+  const readyIds = Object.keys(votes).filter(id => votes[id] === game.id);
+  const readyNames = readyIds.map(id => players[id]?.name).filter(Boolean);
+  const iAmReady = myId && votes[myId] === game.id;
+  const totalPlayers = Object.keys(players).length;
 
-/* ================= HOST ================= */
+  return `
+    <div class="game-detail">
+      <button class="btn btn-ghost" onclick="${isHost ? 'hideHostGameDetail()' : 'hideGameDetail()'}">→ رجوع</button>
+      <div class="detail-icon">${game.icon}</div>
+      <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
+      <p class="narrator">${game.desc}</p>
+      <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
+      <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
+      <div class="players-box">
+        <h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">جاهزون (${readyNames.length})</h3>
+        <div>${readyNames.map(n => `<span class="chip">${escapeHtml(n)}</span>`).join('') || '<span class="muted">لا أحد جاهز بعد</span>'}</div>
+      </div>
+      <div style="text-align:center; margin-top:10px;">
+        ${isHost
+          ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
+          : `<button class="btn ${iAmReady ? 'btn-ghost' : ''}" onclick="toggleReady('${code}','${myId}','${game.id}')">${iAmReady ? 'إلغاء الجهوزية' : 'أنا جاهز ✅'}</button>`}
+      </div>
+    </div>
+  `;
+}
+window.toggleReady = function(code, myId, gameId){
+  const ref = db.ref('rooms/'+code+'/votes/'+myId);
+  ref.once('value', snap => { snap.val() === gameId ? ref.remove() : ref.set(gameId); });
+};
+
+/* =====================================================================
+   SECTION 5 — HOST CONTROLLER
+   ===================================================================== */
+let ACTIVE_HOST_CODE = null;
+let lastHostRoom = null;
+let hostDetailGameId = null;
+
 function renderHost(){
   const savedCode = localStorage.getItem('hostRoomCode');
   if (savedCode) {
@@ -181,6 +270,7 @@ function renderHost(){
 }
 
 function initHostRoom(code, isNew){
+  ACTIVE_HOST_CODE = code;
   localStorage.setItem('hostRoomCode', code);
   const roomRef = db.ref('rooms/' + code);
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
@@ -197,39 +287,46 @@ function initHostRoom(code, isNew){
     }
   };
 
-  roomRef.on('value', snap => {
-    const room = snap.val();
-    if (!room) return;
-    if (room.status === 'voting') renderHostLobby(code, room);
-    else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
-    else if (room.status === 'in_game' && room.activeGame === 'draw') renderDrawHost(code, room);
-    else renderHostGenericPlaceholder(code, room);
-  });
+  roomRef.on('value', snap => dispatchHostRender(code, snap.val()));
 }
 
+function dispatchHostRender(code, room){
+  if (!room) return;
+  lastHostRoom = room;
+  if (room.status === 'voting') renderHostLobby(code, room);
+  else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
+  else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
+  else renderHostGenericPlaceholder(code, room);
+}
+
+window.showHostGameDetail = function(gameId){ hostDetailGameId = gameId; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+
 function renderHostLobby(code, room){
+  if (hostDetailGameId) {
+    const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
+    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true);
+    return;
+  }
+
   const players = room.players || {};
   const votes = room.votes || {};
   const tally = {};
   Object.values(votes).forEach(g => tally[g] = (tally[g]||0)+1);
 
   const cardsHtml = GAMES_LIST.map(g => {
-    const v = tally[g.id] || 0;
-    if (g.available) {
-      return `
-        <div class="game-card">
-          <div class="game-icon-badge">${g.icon}</div>
-          <div class="game-title">${g.title}</div>
-          <div class="vote-badge">${v} صوت</div>
-          <button class="btn" style="padding:6px 12px; font-size:13px; width:100%;" onclick="startGame('${g.id}','${code}')">ابدأ اللعبة</button>
-        </div>`;
-    }
-    return `
-      <div class="game-card disabled">
+    if (!g.available) {
+      return `<div class="game-card disabled">
         <div class="game-icon-badge">${g.icon}</div>
         <div class="game-title">${g.title}</div>
         <div class="coming-soon">قريبًا</div>
       </div>`;
+    }
+    return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
+      <div class="game-icon-badge">${g.icon}</div>
+      <div class="game-title">${g.title}</div>
+      <div class="vote-badge">${tally[g.id]||0} جاهز</div>
+    </div>`;
   }).join('');
 
   document.getElementById('stage').innerHTML = `
@@ -247,7 +344,7 @@ function renderHostLobby(code, room){
       <div>${Object.values(players).map(p=>`<span class="chip">${escapeHtml(p.name)}</span>`).join('') || '<span class="muted">بانتظار انضمام اللاعبين…</span>'}</div>
     </div>
     <div class="players-box">
-      <h3 style="font-family:'Cairo';">الألعاب المتاحة للتصويت</h3>
+      <h3 style="font-family:'Cairo';">اختر لعبة لعرض شرحها والبدء</h3>
       <div class="games-grid">${cardsHtml}</div>
     </div>
   `;
@@ -269,16 +366,20 @@ function renderHostGenericPlaceholder(code, room){
 }
 
 window.startGame = function(gameId, code){
+  hostDetailGameId = null;
   if (gameId === 'mafia') { startMafiaGame(code); return; }
-  if (gameId === 'draw') { startDrawGame(code); return; }
+  if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 window.resetToLobby = function(code){
-  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, draw:null });
-  db.ref('strokes/'+code).set(null);
+  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, silentdraw:null });
+  db.ref('strokes/'+code+'_A').set(null);
+  db.ref('strokes/'+code+'_B').set(null);
 };
 
-/* ================= MAFIA — game logic ================= */
+/* =====================================================================
+   SECTION 6 — MAFIA MODULE
+   ===================================================================== */
 function assignMafiaRoles(ids){
   const n = ids.length;
   const shuffled = shuffle(ids);
@@ -371,7 +472,6 @@ window.policeInvestigate = function(code, myId, targetId){
   });
 };
 
-/* ---- Mafia: host view ---- */
 function renderMafiaHost(code, room){
   const m = room.mafia; if (!m) return;
   const players = room.players || {};
@@ -428,7 +528,6 @@ function renderMafiaHost(code, room){
   `;
 }
 
-/* ---- Mafia: player view ---- */
 function renderMafiaPlayer(code, myId, name, room){
   const m = room.mafia; if (!m) return;
   const players = room.players || {};
@@ -535,114 +634,112 @@ function renderMafiaPlayer(code, myId, name, room){
   }
 }
 
-/* ================= DRAW & GUESS — game logic ================= */
-window.startDrawGame = function(code){
+/* =====================================================================
+   SECTION 7 — SILENT DRAW MODULE (2 teams of 2, first to 3 points wins)
+   ===================================================================== */
+window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
   roomRef.child('players').once('value', snap => {
     const players = snap.val() || {};
-    const ids = Object.keys(players);
-    if (ids.length < 2) { alert('تحتاج لاعبين اثنين على الأقل'); return; }
-    const order = shuffle(ids);
-    const scores = {}; ids.forEach(id => scores[id] = 0);
-    db.ref('strokes/'+code).set(null);
+    const ids = shuffle(Object.keys(players));
+    if (ids.length < 4) { alert('تحتاج 4 لاعبين على الأقل (فريقين) لبدء الرسم الصامت'); return; }
+    const teamA = ids.slice(0,2), teamB = ids.slice(2,4);
+    db.ref('strokes/'+code+'_A').set(null);
+    db.ref('strokes/'+code+'_B').set(null);
     roomRef.update({
-      status:'in_game', activeGame:'draw',
-      draw:{ phase:'choosing_word', order, turnIndex:0, drawerId: order[0],
-        wordOptions: pickWordOptions(), word:null, guesses:null, scores, round:1, timerEnd:null }
+      status:'in_game', activeGame:'silentdraw',
+      silentdraw:{
+        phase:'round_start', round:1,
+        teams:{ A:teamA, B:teamB },
+        guideOf:{ A:teamA[0], B:teamB[0] },
+        drawerOf:{ A:teamA[1], B:teamB[1] },
+        words:{ A: pickRandomWord(), B: pickRandomWord() },
+        undosLeft:{ A:3, B:3 },
+        correctCount:{ A:0, B:0 },
+        results:{ A:null, B:null },
+        timerEnd:null, winner:null
+      }
     });
   });
 };
 
-window.chooseWord = function(code, word){
-  db.ref('strokes/'+code).set(null);
-  db.ref('rooms/'+code+'/draw').update({ word, phase:'drawing', timerEnd: Date.now()+60000, guesses:null });
+window.silentDrawBeginDrawing = function(code){
+  db.ref('rooms/'+code+'/silentdraw').update({ phase:'drawing', timerEnd: Date.now()+90000, results:{A:null,B:null} });
 };
 
-window.endDrawRound = function(code){
-  db.ref('rooms/'+code+'/draw').update({ phase:'reveal' });
+window.silentDrawJudge = function(code, team, verdict){
+  db.ref('rooms/'+code+'/silentdraw/results/'+team).set(verdict);
 };
 
-window.nextDrawRound = function(code){
-  const dRef = db.ref('rooms/'+code+'/draw');
-  dRef.once('value', snap => {
-    const d = snap.val(); if (!d) return;
-    const nextIndex = d.turnIndex + 1;
-    if (nextIndex >= d.order.length) { dRef.update({ phase:'final' }); return; }
-    db.ref('strokes/'+code).set(null);
-    dRef.update({
-      phase:'choosing_word', turnIndex: nextIndex, drawerId: d.order[nextIndex],
-      wordOptions: pickWordOptions(), word:null, guesses:null,
-      round:(d.round||1)+1, timerEnd:null
+window.silentDrawFinishRound = function(code){
+  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  sdRef.once('value', snap => {
+    const sd = snap.val(); if (!sd) return;
+    if (!sd.results.A || !sd.results.B) { alert('حدد صحيح أو خطأ لكل فريق أولًا'); return; }
+    const correctCount = {...sd.correctCount};
+    ['A','B'].forEach(t => { if (sd.results[t]==='correct') correctCount[t] = (correctCount[t]||0)+1; });
+    const winner = correctCount.A>=3 ? 'A' : (correctCount.B>=3 ? 'B' : null);
+    sdRef.update({ correctCount, phase: winner ? 'ended' : 'round_result', winner });
+  });
+};
+
+window.silentDrawNextRound = function(code){
+  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  sdRef.once('value', snap => {
+    const sd = snap.val(); if (!sd) return;
+    db.ref('strokes/'+code+'_A').set(null);
+    db.ref('strokes/'+code+'_B').set(null);
+    sdRef.update({
+      phase:'round_start', round:(sd.round||1)+1,
+      guideOf:{ A: sd.drawerOf.A, B: sd.drawerOf.B },
+      drawerOf:{ A: sd.guideOf.A, B: sd.guideOf.B },
+      words:{ A: pickRandomWord(), B: pickRandomWord() },
+      undosLeft:{ A:3, B:3 }, results:{ A:null, B:null }, timerEnd:null
     });
   });
 };
 
-window.submitGuess = function(code, myId, text){
-  const dRef = db.ref('rooms/'+code+'/draw');
-  dRef.once('value', snap => {
-    const d = snap.val(); if (!d || d.phase!=='drawing') return;
-    const already = d.guesses && Object.values(d.guesses).some(g=>g.playerId===myId && g.correct);
-    if (already) return;
-    const correct = normalizeAr(text) === normalizeAr(d.word);
-    const key = dRef.child('guesses').push().key;
-    dRef.child('guesses/'+key).set({ playerId: myId, name: CURRENT_PLAYER_NAME, text: correct ? '' : text, correct });
-    if (correct){
-      const scores = {...(d.scores||{})};
-      scores[myId] = (scores[myId]||0) + 100;
-      scores[d.drawerId] = (scores[d.drawerId]||0) + 20;
-      dRef.child('scores').update(scores);
-      dRef.once('value', snap2 => {
-        const d2 = snap2.val();
-        const others = d2.order.filter(id=>id!==d2.drawerId);
-        const correctIds = new Set(Object.values(d2.guesses||{}).filter(g=>g.correct).map(g=>g.playerId));
-        if (others.every(id=>correctIds.has(id))) window.endDrawRound(code);
-      });
-    }
+window.silentDrawUndo = function(code, team){
+  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  sdRef.once('value', snap => {
+    const sd = snap.val(); if (!sd || sd.phase!=='drawing') return;
+    if ((sd.undosLeft[team]||0) <= 0) return;
+    const strokesRef = db.ref('strokes/'+code+'_'+team);
+    strokesRef.limitToLast(1).once('value', s2 => {
+      s2.forEach(child => strokesRef.child(child.key).remove());
+      sdRef.child('undosLeft/'+team).set(sd.undosLeft[team]-1);
+    });
   });
 };
 
-let currentColor = '#000000';
-window.setDrawColor = function(c){ currentColor = c; };
-window.clearCanvas = function(code){
-  db.ref('strokes/'+code).set(null);
-  const canvas = document.getElementById('drawCanvas');
-  if (canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-};
-
-function setupDrawCanvas(code){
+function setupSilentCanvas(code, team){
   const canvas = document.getElementById('drawCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  const strokesRef = db.ref('strokes/'+code+'_'+team);
 
-  db.ref('strokes/'+code).once('value', snap => {
-    const all = snap.val() || {};
-    Object.values(all).forEach(s => drawSegment(ctx, canvas, s));
+  strokesRef.once('value', snap => {
+    Object.values(snap.val()||{}).forEach(s => drawSegment(ctx, canvas, s));
   });
 
-  let drawing = false, currentStroke = [], lastFlush = 0;
+  let drawing = false, pts = [];
   function getPos(e){
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    return { x: cx/rect.width, y: cy/rect.height };
+    const r = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: cx/r.width, y: cy/r.height };
   }
-  function start(e){ e.preventDefault(); drawing = true; currentStroke = [getPos(e)]; }
+  function start(e){ e.preventDefault(); drawing=true; pts=[getPos(e)]; }
   function move(e){
     if (!drawing) return; e.preventDefault();
-    const p = getPos(e);
-    const prev = currentStroke[currentStroke.length-1] || p;
-    currentStroke.push(p);
-    drawSegment(ctx, canvas, { points:[prev,p], color: currentColor, size:4 });
-    const now = Date.now();
-    if (now - lastFlush > 120){
-      db.ref('strokes/'+code).push({ points: currentStroke.slice(), color: currentColor, size:4 });
-      currentStroke = [p]; lastFlush = now;
-    }
+    const p = getPos(e); const prev = pts[pts.length-1] || p;
+    pts.push(p);
+    drawSegment(ctx, canvas, { points:[prev,p], color:currentColor, size:4 });
   }
   function end(){
-    if (!drawing) return; drawing = false;
-    if (currentStroke.length > 1) db.ref('strokes/'+code).push({ points: currentStroke.slice(), color: currentColor, size:4 });
-    currentStroke = [];
+    if (!drawing) return; drawing=false;
+    if (pts.length>1) strokesRef.push({ points: pts.slice(), color: currentColor, size:4 });
+    pts=[];
   }
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
@@ -652,153 +749,115 @@ function setupDrawCanvas(code){
   canvas.addEventListener('touchend', end);
 }
 
-function drawSegment(ctx, canvas, s){
-  if (!s || !s.points || s.points.length < 2) return;
-  ctx.strokeStyle = s.color; ctx.lineWidth = s.size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.beginPath();
-  s.points.forEach((p,i) => {
-    const x = p.x*canvas.width, y = p.y*canvas.height;
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-}
-
-function mirrorCanvas(code){
-  const canvas = document.getElementById('hostCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const sRef = db.ref('strokes/'+code);
-  sRef.off('child_added');
-  sRef.on('child_added', snap => drawSegment(ctx, canvas, snap.val()));
-}
-
-let hostTimerInterval = null;
-function startHostTimerWatch(code, timerEnd){
-  if (hostTimerInterval) clearInterval(hostTimerInterval);
-  let ended = false;
-  hostTimerInterval = setInterval(() => {
-    const remaining = Math.max(0, Math.ceil((timerEnd - Date.now())/1000));
-    const el = document.getElementById('timerText');
-    if (el) el.textContent = remaining;
-    if (remaining <= 0 && !ended){ ended = true; clearInterval(hostTimerInterval); window.endDrawRound(code); }
-  }, 500);
-}
-
-/* ---- Draw: host view ---- */
-function renderDrawHost(code, room){
-  const d = room.draw; if (!d) return;
+function renderSilentDrawHost(code, room){
+  const sd = room.silentdraw; if (!sd) return;
   const players = room.players || {};
-  const drawerName = players[d.drawerId]?.name || '';
-  let body = '';
+  const teamLabel = t => sd.teams[t].map(id=>players[id]?.name||'').join(' و ');
+  let narrator = '', control = '', boards = '';
+  const showBoards = ['drawing','round_result','ended'].includes(sd.phase);
 
-  if (d.phase==='choosing_word'){
-    body = `<p class="narrator">🎨 ${escapeHtml(drawerName)} يختار كلمة الآن…</p>`;
-  } else if (d.phase==='drawing' || d.phase==='reveal'){
-    const guessesArr = Object.values(d.guesses||{});
-    const feed = guessesArr.slice(-8).reverse().map(g =>
-      g.correct ? `<div class="guess-line correct">✅ ${escapeHtml(g.name)} خمّن الكلمة!</div>`
-                : `<div class="guess-line">${escapeHtml(g.name)}: ${escapeHtml(g.text)}</div>`
-    ).join('');
-    body = `
-      <div class="draw-layout">
-        <div class="canvas-wrap"><canvas id="hostCanvas" width="600" height="400"></canvas></div>
-        <div class="guess-feed">${feed || '<p class="muted">بانتظار التخمينات…</p>'}</div>
-      </div>
-      ${d.phase==='drawing'
-        ? `<p class="narrator">⏱️ <span id="timerText">--</span> ثانية — الرسام: ${escapeHtml(drawerName)}</p>
-           <button class="btn btn-ghost" onclick="endDrawRound('${code}')">إنهاء الجولة</button>`
-        : `<p class="narrator">الكلمة كانت: <b>${escapeHtml(d.word||'')}</b></p>
-           <button class="btn" onclick="nextDrawRound('${code}')">${(d.turnIndex+1>=d.order.length) ? 'عرض النتيجة النهائية' : 'الجولة التالية 🎨'}</button>`}
-    `;
-  } else if (d.phase==='final'){
-    const ranked = Object.entries(d.scores||{}).sort((a,b)=>b[1]-a[1]);
-    body = `<h3 style="font-family:'Cairo';">🏆 النتائج النهائية</h3>
-      <div>${ranked.map(([id,s],i)=>`<div class="chip">${i+1}. ${escapeHtml(players[id]?.name||'')} — ${s} نقطة</div>`).join('')}</div>
-      <button class="btn" onclick="resetToLobby('${code}')">رجوع لقائمة الألعاب</button>`;
+  if (sd.phase==='round_start'){
+    narrator = `الجولة ${sd.round} — الموجّهون يشاهدون كلماتهم الآن سرًا.`;
+    control = `<button class="btn" onclick="silentDrawBeginDrawing('${code}')">ابدأ الرسم 🎨</button>`;
+  } else if (sd.phase==='drawing'){
+    narrator = `⏱️ <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
+    control = `<button class="btn" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة والتقييم</button>`;
+  } else if (sd.phase==='round_result'){
+    narrator = `نتيجة الجولة: فريق A ${sd.results.A==='correct'?'✅':'❌'} — فريق B ${sd.results.B==='correct'?'✅':'❌'}`;
+    control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية 🔁</button>`;
+  } else if (sd.phase==='ended'){
+    narrator = `🏆 فاز الفريق ${sd.winner}!`;
+    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة 🔁</button>`;
+  }
+
+  if (showBoards){
+    boards = `<div class="draw-layout">${['A','B'].map(t => `
+      <div class="team-board">
+        <h4 style="font-family:'Cairo';">فريق ${t} — ${escapeHtml(teamLabel(t))}</h4>
+        <div class="canvas-wrap"><canvas id="canvas${t}" width="340" height="300"></canvas></div>
+        <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
+        ${sd.phase==='drawing' ? `
+          <button class="btn btn-ghost" onclick="silentDrawJudge('${code}','${t}','correct')">صحيح ✅</button>
+          <button class="btn btn-ghost" onclick="silentDrawJudge('${code}','${t}','wrong')">خطأ ❌</button>
+          <p class="muted">${sd.results[t] ? (sd.results[t]==='correct' ? 'تم القبول ✅' : 'تم الرفض ❌') : 'بانتظار تقييمك'}</p>
+        ` : ''}
+      </div>`).join('')}</div>`;
   }
 
   document.getElementById('stage').innerHTML = `
-    <h2 style="font-family:'Cairo'; color:var(--accent);">ارسم وخمن 🎨</h2>
-    ${body}
+    <h2 style="font-family:'Cairo'; color:var(--accent);">الرسم الصامت 🤫</h2>
+    <p class="narrator">${narrator}</p>
+    <p class="muted">النقاط: فريق A ${sd.correctCount.A} — فريق B ${sd.correctCount.B} (الفوز عند 3)</p>
+    ${boards}
+    ${control}
   `;
 
-  if (d.phase==='drawing' || d.phase==='reveal') mirrorCanvas(code);
-  if (d.phase==='drawing') startHostTimerWatch(code, d.timerEnd);
+  if (showBoards){
+    mirrorCanvasFrom(code+'_A', 'canvasA');
+    mirrorCanvasFrom(code+'_B', 'canvasB');
+  }
+  if (sd.phase==='drawing') startHostTimerWatch(sd.timerEnd);
 }
 
-/* ---- Draw: player view ---- */
-function renderDrawPlayer(code, myId, name, room){
-  const d = room.draw; if (!d) return;
+function renderSilentDrawPlayer(code, myId, name, room){
+  const sd = room.silentdraw; if (!sd) return;
   const players = room.players || {};
-  const isDrawer = myId === d.drawerId;
+  const myTeam = sd.teams.A.includes(myId) ? 'A' : (sd.teams.B.includes(myId) ? 'B' : null);
 
-  if (d.phase==='choosing_word'){
-    app.innerHTML = isDrawer
+  if (!myTeam){
+    app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">👀 أنت متفرج</h2><p class="muted">انضممت بعد بدء اللعبة، شاهد شاشة الحكم.</p></div></div>`;
+    return;
+  }
+
+  const isGuide = sd.guideOf[myTeam] === myId;
+  const teammateId = sd.teams[myTeam].find(id => id !== myId);
+  const teammateName = players[teammateId]?.name || '';
+
+  if (sd.phase==='round_start'){
+    app.innerHTML = isGuide
       ? `<div class="phone"><div class="card">
-          <h2 style="font-family:'Cairo';">اختر كلمة لترسمها</h2>
-          <div class="target-list">${d.wordOptions.map(w=>`<button class="target-btn" onclick="chooseWord('${code}','${w}')">${escapeHtml(w)}</button>`).join('')}</div>
+          <h2 style="font-family:'Cairo';">أنت الموجّه 🤫</h2>
+          <p class="muted">الكلمة السرية:</p>
+          <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
+          <p class="muted">وضّح لـ ${escapeHtml(teammateName)} بالإشارة فقط، بدون أي كلام!</p>
         </div></div>`
-      : `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎨 ${escapeHtml(players[d.drawerId]?.name||'')} يختار كلمة</h2><p class="muted">استعد للتخمين!</p></div></div>`;
+      : `<div class="phone"><div class="card">
+          <h2 style="font-family:'Cairo';">أنت الرسام 🎨</h2>
+          <p class="muted">${escapeHtml(teammateName)} يعرف الكلمة وسيوجهك بالإشارة فقط. انتبه جيدًا!</p>
+        </div></div>`;
     return;
   }
 
-  if (d.phase==='drawing' || d.phase==='reveal'){
-    if (isDrawer){
-      if (d.phase==='reveal'){
-        app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الجولة</h2><p class="muted">الكلمة كانت: <b>${escapeHtml(d.word)}</b></p></div></div>`;
-      } else {
-        app.innerHTML = `<div class="phone" style="padding:10px;">
-          <div class="card" style="max-width:100%;">
-            <p class="muted">كلمتك: <b style="color:var(--accent); font-size:18px;">${escapeHtml(d.word)}</b></p>
-            <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
-            <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-              ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
-            </div>
-            <button class="btn btn-ghost" onclick="clearCanvas('${code}')" style="margin-top:10px;">مسح الكل</button>
-          </div>
-        </div>`;
-        setupDrawCanvas(code);
-      }
-    } else {
-      const guessesArr = Object.values(d.guesses||{});
-      const myGuessed = guessesArr.some(g=>g.playerId===myId && g.correct);
-      const feed = guessesArr.slice(-6).reverse().map(g =>
-        g.correct ? `<div class="guess-line correct">✅ ${escapeHtml(g.name)} خمّن!</div>` : `<div class="guess-line">${escapeHtml(g.name)}: ${escapeHtml(g.text)}</div>`
-      ).join('');
+  if (['drawing','round_result','ended'].includes(sd.phase)){
+    if (isGuide){
       app.innerHTML = `<div class="phone"><div class="card">
-        <h2 style="font-family:'Cairo';">🎨 ${escapeHtml(players[d.drawerId]?.name||'')} يرسم</h2>
-        <p class="muted">شاهد شاشة المضيف وخمّن!</p>
-        ${d.phase==='drawing' && !myGuessed ? `
-          <input type="text" id="guessInput" placeholder="اكتب تخمينك" />
-          <button class="btn" style="width:100%; margin-top:8px;" onclick="submitMyGuess('${code}','${myId}')">إرسال</button>
-        ` : d.phase==='drawing' ? `<p class="muted">✅ خمّنتها! بانتظار الباقي…</p>` : `<p class="muted">الكلمة كانت: <b>${escapeHtml(d.word)}</b></p>`}
-        <div class="guess-feed-mini">${feed}</div>
+        <h2 style="font-family:'Cairo';">تذكير بالكلمة</h2>
+        <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
+        <p class="muted">بدون كلام! فقط إشارات لصديقك.</p>
       </div></div>`;
+    } else {
+      app.innerHTML = `<div class="phone" style="padding:10px;">
+        <div class="card" style="max-width:100%;">
+          <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
+          <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
+            ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
+          </div>
+          <button class="btn btn-ghost" ${sd.undosLeft[myTeam]<=0?'disabled':''} onclick="silentDrawUndo('${code}','${myTeam}')" style="margin-top:10px;">تراجع (${sd.undosLeft[myTeam]} متبقية)</button>
+        </div>
+      </div>`;
+      if (sd.phase==='drawing') setupSilentCanvas(code, myTeam);
     }
-    return;
-  }
-
-  if (d.phase==='final'){
-    const ranked = Object.entries(d.scores||{}).sort((a,b)=>b[1]-a[1]);
-    app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">🏆 النتائج النهائية</h2>
-      ${ranked.map(([id,s],i)=>`<div class="muted">${i+1}. ${escapeHtml(players[id]?.name||'')} — ${s}</div>`).join('')}
-    </div></div>`;
   }
 }
 
-window.submitMyGuess = function(code, myId){
-  const input = document.getElementById('guessInput');
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-  window.submitGuess(code, myId, text);
-  input.value = '';
-};
-
-/* ================= PLAYER (shared entry) ================= */
+/* =====================================================================
+   SECTION 8 — PLAYER CONTROLLER (lobby + game routing)
+   ===================================================================== */
 let CURRENT_PLAYER_NAME = '';
+let ACTIVE_ROOM_CODE = null;
+let ACTIVE_PLAYER_ID = null;
+let lastPlayerRoom = null;
+let playerDetailGameId = null;
 
 function renderPlayer(code){
   const roomRef = db.ref('rooms/' + code);
@@ -806,13 +865,12 @@ function renderPlayer(code){
 
   function attach(id, name){
     CURRENT_PLAYER_NAME = name;
+    ACTIVE_ROOM_CODE = code;
+    ACTIVE_PLAYER_ID = id;
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الغرفة</h2><p class="muted">اطلب رابطًا جديدًا من المضيف.</p></div></div>`; return; }
-      if (room.status === 'voting') renderPlayerVoting(code, id, name, room);
-      else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, id, name, room);
-      else if (room.status === 'in_game' && room.activeGame === 'draw') renderDrawPlayer(code, id, name, room);
-      else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎮 اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
+      dispatchPlayerRender(code, id, name, room);
     });
   }
 
@@ -838,26 +896,46 @@ function renderPlayer(code){
   }
 }
 
+function dispatchPlayerRender(code, myId, name, room){
+  lastPlayerRoom = room;
+  if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);
+  else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
+  else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawPlayer(code, myId, name, room);
+  else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎮 اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
+}
+
+window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
+window.hideGameDetail = function(){ playerDetailGameId = null; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
+
 function renderPlayerVoting(code, myId, name, room){
-  const myVote = room.votes ? room.votes[myId] : null;
+  if (playerDetailGameId){
+    const game = GAMES_LIST.find(g => g.id === playerDetailGameId);
+    app.innerHTML = gameDetailHtml(game, room, code, myId, false);
+    return;
+  }
+
+  const votes = room.votes || {};
   const cardsHtml = GAMES_LIST.map(g => {
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
-    const sel = myVote === g.id;
-    return `<div class="game-card ${sel?'selected':''}" onclick="castVote('${code}','${myId}','${g.id}')">
+    const isReady = votes[myId] === g.id;
+    return `<div class="game-card ${isReady?'selected':''}" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div>
-      ${sel ? '<div class="vote-badge" style="background:var(--green);">صوتك ✓</div>' : '<div class="vote-badge">صوّت</div>'}
+      ${isReady ? '<div class="vote-badge" style="background:var(--green);">أنت جاهز ✓</div>' : '<div class="vote-badge">التفاصيل</div>'}
     </div>`;
   }).join('');
 
-  app.innerHTML = `<div class="phone"><div class="card" style="max-width:480px;">
+  app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} 👋</h2>
-    <p class="muted">صوّت للعبة التي تريد لعبها:</p>
+    <p class="muted">اختر لعبة لعرض شرحها والاستعداد لها:</p>
     <div class="games-grid">${cardsHtml}</div>
     <p class="muted">بانتظار المضيف لبدء اللعبة…</p>
   </div></div>`;
 }
 
-window.castVote = function(code, myId, gameId){ db.ref('rooms/'+code+'/votes/'+myId).set(gameId); };
+/* ================= ENTRY POINT ================= */
+const params = new URLSearchParams(location.search);
+const roomParam = params.get('room');
+if (!roomParam) { renderHost(); } else { renderPlayer(roomParam.trim()); }
 </script>
 </body>
 </html>
