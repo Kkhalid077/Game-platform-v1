@@ -23,6 +23,8 @@
     --text:#f5f1e8;
     --text-dim:#a8a3b8;
     --green:#00d09c;
+    --team-a:#3b82f6;
+    --team-b:#ff4d6d;
     --mafia:#e74c3c;
     --police:#3b82f6;
     --doctor:#5fd0c5;
@@ -60,6 +62,11 @@
   .btn-ghost{ background:transparent; box-shadow:none; border:2px solid #3a3650; font-size:13px; padding:8px 16px; }
   .btn-danger{ background:linear-gradient(135deg, #e74c3c, #c0392b); box-shadow:0 6px 0 #962d22; }
 
+  /* زر اختيار الفريق */
+  .btn-team{ padding:10px 18px; border-radius:12px; font-family:'Cairo'; font-size:14px; border:2px solid #3a3650; background:#100f17; color:var(--text-dim); cursor:pointer; transition:all .2s ease; margin:4px; }
+  .btn-team.selected-a{ background:var(--team-a); border-color:var(--team-a); color:#fff; font-weight:bold; box-shadow:0 0 12px rgba(59,130,246,.4); }
+  .btn-team.selected-b{ background:var(--team-b); border-color:var(--team-b); color:#fff; font-weight:bold; box-shadow:0 0 12px rgba(255,77,109,.4); }
+
   input[type=text]{
     font-family:'Tajawal',sans-serif; font-size:18px; padding:14px 16px;
     border-radius:12px; border:2px solid #3a3650; background:#100f17;
@@ -84,6 +91,8 @@
   .link-text{ direction:ltr; font-size:12px; color:var(--text-dim); word-break:break-all; max-width:220px; text-align:left; }
   .players-box{ margin-top:26px; width:100%; max-width:640px; }
   .chip{ background:var(--surface); border:1px solid #3a3650; padding:8px 16px; border-radius:999px; font-weight:700; display:inline-block; margin:5px; font-size:14px; }
+  .chip.team-A{ border-color:var(--team-a); color:var(--team-a); }
+  .chip.team-B{ border-color:var(--team-b); color:var(--team-b); }
   .chip.dead{ opacity:.45; text-decoration:line-through; }
   .narrator{ font-size:17px; line-height:1.7; max-width:560px; margin:10px auto; }
   .top-bar{ position:absolute; top:10px; left:10px; }
@@ -126,6 +135,14 @@
     background: rgba(255,255,255,0.05);
     padding: 8px;
   }
+  
+  .team-selector-box {
+    margin: 18px 0;
+    padding: 14px;
+    background: var(--surface-2);
+    border-radius: 16px;
+    border: 1px solid #3a3650;
+  }
 </style>
 </head>
 <body>
@@ -167,7 +184,7 @@ const GAMES_LIST = [
     id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4,
     desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد صورة توضيحية ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
     rules: [
-      'ينقسم اللاعبون تلقائيًا إلى فريقين: A و B.',
+      'ينقسم اللاعبون إلى فريقين (A و B) بناءً على اختيارهم أو تلقائيًا.',
       'بكل فريق شخص "الموجّه" يشاهد صورة توضيحية وكلمة سرية، والآخر "الرسام" يرسم بدون رؤية أي منهما.',
       'الموجّه يدل صديقه بالإشارة فقط (ممنوع الكلام نهائيًا) حتى يرسم الشكل الصحيح.',
       'الرسام يكتب تخمينه لما يرسمه في أي وقت؛ إذا خمّن الكلمة الصحيحة يفوز فريقه بنقطة فورًا.',
@@ -186,7 +203,7 @@ const ROLE_META = {
   citizen: { name:'مواطن',  icon:'🙂', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
 };
 
-// بنك الكلمات والصور (يمكنك إدخال رابط صورة مباشرة عبر خاصية img)
+// بنك الكلمات والصور
 const WORD_BANK = [
   {w:'تفاحة', img:'https://cdn-icons-png.flaticon.com/512/415/415733.png', e:'🍎'},
   {w:'سيارة', img:'https://cdn-icons-png.flaticon.com/512/744/744465.png', e:'🚗'},
@@ -215,7 +232,6 @@ function joinUrl(code){ return location.origin + location.pathname + '?room=' + 
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 
-// دالة لعرض الصورة أو الرمز التوضيحي للكلمة
 function renderIllustration(wordText){
   const found = WORD_BANK.find(x => x.w === wordText);
   if (found && found.img) {
@@ -261,6 +277,17 @@ function startHostTimerWatch(timerEnd){
 let currentColor = '#000000';
 window.setDrawColor = function(c){ currentColor = c; };
 
+// تغيير الفريق
+window.setPlayerTeam = function(code, myId, team){
+  db.ref('rooms/'+code+'/players/'+myId+'/team').once('value', snap => {
+    if (snap.val() === team) {
+      db.ref('rooms/'+code+'/players/'+myId+'/team').remove();
+    } else {
+      db.ref('rooms/'+code+'/players/'+myId+'/team').set(team);
+    }
+  });
+};
+
 /* =====================================================================
    SECTION 4 — GAME DETAIL / READY PANEL
    ===================================================================== */
@@ -298,7 +325,7 @@ window.toggleReady = function(code, myId, gameId){
 };
 
 /* =====================================================================
-   SECTION 5 — HOST CONTROLLER (WITH INSTANT END GAME CONTROL)
+   SECTION 5 — HOST CONTROLLER
    ===================================================================== */
 let ACTIVE_HOST_CODE = null;
 let lastHostRoom = null;
@@ -376,6 +403,13 @@ function renderHostLobby(code, room){
     </div>`;
   }).join('');
 
+  // عرض اللاعبين وفرقهم
+  const playersListHtml = Object.values(players).map(p => {
+    const tClass = p.team ? `team-${p.team}` : '';
+    const tText = p.team ? ` [فريق ${p.team}]` : '';
+    return `<span class="chip ${tClass}">${escapeHtml(p.name)}${tText}</span>`;
+  }).join('');
+
   document.getElementById('stage').innerHTML = `
     <p style="margin:0; color:var(--text-dim);">رمز الغرفة</p>
     <div class="code-box"><p class="room-code">${code}</p></div>
@@ -388,7 +422,7 @@ function renderHostLobby(code, room){
     </div>
     <div class="players-box">
       <h3 style="font-family:'Cairo';">اللاعبون (${Object.keys(players).length})</h3>
-      <div>${Object.values(players).map(p=>`<span class="chip">${escapeHtml(p.name)}</span>`).join('') || '<span class="muted">بانتظار انضمام اللاعبين…</span>'}</div>
+      <div>${playersListHtml || '<span class="muted">بانتظار انضمام اللاعبين…</span>'}</div>
     </div>
     <div class="players-box">
       <h3 style="font-family:'Cairo';">اختر لعبة لعرض شرحها والبدء</h3>
@@ -419,7 +453,6 @@ window.startGame = function(gameId, code){
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
-// إنهاء أي لعبة من قِبل المنظم والعودة للوحة الشاشة الرئيسية فوراً
 window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, silentdraw:null });
   db.ref('strokes/'+code+'_A').set(null);
@@ -687,15 +720,28 @@ function renderMafiaPlayer(code, myId, name, room){
 }
 
 /* =====================================================================
-   SECTION 7 — SILENT DRAW MODULE
+   SECTION 7 — SILENT DRAW MODULE WITH TEAM SELECTION
    ===================================================================== */
 window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
   roomRef.child('players').once('value', snap => {
     const players = snap.val() || {};
-    const ids = shuffle(Object.keys(players));
+    const ids = Object.keys(players);
     if (ids.length < 4) { alert('تحتاج 4 لاعبين على الأقل (فريقين) لبدء الرسم الصامت'); return; }
-    const teamA = ids.slice(0,2), teamB = ids.slice(2,4);
+
+    // توزيع اللاعبين بناءً على اختيارهم، مع موازنة متبقي اللاعبين تلقائياً
+    let teamA = ids.filter(id => players[id].team === 'A');
+    let teamB = ids.filter(id => players[id].team === 'B');
+    let unassigned = shuffle(ids.filter(id => players[id].team !== 'A' && players[id].team !== 'B'));
+
+    unassigned.forEach(id => {
+      if (teamA.length <= teamB.length) teamA.push(id);
+      else teamB.push(id);
+    });
+
+    teamA = shuffle(teamA);
+    teamB = shuffle(teamB);
+
     db.ref('strokes/'+code+'_A').set(null);
     db.ref('strokes/'+code+'_B').set(null);
     roomRef.update({
@@ -826,7 +872,7 @@ function setupSilentCanvas(code, team){
 function silentDrawRankingHtml(sd, players){
   const teamLabel = t => sd.teams[t].map(id => players[id]?.name || '').join(' و ');
   const ranked = ['A','B'].sort((a,b) => sd.correctCount[b] - sd.correctCount[a]);
-  return ranked.map((t,i) => `<div class="chip">${i+1}. فريق ${t} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
+  return ranked.map((t,i) => `<div class="chip team-${t}">${i+1}. فريق ${t} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
 }
 
 function renderSilentDrawHost(code, room){
@@ -1023,6 +1069,9 @@ function renderPlayerVoting(code, myId, name, room){
   }
 
   const votes = room.votes || {};
+  const myPlayer = room.players && room.players[myId];
+  const myTeam = myPlayer ? myPlayer.team : null;
+
   const cardsHtml = GAMES_LIST.map(g => {
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     const isReady = votes[myId] === g.id;
@@ -1034,6 +1083,15 @@ function renderPlayerVoting(code, myId, name, room){
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} 👋</h2>
+
+    <!-- خيار اختيار الفريق للألعاب الجماعية -->
+    <div class="team-selector-box">
+      <p style="margin:0 0 10px 0; font-weight:700; font-size:14px; color:var(--text);">انضم لأحد الفريقين (اختياري):</p>
+      <button class="btn-team ${myTeam==='A'?'selected-a':''}" onclick="setPlayerTeam('${code}','${myId}','A')">🔵 فريق A</button>
+      <button class="btn-team ${myTeam==='B'?'selected-b':''}" onclick="setPlayerTeam('${code}','${myId}','B')">🔴 فريق B</button>
+      ${myTeam ? `<div style="font-size:12px; margin-top:6px; color:var(--text-dim);">أنت حالياً في <b>فريق ${myTeam}</b></div>` : '<div style="font-size:12px; margin-top:6px; color:var(--text-dim);">لم تختار فريقًا (سيتم توزيعك تلقائيًا)</div>'}
+    </div>
+
     <p class="muted">اختر لعبة لعرض شرحها والاستعداد لها:</p>
     <div class="games-grid">${cardsHtml}</div>
     <p class="muted">بانتظار المضيف لبدء اللعبة…</p>
