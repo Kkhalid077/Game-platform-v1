@@ -15,14 +15,14 @@
 
 <style>
   :root{
-    --bg:#0f0c29;
-    --surface:#1e1c2a;
+    --bg:#0d0b22;
+    --surface:#1c1a2c;
     --surface-2:#26243590;
-    --accent:#667eea;
+    --accent:#7c6cf0;
     --accent-2:#ff4d6d;
     --text:#f5f1e8;
     --text-dim:#a8a3b8;
-    --green:#00b894;
+    --green:#00d09c;
     --mafia:#e74c3c;
     --police:#3b82f6;
     --doctor:#5fd0c5;
@@ -31,23 +31,31 @@
   *{box-sizing:border-box;}
   html,body{height:100%; touch-action:manipulation;}
   body{
-    margin:0; background:
-      radial-gradient(circle at 50% -10%, rgba(102,126,234,.18), transparent 55%),
+    margin:0;
+    background:
+      radial-gradient(circle at 15% -10%, rgba(124,108,240,.20), transparent 50%),
+      radial-gradient(circle at 90% 10%, rgba(255,77,109,.12), transparent 45%),
       var(--bg);
     color:var(--text); font-family:'Tajawal',sans-serif; min-height:100vh;
     padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   }
   #app{min-height:100vh; display:flex; flex-direction:column;}
 
-  .brand{ text-align:center; padding:16px 0 4px; font-size:14px; color:var(--text-dim); }
+  .brand{ text-align:center; padding:18px 0 4px; font-size:15px; color:var(--text-dim); letter-spacing:.3px; }
   .brand b{color:var(--accent); font-family:'Cairo',sans-serif;}
+
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  .stage, .card{ animation:fadeIn .28s ease; }
+
   .btn{
     font-family:'Cairo',sans-serif; font-weight:800; font-size:16px;
-    border:none; border-radius:14px; padding:12px 24px; cursor:pointer;
-    color:#fff; background:var(--accent); box-shadow:0 6px 0 #4a5db5;
-    transition:transform .08s ease; margin:6px;
+    border:none; border-radius:14px; padding:13px 26px; cursor:pointer;
+    color:#fff; background:linear-gradient(135deg,var(--accent),#5b4bd6);
+    box-shadow:0 6px 0 #40348f, 0 10px 24px rgba(124,108,240,.25);
+    transition:transform .08s ease, filter .15s ease; margin:6px;
   }
-  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #4a5db5;}
+  .btn:hover:not(:disabled){ filter:brightness(1.08); }
+  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #40348f;}
   .btn:disabled{ background:#4a4658; color:#87829a; box-shadow:0 6px 0 #322f3d; cursor:default; }
   .btn-ghost{ background:transparent; box-shadow:none; border:2px solid #3a3650; font-size:13px; padding:8px 16px; }
 
@@ -56,30 +64,32 @@
     border-radius:12px; border:2px solid #3a3650; background:#100f17;
     color:var(--text); width:100%; outline:none; text-align:center;
   }
+  input[type=text]:focus{ border-color:var(--accent); }
 
-  .games-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; width:100%; max-width:600px; margin-top:18px; }
-  .game-card{ background:var(--surface); border:2px solid #3a3650; border-radius:16px; padding:18px 10px; text-align:center; cursor:pointer; transition:all .15s ease; }
+  .games-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; width:100%; max-width:640px; margin-top:18px; }
+  .game-card{ background:var(--surface); border:2px solid #322f47; border-radius:18px; padding:20px 10px; text-align:center; cursor:pointer; transition:all .18s ease; box-shadow:0 8px 20px rgba(0,0,0,.25); }
   .game-card.disabled{ opacity:.5; cursor:not-allowed; }
-  .game-card:hover:not(.disabled){ border-color:var(--accent); transform:translateY(-3px); }
-  .game-card.selected{ border-color:var(--green); background:rgba(0,184,148,.1); }
-  .game-icon{ font-size:38px; margin-bottom:8px; }
+  .game-card:hover:not(.disabled){ border-color:var(--accent); transform:translateY(-4px); box-shadow:0 14px 28px rgba(124,108,240,.25); }
+  .game-card.selected{ border-color:var(--green); background:rgba(0,208,156,.1); }
+  .game-icon-badge{ width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 10px; background:var(--surface-2); }
   .game-title{ font-family:'Cairo',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; }
   .vote-badge{ background:var(--accent); color:#fff; font-size:12px; font-weight:bold; padding:3px 10px; border-radius:20px; display:inline-block; margin-top:8px; }
   .coming-soon{ color:var(--accent-2); font-size:12px; font-weight:bold; margin-top:8px; }
 
   .stage{ flex:1; display:flex; flex-direction:column; align-items:center; padding:20px 16px 40px; text-align:center; width:100%; }
-  .room-code{ font-family:'Cairo',sans-serif; font-weight:900; font-size:44px; letter-spacing:10px; color:var(--accent); text-shadow:0 0 30px rgba(102,126,234,.5); margin:4px 0; }
-  .join-row{ margin-top:16px; display:flex; gap:18px; align-items:center; justify-content:center; flex-wrap:wrap; background:var(--surface); padding:14px 18px; border-radius:16px; }
+  .code-box{ background:var(--surface); border-radius:20px; padding:14px 30px; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  .room-code{ font-family:'Cairo',sans-serif; font-weight:900; font-size:44px; letter-spacing:10px; color:var(--accent); text-shadow:0 0 30px rgba(124,108,240,.55); margin:2px 0; }
+  .join-row{ margin-top:18px; display:flex; gap:18px; align-items:center; justify-content:center; flex-wrap:wrap; background:var(--surface); padding:14px 18px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
   #qr{ background:#fff; padding:8px; border-radius:10px; line-height:0; }
   .link-text{ direction:ltr; font-size:12px; color:var(--text-dim); word-break:break-all; max-width:220px; text-align:left; }
   .players-box{ margin-top:26px; width:100%; max-width:640px; }
   .chip{ background:var(--surface); border:1px solid #3a3650; padding:8px 16px; border-radius:999px; font-weight:700; display:inline-block; margin:5px; font-size:14px; }
   .chip.dead{ opacity:.45; text-decoration:line-through; }
-  .narrator{ font-size:17px; line-height:1.7; max-width:520px; margin:10px auto; }
+  .narrator{ font-size:17px; line-height:1.7; max-width:540px; margin:10px auto; }
   .top-bar{ position:absolute; top:10px; left:10px; }
 
-  .phone{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
-  .card{ background:var(--surface); border-radius:20px; padding:28px 22px; width:100%; max-width:420px; text-align:center; }
+  .phone{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  .card{ background:var(--surface); border-radius:22px; padding:26px 22px; width:100%; max-width:420px; text-align:center; box-shadow:0 14px 34px rgba(0,0,0,.35); }
   .muted{ color:var(--text-dim); font-size:14px; margin-top:10px; }
 
   .role-card{ border-radius:20px; padding:28px 20px; margin-bottom:14px; }
@@ -93,8 +103,17 @@
 
   .target-list{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
   .target-btn{ font-family:'Tajawal',sans-serif; font-size:16px; font-weight:700; padding:13px; border-radius:12px; border:2px solid #3a3650; background:#100f17; color:var(--text); cursor:pointer; }
-  .target-btn.picked{ border-color:var(--green); background:rgba(0,184,148,.12); }
+  .target-btn.picked{ border-color:var(--green); background:rgba(0,208,156,.12); }
   .target-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .draw-layout{ display:flex; gap:20px; width:100%; max-width:920px; margin-top:14px; flex-wrap:wrap; justify-content:center; }
+  .canvas-wrap{ background:#fff; border-radius:16px; padding:6px; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  #hostCanvas{ display:block; border-radius:10px; }
+  .guess-feed{ background:var(--surface); border-radius:16px; padding:14px; width:260px; max-height:400px; overflow-y:auto; text-align:right; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+  .guess-line{ padding:6px 0; border-bottom:1px solid #3a3650; font-size:14px; }
+  .guess-line.correct{ color:var(--green); font-weight:700; }
+  .guess-feed-mini{ margin-top:14px; max-height:150px; overflow-y:auto; text-align:right; }
+  .color-row button{ box-shadow:0 2px 6px rgba(0,0,0,.4); }
 </style>
 </head>
 <body>
@@ -120,8 +139,8 @@ const app = document.getElementById('app');
 
 const GAMES_LIST = [
   { id: 'mafia',   title: 'من هم المافيا؟', icon: '🕵️', available: true },
+  { id: 'draw',    title: 'ارسم وخمن',      icon: '🎨', available: true },
   { id: 'clicker', title: 'أسرع ضغطة',      icon: '⚡', available: false },
-  { id: 'draw',    title: 'ارسم وخمن',      icon: '🎨', available: false },
   { id: 'trivia',  title: 'أسئلة وتحديات',  icon: '🧠', available: false }
 ];
 const ROLE_META = {
@@ -130,11 +149,19 @@ const ROLE_META = {
   doctor:  { name:'طبيب',   icon:'⚕️', cls:'role-doctor',  desc:'كل ليلة تحمي شخصًا واحدًا من القتل.' },
   citizen: { name:'مواطن',  icon:'🙂', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
 };
+const DRAW_WORDS = ['تفاحة','شمس','قطة','كلب','سيارة','بيت','شجرة','كرة','ساعة','مظلة','ثلاجة','هاتف','نظارة','سمكة','طائرة','جبل','نجمة','قلب','وردة','حذاء','مفتاح','كتاب','قلم','كرسي','باب','نافذة','قمر','سحابة','مروحة','دراجة','قهوة','بيتزا','موزة','بطة','فيل','أسد','ثعبان','عنكبوت','مصباح','تلفاز'];
 
 function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]]; } return r; }
 function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinUrl(code){ return location.origin + location.pathname + '?room=' + code; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function normalizeAr(s){
+  return String(s).trim().toLowerCase()
+    .replace(/[\u064B-\u065F\u0610-\u061A\u06D6-\u06ED]/g,'')
+    .replace(/[إأآا]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
+    .replace(/\s+/g,'');
+}
+function pickWordOptions(){ return shuffle(DRAW_WORDS).slice(0,3); }
 
 const params = new URLSearchParams(location.search);
 const roomParam = params.get('room');
@@ -160,7 +187,7 @@ function initHostRoom(code, isNew){
 
   app.innerHTML = `
     <button class="btn btn-ghost top-bar" id="newRoomBtn">غرفة جديدة</button>
-    <div class="brand">منصة <b>الألعاب</b></div>
+    <div class="brand">🎮 منصة <b>الألعاب</b></div>
     <div class="stage" id="stage"></div>
   `;
   document.getElementById('newRoomBtn').onclick = () => {
@@ -175,6 +202,7 @@ function initHostRoom(code, isNew){
     if (!room) return;
     if (room.status === 'voting') renderHostLobby(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'draw') renderDrawHost(code, room);
     else renderHostGenericPlaceholder(code, room);
   });
 }
@@ -190,7 +218,7 @@ function renderHostLobby(code, room){
     if (g.available) {
       return `
         <div class="game-card">
-          <div class="game-icon">${g.icon}</div>
+          <div class="game-icon-badge">${g.icon}</div>
           <div class="game-title">${g.title}</div>
           <div class="vote-badge">${v} صوت</div>
           <button class="btn" style="padding:6px 12px; font-size:13px; width:100%;" onclick="startGame('${g.id}','${code}')">ابدأ اللعبة</button>
@@ -198,7 +226,7 @@ function renderHostLobby(code, room){
     }
     return `
       <div class="game-card disabled">
-        <div class="game-icon">${g.icon}</div>
+        <div class="game-icon-badge">${g.icon}</div>
         <div class="game-title">${g.title}</div>
         <div class="coming-soon">قريبًا</div>
       </div>`;
@@ -206,7 +234,7 @@ function renderHostLobby(code, room){
 
   document.getElementById('stage').innerHTML = `
     <p style="margin:0; color:var(--text-dim);">رمز الغرفة</p>
-    <p class="room-code">${code}</p>
+    <div class="code-box"><p class="room-code">${code}</p></div>
     <div class="join-row">
       <div id="qr"></div>
       <div>
@@ -242,10 +270,12 @@ function renderHostGenericPlaceholder(code, room){
 
 window.startGame = function(gameId, code){
   if (gameId === 'mafia') { startMafiaGame(code); return; }
+  if (gameId === 'draw') { startDrawGame(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 window.resetToLobby = function(code){
-  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null });
+  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, draw:null });
+  db.ref('strokes/'+code).set(null);
 };
 
 /* ================= MAFIA — game logic ================= */
@@ -505,17 +535,283 @@ function renderMafiaPlayer(code, myId, name, room){
   }
 }
 
+/* ================= DRAW & GUESS — game logic ================= */
+window.startDrawGame = function(code){
+  const roomRef = db.ref('rooms/'+code);
+  roomRef.child('players').once('value', snap => {
+    const players = snap.val() || {};
+    const ids = Object.keys(players);
+    if (ids.length < 2) { alert('تحتاج لاعبين اثنين على الأقل'); return; }
+    const order = shuffle(ids);
+    const scores = {}; ids.forEach(id => scores[id] = 0);
+    db.ref('strokes/'+code).set(null);
+    roomRef.update({
+      status:'in_game', activeGame:'draw',
+      draw:{ phase:'choosing_word', order, turnIndex:0, drawerId: order[0],
+        wordOptions: pickWordOptions(), word:null, guesses:null, scores, round:1, timerEnd:null }
+    });
+  });
+};
+
+window.chooseWord = function(code, word){
+  db.ref('strokes/'+code).set(null);
+  db.ref('rooms/'+code+'/draw').update({ word, phase:'drawing', timerEnd: Date.now()+60000, guesses:null });
+};
+
+window.endDrawRound = function(code){
+  db.ref('rooms/'+code+'/draw').update({ phase:'reveal' });
+};
+
+window.nextDrawRound = function(code){
+  const dRef = db.ref('rooms/'+code+'/draw');
+  dRef.once('value', snap => {
+    const d = snap.val(); if (!d) return;
+    const nextIndex = d.turnIndex + 1;
+    if (nextIndex >= d.order.length) { dRef.update({ phase:'final' }); return; }
+    db.ref('strokes/'+code).set(null);
+    dRef.update({
+      phase:'choosing_word', turnIndex: nextIndex, drawerId: d.order[nextIndex],
+      wordOptions: pickWordOptions(), word:null, guesses:null,
+      round:(d.round||1)+1, timerEnd:null
+    });
+  });
+};
+
+window.submitGuess = function(code, myId, text){
+  const dRef = db.ref('rooms/'+code+'/draw');
+  dRef.once('value', snap => {
+    const d = snap.val(); if (!d || d.phase!=='drawing') return;
+    const already = d.guesses && Object.values(d.guesses).some(g=>g.playerId===myId && g.correct);
+    if (already) return;
+    const correct = normalizeAr(text) === normalizeAr(d.word);
+    const key = dRef.child('guesses').push().key;
+    dRef.child('guesses/'+key).set({ playerId: myId, name: CURRENT_PLAYER_NAME, text: correct ? '' : text, correct });
+    if (correct){
+      const scores = {...(d.scores||{})};
+      scores[myId] = (scores[myId]||0) + 100;
+      scores[d.drawerId] = (scores[d.drawerId]||0) + 20;
+      dRef.child('scores').update(scores);
+      dRef.once('value', snap2 => {
+        const d2 = snap2.val();
+        const others = d2.order.filter(id=>id!==d2.drawerId);
+        const correctIds = new Set(Object.values(d2.guesses||{}).filter(g=>g.correct).map(g=>g.playerId));
+        if (others.every(id=>correctIds.has(id))) window.endDrawRound(code);
+      });
+    }
+  });
+};
+
+let currentColor = '#000000';
+window.setDrawColor = function(c){ currentColor = c; };
+window.clearCanvas = function(code){
+  db.ref('strokes/'+code).set(null);
+  const canvas = document.getElementById('drawCanvas');
+  if (canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+};
+
+function setupDrawCanvas(code){
+  const canvas = document.getElementById('drawCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  db.ref('strokes/'+code).once('value', snap => {
+    const all = snap.val() || {};
+    Object.values(all).forEach(s => drawSegment(ctx, canvas, s));
+  });
+
+  let drawing = false, currentStroke = [], lastFlush = 0;
+  function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx/rect.width, y: cy/rect.height };
+  }
+  function start(e){ e.preventDefault(); drawing = true; currentStroke = [getPos(e)]; }
+  function move(e){
+    if (!drawing) return; e.preventDefault();
+    const p = getPos(e);
+    const prev = currentStroke[currentStroke.length-1] || p;
+    currentStroke.push(p);
+    drawSegment(ctx, canvas, { points:[prev,p], color: currentColor, size:4 });
+    const now = Date.now();
+    if (now - lastFlush > 120){
+      db.ref('strokes/'+code).push({ points: currentStroke.slice(), color: currentColor, size:4 });
+      currentStroke = [p]; lastFlush = now;
+    }
+  }
+  function end(){
+    if (!drawing) return; drawing = false;
+    if (currentStroke.length > 1) db.ref('strokes/'+code).push({ points: currentStroke.slice(), color: currentColor, size:4 });
+    currentStroke = [];
+  }
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', move, {passive:false});
+  canvas.addEventListener('touchend', end);
+}
+
+function drawSegment(ctx, canvas, s){
+  if (!s || !s.points || s.points.length < 2) return;
+  ctx.strokeStyle = s.color; ctx.lineWidth = s.size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  s.points.forEach((p,i) => {
+    const x = p.x*canvas.width, y = p.y*canvas.height;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+function mirrorCanvas(code){
+  const canvas = document.getElementById('hostCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const sRef = db.ref('strokes/'+code);
+  sRef.off('child_added');
+  sRef.on('child_added', snap => drawSegment(ctx, canvas, snap.val()));
+}
+
+let hostTimerInterval = null;
+function startHostTimerWatch(code, timerEnd){
+  if (hostTimerInterval) clearInterval(hostTimerInterval);
+  let ended = false;
+  hostTimerInterval = setInterval(() => {
+    const remaining = Math.max(0, Math.ceil((timerEnd - Date.now())/1000));
+    const el = document.getElementById('timerText');
+    if (el) el.textContent = remaining;
+    if (remaining <= 0 && !ended){ ended = true; clearInterval(hostTimerInterval); window.endDrawRound(code); }
+  }, 500);
+}
+
+/* ---- Draw: host view ---- */
+function renderDrawHost(code, room){
+  const d = room.draw; if (!d) return;
+  const players = room.players || {};
+  const drawerName = players[d.drawerId]?.name || '';
+  let body = '';
+
+  if (d.phase==='choosing_word'){
+    body = `<p class="narrator">🎨 ${escapeHtml(drawerName)} يختار كلمة الآن…</p>`;
+  } else if (d.phase==='drawing' || d.phase==='reveal'){
+    const guessesArr = Object.values(d.guesses||{});
+    const feed = guessesArr.slice(-8).reverse().map(g =>
+      g.correct ? `<div class="guess-line correct">✅ ${escapeHtml(g.name)} خمّن الكلمة!</div>`
+                : `<div class="guess-line">${escapeHtml(g.name)}: ${escapeHtml(g.text)}</div>`
+    ).join('');
+    body = `
+      <div class="draw-layout">
+        <div class="canvas-wrap"><canvas id="hostCanvas" width="600" height="400"></canvas></div>
+        <div class="guess-feed">${feed || '<p class="muted">بانتظار التخمينات…</p>'}</div>
+      </div>
+      ${d.phase==='drawing'
+        ? `<p class="narrator">⏱️ <span id="timerText">--</span> ثانية — الرسام: ${escapeHtml(drawerName)}</p>
+           <button class="btn btn-ghost" onclick="endDrawRound('${code}')">إنهاء الجولة</button>`
+        : `<p class="narrator">الكلمة كانت: <b>${escapeHtml(d.word||'')}</b></p>
+           <button class="btn" onclick="nextDrawRound('${code}')">${(d.turnIndex+1>=d.order.length) ? 'عرض النتيجة النهائية' : 'الجولة التالية 🎨'}</button>`}
+    `;
+  } else if (d.phase==='final'){
+    const ranked = Object.entries(d.scores||{}).sort((a,b)=>b[1]-a[1]);
+    body = `<h3 style="font-family:'Cairo';">🏆 النتائج النهائية</h3>
+      <div>${ranked.map(([id,s],i)=>`<div class="chip">${i+1}. ${escapeHtml(players[id]?.name||'')} — ${s} نقطة</div>`).join('')}</div>
+      <button class="btn" onclick="resetToLobby('${code}')">رجوع لقائمة الألعاب</button>`;
+  }
+
+  document.getElementById('stage').innerHTML = `
+    <h2 style="font-family:'Cairo'; color:var(--accent);">ارسم وخمن 🎨</h2>
+    ${body}
+  `;
+
+  if (d.phase==='drawing' || d.phase==='reveal') mirrorCanvas(code);
+  if (d.phase==='drawing') startHostTimerWatch(code, d.timerEnd);
+}
+
+/* ---- Draw: player view ---- */
+function renderDrawPlayer(code, myId, name, room){
+  const d = room.draw; if (!d) return;
+  const players = room.players || {};
+  const isDrawer = myId === d.drawerId;
+
+  if (d.phase==='choosing_word'){
+    app.innerHTML = isDrawer
+      ? `<div class="phone"><div class="card">
+          <h2 style="font-family:'Cairo';">اختر كلمة لترسمها</h2>
+          <div class="target-list">${d.wordOptions.map(w=>`<button class="target-btn" onclick="chooseWord('${code}','${w}')">${escapeHtml(w)}</button>`).join('')}</div>
+        </div></div>`
+      : `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎨 ${escapeHtml(players[d.drawerId]?.name||'')} يختار كلمة</h2><p class="muted">استعد للتخمين!</p></div></div>`;
+    return;
+  }
+
+  if (d.phase==='drawing' || d.phase==='reveal'){
+    if (isDrawer){
+      if (d.phase==='reveal'){
+        app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الجولة</h2><p class="muted">الكلمة كانت: <b>${escapeHtml(d.word)}</b></p></div></div>`;
+      } else {
+        app.innerHTML = `<div class="phone" style="padding:10px;">
+          <div class="card" style="max-width:100%;">
+            <p class="muted">كلمتك: <b style="color:var(--accent); font-size:18px;">${escapeHtml(d.word)}</b></p>
+            <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
+            <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
+              ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
+            </div>
+            <button class="btn btn-ghost" onclick="clearCanvas('${code}')" style="margin-top:10px;">مسح الكل</button>
+          </div>
+        </div>`;
+        setupDrawCanvas(code);
+      }
+    } else {
+      const guessesArr = Object.values(d.guesses||{});
+      const myGuessed = guessesArr.some(g=>g.playerId===myId && g.correct);
+      const feed = guessesArr.slice(-6).reverse().map(g =>
+        g.correct ? `<div class="guess-line correct">✅ ${escapeHtml(g.name)} خمّن!</div>` : `<div class="guess-line">${escapeHtml(g.name)}: ${escapeHtml(g.text)}</div>`
+      ).join('');
+      app.innerHTML = `<div class="phone"><div class="card">
+        <h2 style="font-family:'Cairo';">🎨 ${escapeHtml(players[d.drawerId]?.name||'')} يرسم</h2>
+        <p class="muted">شاهد شاشة المضيف وخمّن!</p>
+        ${d.phase==='drawing' && !myGuessed ? `
+          <input type="text" id="guessInput" placeholder="اكتب تخمينك" />
+          <button class="btn" style="width:100%; margin-top:8px;" onclick="submitMyGuess('${code}','${myId}')">إرسال</button>
+        ` : d.phase==='drawing' ? `<p class="muted">✅ خمّنتها! بانتظار الباقي…</p>` : `<p class="muted">الكلمة كانت: <b>${escapeHtml(d.word)}</b></p>`}
+        <div class="guess-feed-mini">${feed}</div>
+      </div></div>`;
+    }
+    return;
+  }
+
+  if (d.phase==='final'){
+    const ranked = Object.entries(d.scores||{}).sort((a,b)=>b[1]-a[1]);
+    app.innerHTML = `<div class="phone"><div class="card">
+      <h2 style="font-family:'Cairo';">🏆 النتائج النهائية</h2>
+      ${ranked.map(([id,s],i)=>`<div class="muted">${i+1}. ${escapeHtml(players[id]?.name||'')} — ${s}</div>`).join('')}
+    </div></div>`;
+  }
+}
+
+window.submitMyGuess = function(code, myId){
+  const input = document.getElementById('guessInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  window.submitGuess(code, myId, text);
+  input.value = '';
+};
+
 /* ================= PLAYER (shared entry) ================= */
+let CURRENT_PLAYER_NAME = '';
+
 function renderPlayer(code){
   const roomRef = db.ref('rooms/' + code);
   let myId = localStorage.getItem('player_id_' + code);
 
-  function attach(myId, name){
+  function attach(id, name){
+    CURRENT_PLAYER_NAME = name;
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الغرفة</h2><p class="muted">اطلب رابطًا جديدًا من المضيف.</p></div></div>`; return; }
-      if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);
-      else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
+      if (room.status === 'voting') renderPlayerVoting(code, id, name, room);
+      else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, id, name, room);
+      else if (room.status === 'in_game' && room.activeGame === 'draw') renderDrawPlayer(code, id, name, room);
       else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎮 اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
     });
   }
@@ -545,10 +841,10 @@ function renderPlayer(code){
 function renderPlayerVoting(code, myId, name, room){
   const myVote = room.votes ? room.votes[myId] : null;
   const cardsHtml = GAMES_LIST.map(g => {
-    if (!g.available) return `<div class="game-card disabled"><div class="game-icon">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
+    if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     const sel = myVote === g.id;
     return `<div class="game-card ${sel?'selected':''}" onclick="castVote('${code}','${myId}','${g.id}')">
-      <div class="game-icon">${g.icon}</div><div class="game-title">${g.title}</div>
+      <div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div>
       ${sel ? '<div class="vote-badge" style="background:var(--green);">صوتك ✓</div>' : '<div class="vote-badge">صوّت</div>'}
     </div>`;
   }).join('');
