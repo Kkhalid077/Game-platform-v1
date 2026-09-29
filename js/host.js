@@ -31,7 +31,7 @@ function initHostRoom(code, isNew){
   document.getElementById('newRoomBtn').onclick = () => {
     if (confirm('سيتم إنشاء غرفة جديدة وفقدان الاتصال باللاعبين الحاليين. متابعة؟')) {
       localStorage.removeItem('hostRoomCode');
-      location.reload();
+      renderHost();
     }
   };
 

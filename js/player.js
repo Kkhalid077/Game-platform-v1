@@ -93,6 +93,38 @@ function renderPlayerVoting(code, myId, name, room){
 }
 
 /* ================= ENTRY POINT ================= */
+function renderEntryChoice(){
+  app.innerHTML = `<div class="phone"><div class="card">
+    <h2 style="font-family:'Cairo';">🎮 منصة الألعاب</h2>
+    <p class="muted">اكتب رمز الغرفة الظاهر على شاشة المضيف للانضمام:</p>
+    <input type="text" id="codeInput" placeholder="مثال: 4821" maxlength="4" inputmode="numeric" autofocus />
+    <button class="btn" id="joinCodeBtn" style="width:100%; margin-top:12px;">دخول</button>
+    <p class="muted" id="codeError" style="color:var(--accent-2);"></p>
+    <div style="margin-top:26px; border-top:1px solid #3a3650; padding-top:16px;">
+      <button class="btn btn-ghost" id="hostStartBtn">أنا المضيف — ابدأ جلسة جديدة</button>
+    </div>
+  </div></div>`;
+
+  const tryJoin = () => {
+    const code = document.getElementById('codeInput').value.trim();
+    const errEl = document.getElementById('codeError');
+    if (!/^\d{4}$/.test(code)) { errEl.textContent = 'اكتب رمزًا من 4 أرقام'; return; }
+    db.ref('rooms/' + code).once('value', snap => {
+      if (!snap.exists()) { errEl.textContent = 'لا توجد غرفة بهذا الرمز'; return; }
+      renderPlayer(code);
+    });
+  };
+  document.getElementById('joinCodeBtn').onclick = tryJoin;
+  document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryJoin(); });
+  document.getElementById('hostStartBtn').onclick = () => renderHost();
+}
+
 const params = new URLSearchParams(location.search);
 const roomParam = params.get('room');
-if (!roomParam) { renderHost(); } else { renderPlayer(roomParam.trim()); }
+if (roomParam) {
+  renderPlayer(roomParam.trim());
+} else if (localStorage.getItem('hostRoomCode')) {
+  renderHost();
+} else {
+  renderEntryChoice();
+}
