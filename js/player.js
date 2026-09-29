@@ -47,7 +47,7 @@ function renderPlayer(code){
 
 function dispatchPlayerRender(code, myId, name, room){
   lastPlayerRoom = room;
-  if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.stopLocalBuzzerSync) stopLocalBuzzerSync();
+  if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   const isSilentDrawScreen = room.status === 'in_game' && room.activeGame === 'silentdraw';
   if (!isSilentDrawScreen && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);

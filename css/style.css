@@ -324,6 +324,9 @@
   .buzzer-winner-card .buzzer-ready{font-size:22px;color:var(--text)}
   .buzzer-winner-card.has-winner{border-style:solid;border-color:rgba(52,211,153,.48);background:rgba(52,211,153,.08)}
   .buzzer-winner-card.has-winner>strong{color:#6ee7b7}
+  .buzzer-network-note{margin:12px auto;padding:10px 13px;border:1px solid rgba(103,232,249,.25);border-radius:13px;background:rgba(34,211,238,.06);color:#a5f3fc;font-size:13px;line-height:1.7}
+  .buzzer-peer-status{margin:0;color:var(--text-dim);font-size:12px}
+  .buzzer-peer-status strong{color:#6ee7b7;font-size:15px}
   .buzzer-roster{text-align:right;margin-top:18px}
   .buzzer-roster h2{display:flex;align-items:center;gap:9px;font-family:'Cairo',sans-serif;font-size:17px}
   .buzzer-roster h2 b{display:grid;place-items:center;width:26px;height:26px;border-radius:9px;background:rgba(167,139,250,.18);font-size:13px}
