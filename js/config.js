@@ -30,7 +30,7 @@ const GAMES_LIST = [
     ]
   },
   {
-    id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4,
+    id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4, needsTeams: true,
     desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد صورة توضيحية ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
     rules: [
       'ينقسم اللاعبون إلى فريقين (A و B) بناءً على اختيارهم أو تلقائيًا.',

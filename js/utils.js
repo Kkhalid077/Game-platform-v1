@@ -66,6 +66,30 @@ window.setPlayerTeam = function(code, myId, team){
 /* =====================================================================
    SECTION 4 — GAME DETAIL / READY PANEL
    ===================================================================== */
+function teamSelectorHtml(game, room, code, myId, isHost){
+  if (!game.needsTeams) return '';
+  const players = room.players || {};
+  if (isHost) {
+    const teamAName = Object.values(players).filter(p=>p.team==='A').map(p=>escapeHtml(p.name));
+    const teamBName = Object.values(players).filter(p=>p.team==='B').map(p=>escapeHtml(p.name));
+    return `
+      <div class="team-selector-box">
+        <p style="margin:0 0 10px 0; font-weight:700; font-size:14px;">توزيع الفرق حتى الآن:</p>
+        <div class="chip team-A">🔵 فريق A: ${teamAName.join('، ') || 'لا أحد بعد'}</div>
+        <div class="chip team-B">🔴 فريق B: ${teamBName.join('، ') || 'لا أحد بعد'}</div>
+        <div class="muted">من لم يختر فريقًا سيُوزَّع تلقائيًا عند البدء</div>
+      </div>`;
+  }
+  const myTeam = players[myId]?.team || null;
+  return `
+    <div class="team-selector-box">
+      <p style="margin:0 0 10px 0; font-weight:700; font-size:14px;">اختر فريقك (اختياري):</p>
+      <button class="btn-team ${myTeam==='A'?'selected-a':''}" onclick="setPlayerTeam('${code}','${myId}','A')">🔵 فريق A</button>
+      <button class="btn-team ${myTeam==='B'?'selected-b':''}" onclick="setPlayerTeam('${code}','${myId}','B')">🔴 فريق B</button>
+      <div style="font-size:12px; margin-top:6px; color:var(--text-dim);">${myTeam ? `أنت حاليًا في فريق ${myTeam}` : 'لم تختر فريقًا (سيتم توزيعك تلقائيًا)'}</div>
+    </div>`;
+}
+
 function gameDetailHtml(game, room, code, myId, isHost){
   const votes = room.votes || {};
   const players = room.players || {};
@@ -82,6 +106,7 @@ function gameDetailHtml(game, room, code, myId, isHost){
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
       <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
+      ${teamSelectorHtml(game, room, code, myId, isHost)}
       <div class="players-box">
         <h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">جاهزون (${readyNames.length})</h3>
         <div>${readyNames.map(n => `<span class="chip">${escapeHtml(n)}</span>`).join('') || '<span class="muted">لا أحد جاهز بعد</span>'}</div>

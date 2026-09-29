@@ -24,7 +24,10 @@ function initHostRoom(code, isNew){
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
 
   app.innerHTML = `
-    <button class="btn btn-ghost top-bar" id="newRoomBtn">غرفة جديدة</button>
+    <div class="top-bar" style="display:flex; gap:8px;">
+      <button class="btn btn-ghost" id="newRoomBtn">غرفة جديدة</button>
+      <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" id="leaveRoomBtn">مغادرة الغرفة</button>
+    </div>
     <div class="brand">🎮 منصة <b>الألعاب</b></div>
     <div class="stage" id="stage"></div>
   `;
@@ -34,6 +37,7 @@ function initHostRoom(code, isNew){
       renderHost();
     }
   };
+  document.getElementById('leaveRoomBtn').onclick = () => hostLeaveRoom(code);
 
   roomRef.on('value', snap => dispatchHostRender(code, snap.val()));
 }
@@ -131,4 +135,13 @@ window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, silentdraw:null });
   db.ref('strokes/'+code+'_A').set(null);
   db.ref('strokes/'+code+'_B').set(null);
+};
+
+window.hostLeaveRoom = function(code){
+  if (!confirm('سيتم حذف الغرفة نهائيًا وطرد جميع اللاعبين منها. متابعة؟')) return;
+  db.ref('rooms/'+code).remove();
+  db.ref('strokes/'+code+'_A').remove();
+  db.ref('strokes/'+code+'_B').remove();
+  localStorage.removeItem('hostRoomCode');
+  renderEntryChoice();
 };

@@ -17,7 +17,7 @@ function renderPlayer(code){
     ACTIVE_PLAYER_ID = id;
     roomRef.on('value', snap => {
       const room = snap.val();
-      if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الغرفة</h2><p class="muted">اطلب رابطًا جديدًا من المضيف.</p></div></div>`; return; }
+      if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الغرفة</h2><p class="muted">أغلق المضيف الغرفة أو انتهت صلاحيتها.</p><button class="btn" style="margin-top:14px;" onclick="renderEntryChoice()">رجوع للرئيسية</button></div></div>`; return; }
       dispatchPlayerRender(code, id, name, room);
     });
   }
@@ -63,8 +63,6 @@ function renderPlayerVoting(code, myId, name, room){
   }
 
   const votes = room.votes || {};
-  const myPlayer = room.players && room.players[myId];
-  const myTeam = myPlayer ? myPlayer.team : null;
 
   const cardsHtml = GAMES_LIST.map(g => {
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
@@ -76,16 +74,8 @@ function renderPlayerVoting(code, myId, name, room){
   }).join('');
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
+    <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="leaveRoomAsPlayer('${code}','${myId}')">مغادرة الغرفة</button>
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} 👋</h2>
-
-    <!-- خيار اختيار الفريق للألعاب الجماعية -->
-    <div class="team-selector-box">
-      <p style="margin:0 0 10px 0; font-weight:700; font-size:14px; color:var(--text);">انضم لأحد الفريقين (اختياري):</p>
-      <button class="btn-team ${myTeam==='A'?'selected-a':''}" onclick="setPlayerTeam('${code}','${myId}','A')">🔵 فريق A</button>
-      <button class="btn-team ${myTeam==='B'?'selected-b':''}" onclick="setPlayerTeam('${code}','${myId}','B')">🔴 فريق B</button>
-      ${myTeam ? `<div style="font-size:12px; margin-top:6px; color:var(--text-dim);">أنت حالياً في <b>فريق ${myTeam}</b></div>` : '<div style="font-size:12px; margin-top:6px; color:var(--text-dim);">لم تختار فريقًا (سيتم توزيعك تلقائيًا)</div>'}
-    </div>
-
     <p class="muted">اختر لعبة لعرض شرحها والاستعداد لها:</p>
     <div class="games-grid">${cardsHtml}</div>
     <p class="muted">بانتظار المضيف لبدء اللعبة…</p>
@@ -96,12 +86,28 @@ function renderPlayerVoting(code, myId, name, room){
 function renderEntryChoice(){
   app.innerHTML = `<div class="phone"><div class="card">
     <h2 style="font-family:'Cairo';">🎮 منصة الألعاب</h2>
-    <p class="muted">اكتب رمز الغرفة الظاهر على شاشة المضيف للانضمام:</p>
+    <p class="muted">اختر دورك:</p>
+    <button class="btn" style="width:100%;" id="chooseHostBtn">🖥️ أنا المضيف</button>
+    <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="choosePlayerBtn">📱 أنا لاعب</button>
+  </div></div>`;
+  document.getElementById('chooseHostBtn').onclick = () => renderHost();
+  document.getElementById('choosePlayerBtn').onclick = () => renderJoinScreen();
+}
+
+function renderJoinScreen(){
+  app.innerHTML = `<div class="phone"><div class="card">
+    <button class="btn btn-ghost" onclick="renderEntryChoice()">→ رجوع</button>
+    <h2 style="font-family:'Cairo';">الانضمام كلاعب</h2>
+    <p class="muted">اكتب رمز الغرفة الظاهر على شاشة المضيف:</p>
     <input type="text" id="codeInput" placeholder="مثال: 4821" maxlength="4" inputmode="numeric" autofocus />
     <button class="btn" id="joinCodeBtn" style="width:100%; margin-top:12px;">دخول</button>
     <p class="muted" id="codeError" style="color:var(--accent-2);"></p>
-    <div style="margin-top:26px; border-top:1px solid #3a3650; padding-top:16px;">
-      <button class="btn btn-ghost" id="hostStartBtn">أنا المضيف — ابدأ جلسة جديدة</button>
+    <div style="margin-top:18px; border-top:1px solid #3a3650; padding-top:14px;">
+      <button class="btn btn-ghost" id="qrScanBtn" style="width:100%;">📷 أو امسح رمز QR</button>
+      <div id="qrArea" style="margin-top:12px; display:none;">
+        <video id="qrVideo" style="width:100%; border-radius:12px;" playsinline muted></video>
+        <p class="muted" id="qrError"></p>
+      </div>
     </div>
   </div></div>`;
 
@@ -116,8 +122,51 @@ function renderEntryChoice(){
   };
   document.getElementById('joinCodeBtn').onclick = tryJoin;
   document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryJoin(); });
-  document.getElementById('hostStartBtn').onclick = () => renderHost();
+  document.getElementById('qrScanBtn').onclick = startQrScan;
 }
+
+let qrScanStream = null;
+function stopQrScan(){
+  if (qrScanStream) { qrScanStream.getTracks().forEach(t => t.stop()); qrScanStream = null; }
+}
+function startQrScan(){
+  const area = document.getElementById('qrArea');
+  const video = document.getElementById('qrVideo');
+  const errEl = document.getElementById('qrError');
+  area.style.display = 'block';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => {
+    qrScanStream = stream;
+    video.srcObject = stream;
+    video.play();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scanFrame = () => {
+      if (!qrScanStream) return;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const result = window.jsQR && jsQR(imageData.data, imageData.width, imageData.height);
+        if (result) {
+          let roomCode = null;
+          try { roomCode = new URL(result.data).searchParams.get('room'); } catch(e) {}
+          if (roomCode) { stopQrScan(); renderPlayer(roomCode); return; }
+        }
+      }
+      requestAnimationFrame(scanFrame);
+    };
+    requestAnimationFrame(scanFrame);
+  }).catch(() => { errEl.textContent = 'تعذر الوصول إلى الكاميرا'; });
+}
+
+window.leaveRoomAsPlayer = function(code, myId){
+  if (!confirm('هل تريد مغادرة الغرفة؟')) return;
+  const roomRef = db.ref('rooms/'+code);
+  roomRef.off();
+  roomRef.child('players/'+myId).remove();
+  localStorage.removeItem('player_id_'+code);
+  renderEntryChoice();
+};
 
 const params = new URLSearchParams(location.search);
 const roomParam = params.get('room');
