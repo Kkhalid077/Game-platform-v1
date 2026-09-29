@@ -15,7 +15,7 @@ function assignMafiaRoles(ids){
 }
 
 window.startMafiaGame = function(code){
-  const roomRef = db.ref('rooms/'+code);
+  const roomRef = db.ref('sessions/'+code);
   roomRef.child('players').once('value', snap => {
     const players = snap.val() || {};
     const ids = Object.keys(players);
@@ -32,7 +32,7 @@ window.startMafiaGame = function(code){
 };
 
 window.mafiaNext = function(code, action){
-  const mRef = db.ref('rooms/'+code+'/mafia');
+  const mRef = db.ref('sessions/'+code+'/mafia');
   mRef.once('value', snap => {
     const m = snap.val(); if (!m) return;
     if (action==='to_police') mRef.update({ phase:'night_police' });
@@ -70,7 +70,7 @@ window.mafiaNext = function(code, action){
 };
 
 function checkMafiaWin(code){
-  const mRef = db.ref('rooms/'+code+'/mafia');
+  const mRef = db.ref('sessions/'+code+'/mafia');
   mRef.once('value', snap => {
     const m = snap.val(); if (!m) return;
     const aliveIds = Object.keys(m.alive).filter(id=>m.alive[id]);
@@ -81,11 +81,11 @@ function checkMafiaWin(code){
   });
 }
 
-window.mafiaVote = function(code, myId, targetId){ db.ref('rooms/'+code+'/mafia/nightVotes/mafia/'+myId).set(targetId); };
-window.doctorProtect = function(code, targetId){ db.ref('rooms/'+code+'/mafia/nightVotes/doctorTarget').set(targetId); };
-window.dayVote = function(code, myId, targetId){ db.ref('rooms/'+code+'/mafia/dayVotes/'+myId).set(targetId); };
+window.mafiaVote = function(code, myId, targetId){ db.ref('sessions/'+code+'/mafia/nightVotes/mafia/'+myId).set(targetId); };
+window.doctorProtect = function(code, targetId){ db.ref('sessions/'+code+'/mafia/nightVotes/doctorTarget').set(targetId); };
+window.dayVote = function(code, myId, targetId){ db.ref('sessions/'+code+'/mafia/dayVotes/'+myId).set(targetId); };
 window.policeInvestigate = function(code, myId, targetId){
-  const mRef = db.ref('rooms/'+code+'/mafia');
+  const mRef = db.ref('sessions/'+code+'/mafia');
   mRef.once('value', snap => {
     const m = snap.val();
     const isMafia = m.roles[targetId] === 'mafia';

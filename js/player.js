@@ -7,10 +7,11 @@ let ACTIVE_PLAYER_ID = null;
 let lastPlayerRoom = null;
 let playerDetailGameId = null;
 
-function renderPlayer(code){
+function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
-  const roomRef = db.ref('rooms/' + code);
-  let myId = localStorage.getItem('player_id_' + code);
+  const roomRef = db.ref('sessions/' + code);
+  const signedInUser = firebase.auth().currentUser;
+  const myId = signedInUser.uid;
 
   function attach(id, name){
     CURRENT_PLAYER_NAME = name;
@@ -18,37 +19,24 @@ function renderPlayer(code){
     ACTIVE_PLAYER_ID = id;
     roomRef.on('value', snap => {
       const room = snap.val();
-      if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الغرفة</h2><p class="muted">أغلق المضيف الغرفة أو انتهت صلاحيتها.</p><button class="btn" style="margin-top:14px;" onclick="renderEntryChoice()">رجوع للرئيسية</button></div></div>`; return; }
-      dispatchPlayerRender(code, id, name, room);
+      if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الجلسة</h2><p class="muted">لم تعد هذه اللعبة متاحة.</p><button class="btn" style="margin-top:14px;" onclick="renderHost()">الرئيسية</button></div></div>`; return; }
+      dispatchPlayerRender(code, id, name, room, invitedGameId);
     });
   }
 
-  if (!myId) {
-    app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">انضم للغرفة</h2>
-      <input type="text" id="nameInput" placeholder="اكتب اسمك" maxlength="15" autofocus />
-      <button class="btn" id="joinBtn" style="width:100%; margin-top:15px;">دخول</button>
-    </div></div>`;
-    document.getElementById('joinBtn').onclick = () => {
-      const name = document.getElementById('nameInput').value.trim();
-      if (!name) return;
-      const newId = roomRef.child('players').push().key;
-      roomRef.child('players/' + newId).set({ name });
-      localStorage.setItem('player_id_' + code, newId);
-      attach(newId, name);
-    };
-  } else {
-    roomRef.child('players/' + myId).once('value', snap => {
-      if (snap.exists()) attach(myId, snap.val().name);
-      else { localStorage.removeItem('player_id_' + code); renderPlayer(code); }
-    });
-  }
+  const name = (signedInUser.displayName || signedInUser.email || 'لاعب').slice(0, 30);
+  roomRef.child('players/' + myId).set({ name, gameId: invitedGameId || null, uid: myId });
+  attach(myId, name);
 }
 
-function dispatchPlayerRender(code, myId, name, room){
+function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   lastPlayerRoom = room;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (window.cleanupSilentCanvas) window.cleanupSilentCanvas();
+  if (invitedGameId) {
+    renderInvitedGame(code, myId, name, room, invitedGameId);
+    return;
+  }
   if (room.status === 'in_tool' && room.activeTool === 'buzzer') {
     renderBuzzerPlayer(code, myId, name, room);
     return;
@@ -58,6 +46,22 @@ function dispatchPlayerRender(code, myId, name, room){
     return;
   }
   renderPlayerVoting(code, myId, name, room);
+}
+
+function renderInvitedGame(code, myId, name, room, gameId){
+  if (gameId === 'buzzer') {
+    if (room.status === 'in_tool' && room.activeTool === 'buzzer') return renderBuzzerPlayer(code, myId, name, room);
+    app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">جرس الإجابة</h2><p class="muted">بانتظار المنظّم لفتح أداة الجرس.</p></div></div>`;
+    return;
+  }
+  const game = GAMES_LIST.find(g => g.id === gameId);
+  if (!game) { app.innerHTML = `<div class="phone"><div class="card"><h2>رابط لعبة غير صالح</h2></div></div>`; return; }
+  if (room.status === 'in_game' && room.activeGame === gameId) {
+    if (gameId === 'mafia') return renderMafiaPlayer(code, myId, name, room);
+    if (gameId === 'silentdraw') return renderSilentDrawPlayer(code, myId, name, room);
+    if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
+  }
+  app.innerHTML = gameDetailHtml(game, room, code, myId, false) + `<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p>`;
 }
 
 window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
@@ -79,7 +83,7 @@ function renderPlayerVoting(code, myId, name, room){
   }).join('');
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
-    <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="leaveRoomAsPlayer('${code}','${myId}')">مغادرة الغرفة</button>
+    <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="renderHost()">الرئيسية</button>
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} </h2>
     <p class="muted">تصفّح الألعاب وانضم إلى فريق في الألعاب الجماعية. المنظّم يبدأ اللعبة ويعرضها على شاشته.</p>
     <div class="games-grid">${cardsHtml}</div>
@@ -101,104 +105,26 @@ function renderPlayerGameNotice(code, myId, name, room){
   </div></div>`;
 }
 
-/* ================= ENTRY POINT ================= */
-function renderEntryChoice(){
-  setVersionFooterVisibility(true);
-  app.innerHTML = `<div class="phone"><div class="card">
-    <h2 style="font-family:'Cairo';">منصة الألعاب</h2>
-    <p class="muted">ابدأ جلسة اللعب أو انضم إلى غرفة موجودة.</p>
-    <button class="btn" style="width:100%;" id="chooseHostBtn">إنشاء غرفة</button>
-    <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="choosePlayerBtn">الدخول إلى غرفة</button>
-  </div></div>`;
-  document.getElementById('chooseHostBtn').onclick = () => renderHost();
-  document.getElementById('choosePlayerBtn').onclick = () => renderJoinScreen();
-}
-
 function setVersionFooterVisibility(visible){
   const footer = document.querySelector('.site-footer');
   if (footer) footer.classList.toggle('is-entry-visible', visible);
   document.body.classList.toggle('has-version-footer', visible);
 }
 
-function renderJoinScreen(){
-  app.innerHTML = `<div class="phone"><div class="card">
-    <button class="btn btn-ghost" onclick="renderEntryChoice()">→ رجوع</button>
-    <h2 style="font-family:'Cairo';">الانضمام كلاعب</h2>
-    <p class="muted">اكتب رمز الغرفة الظاهر على شاشة المضيف:</p>
-    <input type="text" id="codeInput" placeholder="مثال: 4821" maxlength="4" inputmode="numeric" autofocus />
-    <button class="btn" id="joinCodeBtn" style="width:100%; margin-top:12px;">دخول</button>
-    <p class="muted" id="codeError" style="color:var(--accent-2);"></p>
-    <div style="margin-top:18px; border-top:1px solid #3a3650; padding-top:14px;">
-      <button class="btn btn-ghost" id="qrScanBtn" style="width:100%;"> أو امسح رمز QR</button>
-      <div id="qrArea" style="margin-top:12px; display:none;">
-        <video id="qrVideo" style="width:100%; border-radius:12px;" playsinline muted></video>
-        <p class="muted" id="qrError"></p>
-      </div>
-    </div>
-  </div></div>`;
-
-  const tryJoin = () => {
-    const code = document.getElementById('codeInput').value.trim();
-    const errEl = document.getElementById('codeError');
-    if (!/^\d{4}$/.test(code)) { errEl.textContent = 'اكتب رمزًا من 4 أرقام'; return; }
-    db.ref('rooms/' + code).once('value', snap => {
-      if (!snap.exists()) { errEl.textContent = 'لا توجد غرفة بهذا الرمز'; return; }
-      renderPlayer(code);
-    });
+function renderGoogleSignIn(){
+  setVersionFooterVisibility(true);
+  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
+  document.getElementById('googleSignInBtn').onclick = async () => {
+    try { await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch (error) { document.getElementById('authError').textContent = 'تعذر تسجيل الدخول. فعّل Google من إعدادات Firebase ثم حاول مرة أخرى.'; }
   };
-  document.getElementById('joinCodeBtn').onclick = tryJoin;
-  document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryJoin(); });
-  document.getElementById('qrScanBtn').onclick = startQrScan;
 }
 
-let qrScanStream = null;
-function stopQrScan(){
-  if (qrScanStream) { qrScanStream.getTracks().forEach(t => t.stop()); qrScanStream = null; }
-}
-function startQrScan(){
-  const area = document.getElementById('qrArea');
-  const video = document.getElementById('qrVideo');
-  const errEl = document.getElementById('qrError');
-  area.style.display = 'block';
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => {
-    qrScanStream = stream;
-    video.srcObject = stream;
-    video.play();
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const scanFrame = () => {
-      if (!qrScanStream) return;
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const result = window.jsQR && jsQR(imageData.data, imageData.width, imageData.height);
-        if (result) {
-          let roomCode = null;
-          try { roomCode = new URL(result.data).searchParams.get('room'); } catch(e) {}
-          if (roomCode) { stopQrScan(); renderPlayer(roomCode); return; }
-        }
-      }
-      requestAnimationFrame(scanFrame);
-    };
-    requestAnimationFrame(scanFrame);
-  }).catch(() => { errEl.textContent = 'تعذر الوصول إلى الكاميرا'; });
-}
-
-window.leaveRoomAsPlayer = function(code, myId){
-  const roomRef = db.ref('rooms/'+code);
-  roomRef.off();
-  roomRef.child('players/'+myId).remove();
-  localStorage.removeItem('player_id_'+code);
-  renderEntryChoice();
-};
-
-const params = new URLSearchParams(location.search);
-const roomParam = params.get('room');
-if (roomParam) {
-  renderPlayer(roomParam.trim());
-} else if (localStorage.getItem('hostRoomCode')) {
-  renderHost();
-} else {
-  renderEntryChoice();
-}
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) { renderGoogleSignIn(); return; }
+  const params = new URLSearchParams(location.search);
+  const sessionParam = params.get('session');
+  const gameParam = params.get('game');
+  if (sessionParam && gameParam) renderPlayer(sessionParam.trim(), gameParam.trim());
+  else renderHost();
+});

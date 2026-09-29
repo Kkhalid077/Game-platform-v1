@@ -7,11 +7,11 @@ let hostDetailGameId = null;
 
 function renderHost(){
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
-  const savedCode = localStorage.getItem('hostRoomCode');
+  const savedCode = localStorage.getItem('hostSessionCode');
   if (savedCode) {
-    db.ref('rooms/' + savedCode).once('value', snap => {
+    db.ref('sessions/' + savedCode).once('value', snap => {
       if (snap.exists()) initHostRoom(savedCode, false);
-      else { localStorage.removeItem('hostRoomCode'); initHostRoom(makeRoomCode(), true); }
+      else { localStorage.removeItem('hostSessionCode'); initHostRoom(makeRoomCode(), true); }
     });
   } else {
     initHostRoom(makeRoomCode(), true);
@@ -20,8 +20,8 @@ function renderHost(){
 
 function initHostRoom(code, isNew){
   ACTIVE_HOST_CODE = code;
-  localStorage.setItem('hostRoomCode', code);
-  const roomRef = db.ref('rooms/' + code);
+  localStorage.setItem('hostSessionCode', code);
+  const roomRef = db.ref('sessions/' + code);
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
 
   app.innerHTML = `
@@ -44,13 +44,17 @@ function dispatchHostRender(code, room){
   else renderHostGenericPlaceholder(code, room);
 }
 
-window.showHostGameDetail = function(gameId){ hostDetailGameId = gameId; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+window.showHostGameDetail = function(gameId){
+  hostDetailGameId = gameId;
+  db.ref('sessions/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
+};
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 
 function renderHostLobby(code, room){
   if (hostDetailGameId) {
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
-    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true);
+    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true) + (game.minPlayers > 1 ? `<section class="players-box" style="text-align:center;"><h3 style="font-family:'Cairo';">انضمام اللاعبين</h3><div id="gameInviteQr" style="display:inline-block; background:#fff; padding:8px;"></div><p class="muted">امسح الرمز أو افتح <a href="${joinGameUrl(code, game.id)}" target="_blank" rel="noopener">رابط اللعبة</a></p></section>` : '');
+    if (game.minPlayers > 1) new QRCode(document.getElementById('gameInviteQr'), { text:joinGameUrl(code, game.id), width:120, height:120 });
     return;
   }
 
@@ -91,27 +95,21 @@ function renderHostLobby(code, room){
 
   document.getElementById('stage').innerHTML = `
     <div class="host-dashboard">
-      <aside class="host-sidebar" aria-label="معلومات الغرفة">
+      <aside class="host-sidebar" aria-label="معلومات الجلسة">
         <section class="host-room-card">
-          <span class="host-section-kicker">رمز الغرفة</span>
-          <p class="room-code">${code}</p>
-          <div class="host-room-status"><span class="host-live-dot"></span> الغرفة نشطة</div>
-        </section>
-
-        <section class="host-qr-card">
-          <span>امسح للانضمام</span>
-          <div id="qr"></div>
+          <span class="host-section-kicker">جلسة اللعب</span>
+          <p class="muted">اختر لعبة، ثم شارك رمز QR الخاص بها فقط مع المشاركين.</p>
         </section>
 
         <section class="host-players-panel">
           <div class="host-sidebar-heading">
-            <span>اللاعبون المتصلون</span>
+            <span>المشاركون</span>
             <b>${playerCount}</b>
           </div>
-          <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>بانتظار أول لاعب</span><small>امسح رمز QR للانضمام</small></div>'}</div>
+          <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>اختر لعبة أولاً</span><small>سيظهر المشاركون بعد فتح رابط اللعبة</small></div>'}</div>
         </section>
 
-        <button type="button" class="btn btn-ghost host-leave-button" onclick="hostLeaveRoom('${code}')">مغادرة الغرفة</button>
+        <button type="button" class="btn btn-ghost host-leave-button" onclick="hostLeaveRoom('${code}')">إنهاء الجلسة</button>
       </aside>
 
       <main class="host-games-main">
@@ -130,7 +128,6 @@ function renderHostLobby(code, room){
       </main>
     </div>
   `;
-  new QRCode(document.getElementById('qr'), { text: joinUrl(code), width:120, height:120 });
 }
 
 function renderHostGenericPlaceholder(code, room){
@@ -147,26 +144,26 @@ window.startGame = function(gameId, code){
   if (gameId === 'mafia') { startMafiaGame(code); return; }
   if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
   if (gameId === 'trivia') { startTriviaSetup(code); return; }
-  db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
+  db.ref('sessions/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
 window.startBuzzerTool = function(code){
   hostDetailGameId = null;
   if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
   const session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  db.ref('sessions/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
 };
 
 window.resetToLobby = function(code){
-  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, votes:{}, mafia:null, silentdraw:null, buzzer:null });
+  db.ref('sessions/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, votes:{}, mafia:null, silentdraw:null, buzzer:null });
   db.ref('strokes/'+code+'_A').set(null);
   db.ref('strokes/'+code+'_B').set(null);
 };
 
 window.hostLeaveRoom = function(code){
-  db.ref('rooms/'+code).remove();
+  db.ref('sessions/'+code).remove();
   db.ref('strokes/'+code+'_A').remove();
   db.ref('strokes/'+code+'_B').remove();
-  localStorage.removeItem('hostRoomCode');
-  renderEntryChoice();
+  localStorage.removeItem('hostSessionCode');
+  renderHost();
 };

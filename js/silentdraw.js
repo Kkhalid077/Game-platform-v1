@@ -8,7 +8,7 @@ function silentDrawTeamIds(sd, team){
 }
 
 window.startSilentDrawGame = function(code){
-  const roomRef = db.ref('rooms/'+code);
+  const roomRef = db.ref('sessions/'+code);
   roomRef.child('players').once('value', snap => {
     const players = snap.val() || {};
     const ids = Object.keys(players);
@@ -50,7 +50,7 @@ window.startSilentDrawGame = function(code){
 };
 
 window.silentDrawBeginDrawing = async function(code){
-  const roomRef = db.ref('rooms/'+code);
+  const roomRef = db.ref('sessions/'+code);
   const sdRef = roomRef.child('silentdraw');
   const button = document.getElementById('beginDrawingBtn');
   if (button){ button.disabled = true; button.textContent = 'جارٍ بدء الرسم…'; }
@@ -71,7 +71,7 @@ window.silentDrawBeginDrawing = async function(code){
 };
 
 window.silentDrawFinishRound = function(code){
-  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  const sdRef = db.ref('sessions/'+code+'/silentdraw');
   sdRef.once('value', snap => {
     const sd = snap.val(); if (!sd) return;
     const results = { A: sd.results.A || 'wrong', B: sd.results.B || 'wrong' };
@@ -83,7 +83,7 @@ window.silentDrawFinishRound = function(code){
 };
 
 window.silentDrawAwardPoint = function(code, team){
-  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  const sdRef = db.ref('sessions/'+code+'/silentdraw');
   sdRef.once('value', snap => {
     const sd = snap.val();
     if (!sd || sd.phase !== 'drawing' || (sd.awarded && sd.awarded[team])) return;
@@ -101,7 +101,7 @@ window.silentDrawAwardPoint = function(code, team){
 };
 
 window.silentDrawMarkCorrect = function(code, team){
-  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  const sdRef = db.ref('sessions/'+code+'/silentdraw');
   sdRef.child('results/'+team).set('correct').then(() => {
     sdRef.once('value', snap => {
       const sd = snap.val(); if (!sd) return;
@@ -127,7 +127,7 @@ window.submitSilentGuess = function(code, team, actualWord){
 };
 
 window.silentDrawNextRound = function(code){
-  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  const sdRef = db.ref('sessions/'+code+'/silentdraw');
   sdRef.once('value', snap => {
     const sd = snap.val(); if (!sd) return;
     db.ref('strokes/'+code+'_A').set(null);
@@ -143,7 +143,7 @@ window.silentDrawNextRound = function(code){
 };
 
 window.silentDrawUndo = function(code, team){
-  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  const sdRef = db.ref('sessions/'+code+'/silentdraw');
   sdRef.once('value', snap => {
     const sd = snap.val(); if (!sd || sd.phase!=='drawing') return;
     if ((sd.undosLeft[team]||0) <= 0) return;

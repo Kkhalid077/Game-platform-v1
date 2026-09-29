@@ -3,7 +3,7 @@
    ===================================================================== */
 function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]]; } return r; }
 function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
-function joinUrl(code){ return location.origin + location.pathname + '?room=' + code; }
+function joinGameUrl(code, gameId){ return location.origin + location.pathname + '?session=' + encodeURIComponent(code) + '&game=' + encodeURIComponent(gameId); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function iconImageHtml(src, className='game-icon-image'){
   return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" />`;
@@ -75,11 +75,11 @@ window.setDrawColor = function(c){ currentColor = c; };
 
 // تغيير الفريق
 window.setPlayerTeam = function(code, myId, team){
-  db.ref('rooms/'+code+'/players/'+myId+'/team').once('value', snap => {
+  db.ref('sessions/'+code+'/players/'+myId+'/team').once('value', snap => {
     if (snap.val() === team) {
-      db.ref('rooms/'+code+'/players/'+myId+'/team').remove();
+      db.ref('sessions/'+code+'/players/'+myId+'/team').remove();
     } else {
-      db.ref('rooms/'+code+'/players/'+myId+'/team').set(team);
+      db.ref('sessions/'+code+'/players/'+myId+'/team').set(team);
     }
   });
 };
@@ -137,6 +137,6 @@ function gameDetailHtml(game, room, code, myId, isHost){
   `;
 }
 window.toggleReady = function(code, myId, gameId){
-  const ref = db.ref('rooms/'+code+'/votes/'+myId);
+  const ref = db.ref('sessions/'+code+'/votes/'+myId);
   ref.once('value', snap => { snap.val() === gameId ? ref.remove() : ref.set(gameId); });
 };

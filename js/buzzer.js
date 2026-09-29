@@ -3,6 +3,9 @@
    ===================================================================== */
 let rtcHostCode=null,rtcHostSession=null,rtcHostSignals=null,rtcHostSignalHandler=null,rtcHostPeers=new Map(),rtcHostState=null;
 let rtcPlayerCode=null,rtcPlayerId=null,rtcPlayerSession=null,rtcPlayerSignal=null,rtcPlayerConnection=null,rtcPlayerChannel=null,rtcPlayerState=null,rtcPlayerStatus='idle';
+let buzzerServerTimeOffset=0;
+db.ref('.info/serverTimeOffset').on('value',snapshot=>{buzzerServerTimeOffset=Number(snapshot.val())||0;});
+function buzzerNow(){ return Date.now()+buzzerServerTimeOffset; }
 
 function buzzerState(room,override){ return Object.assign({ winner:null, locked:false, timer:null, round:0 }, override || room.buzzer || {}); }
 function rtcConfiguration(){return {iceServers:[]};}
@@ -43,11 +46,11 @@ function startBuzzerRtcHost(code,session,room){
   if(!session){
     if(rtcHostCode===code&&rtcHostSession)return true;
     session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-    db.ref('rooms/'+code).update({buzzerSession:session,buzzerRtc:null});
+    db.ref('sessions/'+code).update({buzzerSession:session,buzzerRtc:null});
   }
   if(rtcHostCode===code&&rtcHostSession===session)return true;
   closeBuzzerRtcHost();rtcHostCode=code;rtcHostSession=session;rtcHostState=buzzerState(room);
-  rtcHostSignals=db.ref(`rooms/${code}/buzzerRtc/${session}`);
+  rtcHostSignals=db.ref(`sessions/${code}/buzzerRtc/${session}`);
   rtcHostSignalHandler=snapshot=>acceptRtcOffer(snapshot.key,snapshot,session);
   rtcHostSignals.on('child_added',rtcHostSignalHandler);
   return true;
@@ -67,7 +70,7 @@ async function startBuzzerRtcPlayer(code,playerId,session){
   channel.onclose=()=>{rtcPlayerStatus='failed';refreshRtcPlayer(code,playerId);};
   channel.onmessage=event=>{try{const message=JSON.parse(event.data);if(message.type==='state'){rtcPlayerState=message.state;rtcPlayerStatus='connected';refreshRtcPlayer(code,playerId);}}catch(error){console.warn('Invalid direct buzzer message',error);}};
   connection.onconnectionstatechange=()=>{if(connection.connectionState==='connected')rtcPlayerStatus='connected';else if(['failed','disconnected'].includes(connection.connectionState))rtcPlayerStatus='failed';refreshRtcPlayer(code,playerId);};
-  rtcPlayerSignal=db.ref(`rooms/${code}/buzzerRtc/${session}`).push();
+  rtcPlayerSignal=db.ref(`sessions/${code}/buzzerRtc/${session}`).push();
   rtcPlayerSignal.child('answer').on('value',async snapshot=>{
     const answer=snapshot.val();if(!answer||connection.remoteDescription||rtcPlayerConnection!==connection)return;
     try{await connection.setRemoteDescription(new RTCSessionDescription(answer));}
@@ -97,7 +100,7 @@ function updateRtcHostState(code,update){
 
 function buzzerTimerHtml(timer){
   if(!timer || !timer.duration || !timer.startedAt) return '';
-  const remaining=Math.min(timer.duration,Math.max(0,Math.ceil(timer.duration-(Date.now()-timer.startedAt)/1000)));
+  const remaining=Math.min(timer.duration,Math.max(0,Math.ceil(timer.duration-(buzzerNow()-timer.startedAt)/1000)));
   return `<div class="buzzer-timer" data-start="${timer.startedAt}" data-duration="${timer.duration}"><span>المؤقت</span><strong>${remaining}</strong><i></i></div>`;
 }
 
@@ -111,7 +114,7 @@ function renderBuzzerHost(code, room, directState){
       <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
       <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>جرس الإجابة</h1>
       <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
-      <p class="muted">يعرض اللاعبون أسماءهم عند الانضمام إلى الغرفة، ثم يضغطون من هواتفهم للإجابة.</p>
+      <p class="muted">يسجّل اللاعبون أسماءهم من رابط الجرس، ثم يضغطون من هواتفهم للإجابة.</p>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين. لأفضل استجابة، اتصلوا جميعاً بشبكة Wi‑Fi نفسها.':'الاتصال المباشر غير مدعوم في هذا المتصفح؛ تُرسل الضغطات عبر Firebase.'}</p>
       <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
@@ -120,7 +123,7 @@ function renderBuzzerHost(code, room, directState){
       <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><div id="buzzerRoster"></div></section>
     </main></div>`;
     const qr=document.getElementById('buzzerQr');
-    if(qr) new QRCode(qr,{text:joinUrl(code),width:88,height:88});
+    if(qr) new QRCode(qr,{text:joinGameUrl(code,'buzzer'),width:88,height:88});
   }
   const peerCount=document.getElementById('buzzerPeerCount');
   if(peerCount)peerCount.textContent=connectedRtcPlayers();
@@ -140,7 +143,7 @@ function renderBuzzerHost(code, room, directState){
   const rosterKey=JSON.stringify(Object.entries(players).map(([id,p])=>[id,p.name,state.winner===id]));
   if(roster.dataset.key!==rosterKey){
     roster.dataset.key=rosterKey;
-    roster.innerHTML=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('')||'<p class="muted">لا يوجد لاعبون في الغرفة بعد. شارك رمز الغرفة أو QR للانضمام.</p>';
+    roster.innerHTML=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('')||'<p class="muted">لا يوجد مشاركون بعد. شارك رمز QR أو رابط الجرس.</p>';
     document.getElementById('buzzerPlayerCount').textContent=Object.keys(players).length;
   }
   updateBuzzerTimerMount(state.timer);
@@ -178,15 +181,15 @@ window.buzzerPress=function(code,playerId){
     return;
   }
   if(rtcPlayerSession)return;
-  db.ref('rooms/'+code+'/buzzer').transaction(state=>{
+  db.ref('sessions/'+code+'/buzzer').transaction(state=>{
     if(!state||state.locked||state.winner) return;
     state.winner=playerId; state.pressedAt=Date.now(); return state;
   });
 };
-window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.round=(state.round||0)+1;}))return;db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
-window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.locked=locked;}))return;db.ref('rooms/'+code+'/buzzer/locked').set(locked);};
-window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=Date.now()+1000;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt});};
-window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('rooms/'+code+'/buzzer/timer').set(null);};
+window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.round=(state.round||0)+1;}))return;db.ref('sessions/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
+window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.locked=locked;}))return;db.ref('sessions/'+code+'/buzzer/locked').set(locked);};
+window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=buzzerNow()+1500;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('sessions/'+code+'/buzzer/timer').set({duration,startedAt});};
+window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('sessions/'+code+'/buzzer/timer').set(null);};
 window.buzzerFullscreen=function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.();};
 window.buzzerToggleSound=function(){buzzerMuted=!buzzerMuted;localStorage.setItem('buzzerMuted',buzzerMuted?'1':'0');if(!buzzerMuted){buzzerUnlockAudio();buzzerPlayTone(740,0.16);}const b=document.querySelector('.buzzer-controls button:last-child');if(b)b.textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';};
 
@@ -200,6 +203,6 @@ let lastBuzzerSecond=null;
 function startBuzzerTimerDisplay(){
   if(buzzerDisplayInterval)return;
   lastBuzzerSecond=null;
-  const update=()=>{const el=document.querySelector('.buzzer-timer');if(!el){clearInterval(buzzerDisplayInterval);buzzerDisplayInterval=null;return;}const duration=Number(el.dataset.duration),remaining=Math.min(duration,Math.max(0,Math.ceil(duration-(Date.now()-Number(el.dataset.start))/1000)));el.querySelector('strong').textContent=remaining;el.classList.toggle('is-low',remaining<=5);el.querySelector('i').style.width=`${Math.max(0,remaining/duration*100)}%`;if(remaining!==lastBuzzerSecond){lastBuzzerSecond=remaining;if(remaining>0&&remaining<=5)buzzerPlayTone(880,.07);}};
+  const update=()=>{const el=document.querySelector('.buzzer-timer');if(!el){clearInterval(buzzerDisplayInterval);buzzerDisplayInterval=null;return;}const duration=Number(el.dataset.duration),remaining=Math.min(duration,Math.max(0,Math.ceil(duration-(buzzerNow()-Number(el.dataset.start))/1000)));el.querySelector('strong').textContent=remaining;el.classList.toggle('is-low',remaining<=5);el.querySelector('i').style.width=`${Math.max(0,remaining/duration*100)}%`;if(remaining!==lastBuzzerSecond){lastBuzzerSecond=remaining;if(remaining>0&&remaining<=5)buzzerPlayTone(880,.07);}};
   update();buzzerDisplayInterval=setInterval(update,250);
 }
