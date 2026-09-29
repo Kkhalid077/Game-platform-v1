@@ -171,7 +171,6 @@ function startQrScan(){
 }
 
 window.leaveRoomAsPlayer = function(code, myId){
-  if (!confirm('هل تريد مغادرة الغرفة؟')) return;
   const roomRef = db.ref('rooms/'+code);
   roomRef.off();
   roomRef.child('players/'+myId).remove();

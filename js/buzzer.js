@@ -13,27 +13,62 @@ function renderBuzzerHost(code, room){
   const state=buzzerState(room), players=room.players||{}, winner=state.winner&&players[state.winner];
   if(state.winner&&state.winner!==lastBuzzerWinner){lastBuzzerWinner=state.winner;buzzerPlayWinner();}
   else if(!state.winner)lastBuzzerWinner=null;
-  const roster=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('');
-  app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel">
-    <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
-    <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>استوديو الأسئلة</h1>
-    <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
-    <p class="muted">يعرض اللاعبون أسماءهم عند الانضمام إلى الغرفة، ثم يضغطون من هواتفهم للإجابة.</p>
-    <div class="buzzer-controls"><button class="btn ${state.locked?'btn-danger':'btn-ghost'}" onclick="buzzerToggleLock('${code}',${!state.locked})">${state.locked?'فتح الأزرار':'قفل الأزرار'}</button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button class="btn btn-ghost" onclick="buzzerToggleSound()">${buzzerMuted?'تشغيل الصوت':'كتم الصوت'}</button></div>
-    <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
-    ${buzzerTimerHtml(state.timer)}
-    <section class="buzzer-winner-card ${winner?'has-winner':''}">${winner?`<span>أول من ضغط</span><strong>${escapeHtml(winner.name)}</strong>`:`<span>${state.locked?'الأزرار مقفلة':'بانتظار أول إجابة'}</span><strong class="buzzer-ready">${Object.keys(players).length?'جاهزون!':'بانتظار انضمام اللاعبين'}</strong>`}</section>
-    <section class="buzzer-roster"><h2>اللاعبون <b>${Object.keys(players).length}</b></h2>${roster||'<p class="muted">لا يوجد لاعبون في الغرفة بعد. شارك رمز الغرفة أو QR للانضمام.</p>'}</section>
-  </main></div>`;
-  const qr=document.getElementById('buzzerQr');
-  if(qr) new QRCode(qr,{text:joinUrl(code),width:88,height:88});
+  if(!document.getElementById('buzzerHostRoot')){
+    app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
+      <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
+      <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>استوديو الأسئلة</h1>
+      <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
+      <p class="muted">يعرض اللاعبون أسماءهم عند الانضمام إلى الغرفة، ثم يضغطون من هواتفهم للإجابة.</p>
+      <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
+      <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
+      <div id="buzzerTimerMount"></div><section id="buzzerWinner" class="buzzer-winner-card"></section>
+      <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><div id="buzzerRoster"></div></section>
+    </main></div>`;
+    const qr=document.getElementById('buzzerQr');
+    if(qr) new QRCode(qr,{text:joinUrl(code),width:88,height:88});
+  }
+  const lock=document.getElementById('buzzerLock');
+  lock.textContent=state.locked?'فتح الأزرار':'قفل الأزرار';
+  lock.onclick=()=>buzzerToggleLock(code,!state.locked);
+  lock.classList.toggle('btn-danger',state.locked);lock.classList.toggle('btn-ghost',!state.locked);
+  document.getElementById('buzzerSound').textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';
+  const winnerCard=document.getElementById('buzzerWinner');
+  const winnerKey=winner?`winner:${state.winner}:${winner.name}`:state.locked?'locked':`ready:${Object.keys(players).length}`;
+  if(winnerCard.dataset.key!==winnerKey){
+    winnerCard.dataset.key=winnerKey;
+    winnerCard.classList.toggle('has-winner',!!winner);
+    winnerCard.innerHTML=winner?`<span>أول من ضغط</span><strong>${escapeHtml(winner.name)}</strong>`:`<span>${state.locked?'الأزرار مقفلة':'بانتظار أول إجابة'}</span><strong class="buzzer-ready">${Object.keys(players).length?'جاهزون!':'بانتظار انضمام اللاعبين'}</strong>`;
+  }
+  const roster=document.getElementById('buzzerRoster');
+  const rosterKey=JSON.stringify(Object.entries(players).map(([id,p])=>[id,p.name,state.winner===id]));
+  if(roster.dataset.key!==rosterKey){
+    roster.dataset.key=rosterKey;
+    roster.innerHTML=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('')||'<p class="muted">لا يوجد لاعبون في الغرفة بعد. شارك رمز الغرفة أو QR للانضمام.</p>';
+    document.getElementById('buzzerPlayerCount').textContent=Object.keys(players).length;
+  }
+  updateBuzzerTimerMount(state.timer);
   startBuzzerTimerDisplay();
 }
 
 function renderBuzzerPlayer(code, myId, name, room){
   const state=buzzerState(room), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
-  app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel"><span class="host-section-kicker">استوديو الأسئلة</span><h1>أهلاً ${escapeHtml(name)}</h1>${buzzerTimerHtml(state.timer)}<button class="buzzer-dome ${state.locked||first?'is-disabled':''} ${won?'is-winner':''}" ${state.locked||first?'disabled':''} onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة">${won?'أنت الأسرع!':first?`سبقك ${escapeHtml(first.name)}`:state.locked?'مقفلة':'اضغط للإجابة'}</button><p class="buzzer-player-status">${won?'مبروك! أنت أول من ضغط':first?`أجاب أولاً: ${escapeHtml(first.name)}`:state.locked?'انتظر فتح الأزرار من المنظم':'جاهز؟ اضغط عند معرفة الإجابة'}</p></main></div>`;
+  if(!document.getElementById('buzzerPlayerRoot')){
+    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">استوديو الأسئلة</span><h1>أهلاً ${escapeHtml(name)}</h1><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
+  }
+  const button=document.getElementById('buzzerDome');
+  button.disabled=!!(state.locked||first);
+  button.classList.toggle('is-disabled',!!(state.locked||first));button.classList.toggle('is-winner',won);
+  button.textContent=won?'أنت الأسرع!':first?`سبقك ${first.name}`:state.locked?'مقفلة':'اضغط للإجابة';
+  document.getElementById('buzzerPlayerStatus').textContent=won?'مبروك! أنت أول من ضغط':first?`أجاب أولاً: ${first.name}`:state.locked?'انتظر فتح الأزرار من المنظم':'جاهز؟ اضغط عند معرفة الإجابة';
+  updateBuzzerTimerMount(state.timer,'buzzerPlayerTimer');
   startBuzzerTimerDisplay();
+}
+
+function updateBuzzerTimerMount(timer,mountId='buzzerTimerMount'){
+  const mount=document.getElementById(mountId);if(!mount)return;
+  const key=timer&&timer.duration&&timer.startedAt?`${timer.startedAt}:${timer.duration}`:'none';
+  if(mount.dataset.key===key)return;
+  mount.dataset.key=key;mount.innerHTML=buzzerTimerHtml(timer);
 }
 
 window.buzzerPress=function(code,playerId){
@@ -58,7 +93,7 @@ function buzzerPlayWinner(){buzzerPlayTone(740,.18);setTimeout(()=>buzzerPlayTon
 let buzzerDisplayInterval=null;
 let lastBuzzerSecond=null;
 function startBuzzerTimerDisplay(){
-  if(buzzerDisplayInterval)clearInterval(buzzerDisplayInterval);
+  if(buzzerDisplayInterval)return;
   lastBuzzerSecond=null;
   const update=()=>{const el=document.querySelector('.buzzer-timer');if(!el){clearInterval(buzzerDisplayInterval);buzzerDisplayInterval=null;return;}const duration=Number(el.dataset.duration),remaining=Math.max(0,Math.ceil(duration-(Date.now()-Number(el.dataset.start))/1000));el.querySelector('strong').textContent=remaining;el.classList.toggle('is-low',remaining<=5);el.querySelector('i').style.width=`${Math.max(0,remaining/duration*100)}%`;if(remaining!==lastBuzzerSecond){lastBuzzerSecond=remaining;if(remaining>0&&remaining<=5)buzzerPlayTone(880,.07);}};
   update();buzzerDisplayInterval=setInterval(update,250);

@@ -162,7 +162,6 @@ window.resetToLobby = function(code){
 };
 
 window.hostLeaveRoom = function(code){
-  if (!confirm('سيتم حذف الغرفة نهائيًا وطرد جميع اللاعبين منها. متابعة؟')) return;
   db.ref('rooms/'+code).remove();
   db.ref('strokes/'+code+'_A').remove();
   db.ref('strokes/'+code+'_B').remove();
