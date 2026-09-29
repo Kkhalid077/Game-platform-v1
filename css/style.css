@@ -26,6 +26,9 @@
     padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   }
   #app{min-height:100vh; display:flex; flex-direction:column;}
+  body{display:flex;flex-direction:column;}
+  #app{flex:1;min-height:calc(100vh - 42px)}
+  .site-footer{min-height:42px;display:flex;align-items:center;justify-content:center;padding:8px 16px;color:var(--text-dim);font-size:12px;border-top:1px solid rgba(196,181,253,.12);background:rgba(16,11,37,.55)}
 
   .brand{ text-align:center; padding:18px 0 4px; font-size:15px; color:var(--text-dim); letter-spacing:.3px; }
   .brand b{color:var(--accent); font-family:'Cairo',sans-serif;}
