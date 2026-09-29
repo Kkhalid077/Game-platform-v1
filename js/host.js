@@ -85,11 +85,13 @@ function renderHostLobby(code, room){
     <p style="margin:0; color:var(--text-dim);">رمز الغرفة</p>
     <div class="code-box"><p class="room-code">${code}</p></div>
     <div class="join-row">
-      <div id="qr"></div>
-      <div>
+      <div class="join-info">
+        <span class="join-kicker">انضم إلى اللعبة</span>
+        <h3>امسح الرمز أو أدخل رقم الغرفة</h3>
         <div class="link-text">${joinUrl(code)}</div>
         <button class="btn btn-ghost" id="copyBtn">نسخ الرابط</button>
       </div>
+      <div class="join-qr"><span>امسح للانضمام</span><div id="qr"></div></div>
     </div>
     <div class="players-box">
       <h3 style="font-family:'Cairo';">اللاعبون (${Object.keys(players).length})</h3>
