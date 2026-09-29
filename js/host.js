@@ -78,28 +78,49 @@ function renderHostLobby(code, room){
   const playersListHtml = Object.values(players).map(p => {
     const tClass = p.team ? `team-${p.team}` : '';
     const tText = p.team ? ` [فريق ${p.team}]` : '';
-    return `<span class="chip ${tClass}">${escapeHtml(p.name)}${tText}</span>`;
+    return `<span class="chip host-player-chip ${tClass}"><span class="host-player-dot"></span>${escapeHtml(p.name)}${tText}</span>`;
   }).join('');
+  const playerCount = Object.keys(players).length;
 
   document.getElementById('stage').innerHTML = `
-    <p style="margin:0; color:var(--text-dim);">رمز الغرفة</p>
-    <div class="code-box"><p class="room-code">${code}</p></div>
-    <div class="join-row">
-      <div class="join-info">
-        <span class="join-kicker">انضم إلى اللعبة</span>
-        <h3>امسح الرمز أو أدخل رقم الغرفة</h3>
-        <div class="link-text">${joinUrl(code)}</div>
-        <button class="btn btn-ghost" id="copyBtn">نسخ الرابط</button>
-      </div>
-      <div class="join-qr"><span>امسح للانضمام</span><div id="qr"></div></div>
-    </div>
-    <div class="players-box">
-      <h3 style="font-family:'Cairo';">اللاعبون (${Object.keys(players).length})</h3>
-      <div>${playersListHtml || '<span class="muted">بانتظار انضمام اللاعبين…</span>'}</div>
-    </div>
-    <div class="players-box">
-      <h3 style="font-family:'Cairo';">اختر لعبة لعرض شرحها والبدء</h3>
-      <div class="games-grid">${cardsHtml}</div>
+    <div class="host-lobby">
+      <header class="host-welcome">
+        <span class="host-eyebrow"><span class="host-live-dot"></span> مساحة المنظم</span>
+        <h1>جهّزوا أجواء اللعب</h1>
+        <p>شارك رمز الغرفة، تابع انضمام أصدقائك، ثم اختَر اللعبة.</p>
+      </header>
+      <section class="host-room-grid" aria-label="معلومات الغرفة والانضمام">
+        <div class="host-room-card">
+          <span class="host-section-kicker">رمز الغرفة</span>
+          <p class="room-code">${code}</p>
+          <div class="host-room-status"><span class="host-live-dot"></span> الغرفة نشطة <span class="host-status-separator">•</span> ${playerCount} لاعب</div>
+        </div>
+        <div class="join-row">
+          <div class="join-info">
+            <span class="join-kicker">انضم إلى اللعبة</span>
+            <h3>امسح الرمز أو افتح الرابط</h3>
+            <div class="link-text">${joinUrl(code)}</div>
+            <button class="btn btn-ghost" id="copyBtn">نسخ رابط الانضمام</button>
+          </div>
+          <div class="join-qr"><span>امسح للانضمام</span><div id="qr"></div></div>
+        </div>
+      </section>
+
+      <section class="host-panel">
+        <div class="host-section-heading">
+          <div><span class="host-section-kicker">الردهة</span><h2>اللاعبون</h2><p>الأصدقاء الموجودون في الغرفة الآن</p></div>
+          <span class="host-count">${playerCount}</span>
+        </div>
+        <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>بانتظار أول لاعب</span><small>أرسل رمز الغرفة أو امسح رمز QR للانضمام</small></div>'}</div>
+      </section>
+
+      <section class="host-panel host-games-panel">
+        <div class="host-section-heading">
+          <div><span class="host-section-kicker">اختروا وجهتكم</span><h2>الألعاب</h2><p>اختر لعبة لعرض تفاصيلها والتحكم في بدايتها</p></div>
+          <span class="host-game-mark" aria-hidden="true">✦</span>
+        </div>
+        <div class="games-grid">${cardsHtml}</div>
+      </section>
     </div>
   `;
   new QRCode(document.getElementById('qr'), { text: joinUrl(code), width:120, height:120 });
