@@ -88,6 +88,9 @@ window.policeInvestigate = function(code, myId, targetId){
   const mRef = db.ref('rooms/'+code+'/mafia');
   mRef.once('value', snap => {
     const m = snap.val();
+    // الشرطي يحقق مرة واحدة فقط في الليلة، ولا يحقق خارج دوره
+    if (!m || m.phase !== 'night_police' || m.roles[myId] !== 'police') return;
+    if (m.policeResults && m.policeResults[myId] && m.policeResults[myId].round === m.round) return;
     const isMafia = m.roles[targetId] === 'mafia';
     mRef.child('policeResults/'+myId).set({ targetId, isMafia, round: m.round });
   });
@@ -132,7 +135,7 @@ function renderMafiaHost(code, room){
     control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة </button>`;
   }
 
-  const rolesHtml = Object.keys(players).map(id => {
+  const rolesHtml = Object.keys(m.roles||{}).filter(id=>players[id]).map(id => {
     const dead = !m.alive[id];
     const rm = ROLE_META[m.roles[id]];
     return `<span class="chip ${dead?'dead':''}">${escapeHtml(players[id].name)} — ${rm?rm.icon+' '+rm.name:''}</span>`;
@@ -156,6 +159,10 @@ function renderMafiaPlayer(code, myId, name, room){
   const m = room.mafia; if (!m) return;
   const players = room.players || {};
   const myRole = m.roles[myId];
+  if (!myRole){
+    app.innerHTML = `<div class="phone"><div class="card"><h2>أنت متفرج</h2><p class="muted">انضممت بعد توزيع الأدوار. تابع شاشة الحكم.</p></div></div>`;
+    return;
+  }
   const rm = ROLE_META[myRole];
   const iAmAlive = !!m.alive[myId];
   const aliveIds = Object.keys(m.alive||{}).filter(id=>m.alive[id]);
@@ -206,9 +213,9 @@ function renderMafiaPlayer(code, myId, name, room){
       app.innerHTML = `<div class="phone"><div class="card">
         <h2 style="font-family:'Cairo';"> اختر من تحقق معه</h2>
         <div class="target-list">${targets.map(id=>`
-          <button class="target-btn ${myResult && myResult.targetId===id?'picked':''}" onclick="policeInvestigate('${code}','${myId}','${id}')">${escapeHtml(players[id].name)}</button>
+          <button class="target-btn ${myResult && myResult.targetId===id?'picked':''}" ${myResult?'disabled':''} onclick="policeInvestigate('${code}','${myId}','${id}')">${escapeHtml(players[id].name)}</button>
         `).join('')}</div>
-        ${myResult ? `<p class="muted" style="font-size:16px; font-weight:700;">${escapeHtml(players[myResult.targetId].name)}${myResult.isMafia ? 'هو من المافيا ' : 'ليس من المافيا '}</p>` : ''}
+        ${myResult ? `<p class="muted" style="font-size:16px; font-weight:700;">${escapeHtml(players[myResult.targetId]?.name||'')} ${myResult.isMafia ? 'هو من المافيا' : 'ليس من المافيا'}</p>` : ''}
       </div></div>`;
     } else {
       app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> أغلق عينيك</h2><p class="muted">الشرطي يحقق الآن…</p></div></div>`;
@@ -250,7 +257,7 @@ function renderMafiaPlayer(code, myId, name, room){
     app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${txt}</h2><p class="muted">الجولة التالية تبدأ قريبًا…</p></div></div>`;
 
   } else if (m.phase==='ended'){
-    const allRoles = Object.keys(players).map(id=>`${escapeHtml(players[id].name)}: ${ROLE_META[m.roles[id]].icon} ${ROLE_META[m.roles[id]].name}`).join('<br>');
+    const allRoles = Object.keys(m.roles).filter(id=>players[id]).map(id=>`${escapeHtml(players[id].name)}: ${ROLE_META[m.roles[id]].icon} ${ROLE_META[m.roles[id]].name}`).join('<br>');
     app.innerHTML = `<div class="phone"><div class="card">
       <h2 style="font-family:'Cairo';">${m.winner==='mafia' ? ' فازت المافيا!' : ' فاز المواطنون!'}</h2>
       <p class="muted">${allRoles}</p>

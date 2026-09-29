@@ -16,7 +16,7 @@ function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 function renderIllustration(wordText){
   const found = WORD_BANK.find(x => x.w === wordText);
   if (found && found.img) {
-    return `<img src="${found.img}" class="illustration-img" alt="${escapeHtml(wordText)}" />`;
+    return `<img src="${found.img}" class="illustration-img" alt="${escapeHtml(wordText)}" onerror="const d=document.createElement('div');d.className='illustration-fallback';d.textContent=this.alt;this.replaceWith(d)" />`;
   }
   return `<div class="illustration-fallback">${escapeHtml(found ? found.e : wordText)}</div>`;
 }
@@ -50,12 +50,16 @@ function drawSegment(ctx, canvas, s){
   });
   ctx.stroke();
 }
+const mirrorRefs = {};
+function stopMirrorCanvases(){ Object.values(mirrorRefs).forEach(r => r.off('value')); Object.keys(mirrorRefs).forEach(k => delete mirrorRefs[k]); }
+function stopHostTimerWatch(){ if (hostTimerInterval){ clearInterval(hostTimerInterval); hostTimerInterval = null; } }
 function mirrorCanvasFrom(strokeKey, canvasId){
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const sRef = db.ref('strokes/'+strokeKey);
   sRef.off('value');
+  mirrorRefs[canvasId] = sRef;
   sRef.on('value', snap => {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     Object.values(snap.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
@@ -114,24 +118,25 @@ function teamSelectorHtml(game, room, code, myId, isHost){
     </div>`;
 }
 
-function gameDetailHtml(game, room, code, myId, isHost){
+function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const players = room.players || {};
   const totalPlayers = Object.keys(players).length;
 
   return `
     <div class="game-detail">
-      <button class="btn btn-ghost" onclick="${isHost ? 'hideHostGameDetail()' : 'hideGameDetail()'}">→ رجوع</button>
+      ${isHost ? '<button class="btn btn-ghost back-btn" onclick="hideHostGameDetail()">→ رجوع</button>' : ''}
       <div class="detail-icon">${gameIconHtml(game, 'detail-icon-image')}</div>
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
       <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
+      ${inviteHtml}
       ${teamSelectorHtml(game, room, code, myId, isHost)}
       ${isHost ? `<div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">اللاعبون (${totalPlayers})</h3><div>${Object.values(players).map(p => `<span class="chip">${escapeHtml(p.name)}</span>`).join('') || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost
           ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
-          : `<button class="btn btn-ghost" onclick="hideGameDetail()">العودة إلى الألعاب</button>`}
+          : ''}
       </div>
     </div>
   `;
@@ -140,3 +145,42 @@ window.toggleReady = function(code, myId, gameId){
   const ref = db.ref('rooms/'+code+'/votes/'+myId);
   ref.once('value', snap => { snap.val() === gameId ? ref.remove() : ref.set(gameId); });
 };
+
+/* =====================================================================
+   بطاقة دعوة اللاعبين: رمز QR + زر نسخ الرابط (+ مشاركة على الجوال)
+   ===================================================================== */
+function joinCardHtml(id, url){
+  const share = navigator.share ? `<button type="button" class="btn btn-ghost" data-share>مشاركة</button>` : '';
+  return `<section class="invite-card" id="${id}">
+    <div class="invite-qr" id="${id}Qr" role="img" aria-label="رمز QR للانضمام"></div>
+    <div class="invite-body">
+      <h2>دعوة اللاعبين</h2>
+      <p>امسح الرمز بالجوال، أو انسخ الرابط وأرسله في مجموعتكم.</p>
+      <div class="invite-link" dir="ltr" title="${escapeHtml(url)}">${escapeHtml(url)}</div>
+      <div class="invite-actions"><button type="button" class="btn" data-copy>نسخ الرابط</button>${share}</div>
+    </div>
+  </section>`;
+}
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; } catch (_) {}
+  const t = document.createElement('textarea');
+  t.value = text; t.setAttribute('readonly',''); t.style.cssText = 'position:fixed;top:0;opacity:0';
+  document.body.appendChild(t); t.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+  t.remove(); return ok;
+}
+function initJoinCard(id, url){
+  const root = document.getElementById(id); if (!root) return;
+  const qr = document.getElementById(id + 'Qr');
+  if (qr && !qr.firstChild && window.QRCode) new QRCode(qr, { text:url, width:132, height:132, correctLevel:QRCode.CorrectLevel.M });
+  const copy = root.querySelector('[data-copy]');
+  copy.onclick = async () => {
+    const ok = await copyText(url);
+    copy.textContent = ok ? 'تم نسخ الرابط ✓' : 'تعذّر النسخ، انسخه يدويًا';
+    copy.classList.toggle('is-done', ok);
+    clearTimeout(copy._t);
+    copy._t = setTimeout(() => { copy.textContent = 'نسخ الرابط'; copy.classList.remove('is-done'); }, 2200);
+  };
+  const share = root.querySelector('[data-share]');
+  if (share) share.onclick = () => navigator.share({ title:'انضم إلى اللعبة', url }).catch(() => {});
+}

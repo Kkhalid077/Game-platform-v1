@@ -3,6 +3,7 @@
    ===================================================================== */
 let rtcHostCode=null,rtcHostSession=null,rtcHostSignals=null,rtcHostSignalHandler=null,rtcHostPeers=new Map(),rtcHostState=null;
 let rtcPlayerCode=null,rtcPlayerId=null,rtcPlayerSession=null,rtcPlayerSignal=null,rtcPlayerConnection=null,rtcPlayerChannel=null,rtcPlayerState=null,rtcPlayerStatus='idle';
+let rtcHostFallback=null,rtcHostFallbackHandler=null;
 let buzzerServerTimeOffset=0;
 db.ref('.info/serverTimeOffset').on('value',snapshot=>{buzzerServerTimeOffset=Number(snapshot.val())||0;});
 function buzzerNow(){ return Date.now()+buzzerServerTimeOffset; }
@@ -17,6 +18,8 @@ function connectedRtcPlayers(){return [...rtcHostPeers.values()].filter(peer=>pe
 function publishRtcHostState(){
   const payload=JSON.stringify({type:'state',state:rtcHostState});
   for(const peer of rtcHostPeers.values())if(peer.channel&&peer.channel.readyState==='open')try{peer.channel.send(payload);}catch(error){console.warn('Unable to send buzzer state',error);}
+  // نسخة على Firebase: يقرؤها اللاعب إن تعذّر الاتصال المباشر
+  if(rtcHostCode&&rtcHostState)db.ref('rooms/'+rtcHostCode+'/buzzer').set(rtcHostState).catch(()=>{});
   if(rtcHostCode&&lastHostRoom)renderBuzzerHost(rtcHostCode,lastHostRoom,rtcHostState);
 }
 function handleRtcHostMessage(signalKey,peer,event){
@@ -53,12 +56,21 @@ function startBuzzerRtcHost(code,session,room){
   rtcHostSignals=db.ref(`rooms/${code}/buzzerRtc/${session}`);
   rtcHostSignalHandler=snapshot=>acceptRtcOffer(snapshot.key,snapshot,session);
   rtcHostSignals.on('child_added',rtcHostSignalHandler);
+  // مسار احتياطي: ضغطات اللاعبين الذين لم ينجح اتصالهم المباشر تصل عبر Firebase
+  rtcHostFallback=db.ref(`rooms/${code}/buzzerFallback/${session}`);
+  rtcHostFallbackHandler=snap=>{
+    const press=snap.val();
+    if(!press||!rtcHostState||press.round!==(rtcHostState.round||0)||rtcHostState.locked||rtcHostState.winner)return;
+    if(!lastHostRoom?.players?.[press.playerId])return;
+    rtcHostState.winner=press.playerId;rtcHostState.pressedAt=Date.now();publishRtcHostState();
+  };
+  rtcHostFallback.on('child_added',rtcHostFallbackHandler);
   return true;
 }
 function closeBuzzerRtcHost(){
   if(rtcHostSignals&&rtcHostSignalHandler)rtcHostSignals.off('child_added',rtcHostSignalHandler);
   for(const peer of rtcHostPeers.values())peer.connection.close();
-  rtcHostPeers.clear();rtcHostSignals=null;rtcHostSignalHandler=null;rtcHostCode=null;rtcHostSession=null;rtcHostState=null;
+  rtcHostPeers.clear();if(rtcHostFallback&&rtcHostFallbackHandler)rtcHostFallback.off('child_added',rtcHostFallbackHandler);rtcHostFallback=null;rtcHostFallbackHandler=null;rtcHostSignals=null;rtcHostSignalHandler=null;rtcHostCode=null;rtcHostSession=null;rtcHostState=null;
 }
 async function startBuzzerRtcPlayer(code,playerId,session){
   if(!window.RTCPeerConnection||!session)return false;
@@ -110,20 +122,19 @@ function renderBuzzerHost(code, room, directState){
   if(state.winner&&state.winner!==lastBuzzerWinner){lastBuzzerWinner=state.winner;buzzerPlayWinner();}
   else if(!state.winner)lastBuzzerWinner=null;
   if(!document.getElementById('buzzerHostRoot')){
+    const inviteUrl=joinGameUrl(code,'buzzer');
     app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
-      <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
-      <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>جرس الإجابة</h1>
-      <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
-      <p class="muted">يسجّل اللاعبون أسماءهم من رابط الجرس، ثم يضغطون من هواتفهم للإجابة.</p>
-      <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين. لأفضل استجابة، اتصلوا جميعاً بشبكة Wi‑Fi نفسها.':'الاتصال المباشر غير مدعوم في هذا المتصفح؛ تُرسل الضغطات عبر Firebase.'}</p>
-      <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
+      <header class="tool-head"><button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button><div><span class="host-section-kicker">أداة مساندة</span><h1>جرس الإجابة</h1></div></header>
+      ${joinCardHtml('buzzerInvite',inviteUrl)}
+      <section id="buzzerWinner" class="buzzer-winner-card"></section>
+      <div id="buzzerTimerMount"></div>
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
       <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
-      <div id="buzzerTimerMount"></div><section id="buzzerWinner" class="buzzer-winner-card"></section>
       <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><div id="buzzerRoster"></div></section>
+      <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين لأسرع استجابة (على شبكة Wi‑Fi نفسها). وإن تعذّر الاتصال المباشر لأي لاعب يعمل جرسه تلقائيًا عبر الإنترنت.':'تُرسل الضغطات عبر Firebase لأن الاتصال المباشر غير مدعوم في هذا المتصفح.'}</p>
+      <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
     </main></div>`;
-    const qr=document.getElementById('buzzerQr');
-    if(qr) new QRCode(qr,{text:joinGameUrl(code,'buzzer'),width:88,height:88});
+    initJoinCard('buzzerInvite',inviteUrl);
   }
   const peerCount=document.getElementById('buzzerPeerCount');
   if(peerCount)peerCount.textContent=connectedRtcPlayers();
@@ -150,19 +161,26 @@ function renderBuzzerHost(code, room, directState){
   startBuzzerTimerDisplay();
 }
 
+function rtcPlayerReady(){return !!(rtcPlayerChannel&&rtcPlayerChannel.readyState==='open');}
 function renderBuzzerPlayer(code, myId, name, room, directState){
   if(room.buzzerTransport==='rtc')startBuzzerRtcPlayer(code,myId,room.buzzerSession);
-  const state=buzzerState(room,directState||(rtcPlayerCode===code?rtcPlayerState:null)), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
+  // الاتصال المباشر إن كان جاهزًا، وإلا نسخة Firebase التي ينشرها المنظّم
+  const direct=directState||(rtcPlayerCode===code&&rtcPlayerReady()?rtcPlayerState:null);
+  const state=buzzerState(room,direct), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
   if(!document.getElementById('buzzerPlayerRoot')){
-    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">جرس الإجابة</span><h1>أهلاً ${escapeHtml(name)}</h1><p class="buzzer-network-note">لأفضل استجابة، تأكد أن هاتفك وجهاز المنظّم على شبكة Wi‑Fi نفسها.</p><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
+    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><div><span class="host-section-kicker">جرس الإجابة</span><h1>أهلاً ${escapeHtml(name)}</h1></div><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p><p id="buzzerConn" class="buzzer-conn"></p></main></div>`;
   }
   const button=document.getElementById('buzzerDome');
-  const rtcExpected=room.buzzerTransport==='rtc',rtcSupported=!!window.RTCPeerConnection,rtcConnected=rtcPlayerChannel&&rtcPlayerChannel.readyState==='open';
-  const rtcUnavailable=rtcExpected&&!rtcSupported;
-  button.disabled=!!(state.locked||first||(rtcExpected&&(!rtcSupported||!rtcConnected)));
-  button.classList.toggle('is-disabled',!!(state.locked||first||(rtcExpected&&(!rtcSupported||!rtcConnected))));button.classList.toggle('is-winner',won);
-  button.textContent=won?'أنت الأسرع!':first?`سبقك ${first.name}`:state.locked?'مقفلة':rtcExpected&&!rtcConnected?'جار الاتصال':'اضغط للإجابة';
-  document.getElementById('buzzerPlayerStatus').textContent=rtcUnavailable?'المتصفح لا يدعم الاتصال المباشر، حدّثه للمشاركة.':rtcExpected&&!rtcConnected?(rtcPlayerStatus==='failed'?'تعذر الاتصال المباشر. تأكد من شبكة Wi‑Fi ثم أعد فتح الأداة.':'جارٍ إنشاء اتصال مباشر...'):won?'مبروك! أنت أول من ضغط':first?`أجاب أولاً: ${first.name}`:state.locked?'انتظر فتح الأزرار من المنظم':'جاهز؟ اضغط عند معرفة الإجابة';
+  const blocked=!!(state.locked||state.winner);
+  button.disabled=blocked;
+  button.classList.toggle('is-disabled',blocked);button.classList.toggle('is-winner',won);
+  button.textContent=won?'أنت الأسرع!':first?`سبقك ${first.name}`:state.winner?'سبقك أحدهم':state.locked?'مقفلة':'اضغط للإجابة';
+  document.getElementById('buzzerPlayerStatus').textContent=won?'مبروك! أنت أول من ضغط':first?`أجاب أولاً: ${first.name}`:state.locked?'انتظر فتح الأزرار من المنظّم':'جاهز؟ اضغط عند معرفة الإجابة';
+  const conn=document.getElementById('buzzerConn');
+  if(room.buzzerTransport==='rtc'){
+    conn.textContent=rtcPlayerReady()?'اتصال مباشر ⚡':(rtcPlayerStatus==='failed'?'الاتصال عبر الإنترنت':'جارٍ إنشاء اتصال مباشر…');
+    conn.classList.toggle('is-direct',rtcPlayerReady());
+  } else conn.textContent='';
   updateBuzzerTimerMount(state.timer,'buzzerPlayerTimer');
   startBuzzerTimerDisplay();
 }
@@ -176,11 +194,15 @@ function updateBuzzerTimerMount(timer,mountId='buzzerTimerMount'){
 
 window.buzzerPress=function(code,playerId){
   buzzerUnlockAudio(); buzzerPlayTone(740,0.16);
-  if(rtcPlayerSession&&rtcPlayerChannel&&rtcPlayerChannel.readyState==='open'){
-    try{rtcPlayerChannel.send(JSON.stringify({type:'press',playerId}));}catch(error){console.error('تعذر إرسال الضغطة عبر الاتصال المباشر',error);}
+  if(rtcPlayerSession&&rtcPlayerReady()){
+    try{rtcPlayerChannel.send(JSON.stringify({type:'press',playerId}));return;}catch(error){console.error('تعذر إرسال الضغطة عبر الاتصال المباشر',error);}
+  }
+  const room=lastPlayerRoom, st=buzzerState(room||{});
+  if(room&&room.buzzerTransport==='rtc'&&room.buzzerSession){
+    if(st.locked||st.winner)return;
+    db.ref(`rooms/${code}/buzzerFallback/${room.buzzerSession}`).push({playerId,round:st.round||0});
     return;
   }
-  if(rtcPlayerSession)return;
   db.ref('rooms/'+code+'/buzzer').transaction(state=>{
     if(!state||state.locked||state.winner) return;
     state.winner=playerId; state.pressedAt=Date.now(); return state;

@@ -4,17 +4,24 @@
 let ACTIVE_HOST_CODE = null;
 let lastHostRoom = null;
 let hostDetailGameId = null;
+let hostRoomRef = null;
+function detachHostRoom(){ if (hostRoomRef){ hostRoomRef.off('value'); hostRoomRef = null; } }
+function allocateRoomCode(attempt = 0){
+  const code = makeRoomCode();
+  return db.ref('rooms/' + code).once('value').then(s => (s.exists() && attempt < 20) ? allocateRoomCode(attempt + 1) : code);
+}
 
 function renderHost(){
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
+  if (typeof detachPlayerRoom === 'function') detachPlayerRoom();
   const savedCode = localStorage.getItem('hostSessionCode');
   if (savedCode) {
     db.ref('rooms/' + savedCode).once('value', snap => {
       if (snap.exists()) initHostRoom(savedCode, false);
-      else { localStorage.removeItem('hostSessionCode'); initHostRoom(makeRoomCode(), true); }
+      else { localStorage.removeItem('hostSessionCode'); allocateRoomCode().then(c => initHostRoom(c, true)); }
     });
   } else {
-    initHostRoom(makeRoomCode(), true);
+    allocateRoomCode().then(c => initHostRoom(c, true));
   }
 }
 
@@ -28,12 +35,18 @@ function initHostRoom(code, isNew){
     <div class="stage" id="stage"></div>
   `;
 
+  detachHostRoom();
+  hostRoomRef = roomRef;
   roomRef.on('value', snap => dispatchHostRender(code, snap.val()));
 }
 
 function dispatchHostRender(code, room){
   if (!room) return;
   lastHostRoom = room;
+  stopHostTimerWatch();
+  if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
+  // لا نعيد رسم الردهة أثناء فتح نافذة الحساب حتى لا تُغلق أو يضيع ما كُتب فيها
+  if (room.status === 'voting' && document.getElementById('accountModal')?.classList.contains('is-open')) return;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
   if (room.status === 'voting') renderHostLobby(code, room);
   else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
@@ -51,6 +64,7 @@ window.showHostGameDetail = function(gameId){
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
 window.signOut = function(){
+  detachHostRoom();
   if (firebase.auth().currentUser) firebase.auth().signOut();
   else { localStorage.removeItem('adminGuestName'); renderGoogleSignIn(); }
 };
@@ -97,8 +111,10 @@ function accountInfoHtml(){
 function renderHostLobby(code, room){
   if (hostDetailGameId) {
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
-    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true) + (game.minPlayers > 1 ? `<section class="players-box" style="text-align:center;"><h3 style="font-family:'Cairo';">انضمام اللاعبين</h3><div id="gameInviteQr" style="display:inline-block; background:#fff; padding:8px;"></div><p class="muted">امسح الرمز أو افتح <a href="${joinGameUrl(code, game.id)}" target="_blank" rel="noopener">رابط اللعبة</a></p></section>` : '');
-    if (game.minPlayers > 1) new QRCode(document.getElementById('gameInviteQr'), { text:joinGameUrl(code, game.id), width:120, height:120 });
+    const inviteUrl = joinGameUrl(code, game.id);
+    const invite = game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
+    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true, invite);
+    if (game.minPlayers > 1) initJoinCard('gameInvite', inviteUrl);
     return;
   }
 
@@ -118,24 +134,6 @@ function renderHostLobby(code, room){
       <div class="vote-badge">الحد الأدنى ${g.minPlayers}</div>
     </div>`;
   }).join('');
-
-  // عرض اللاعبين وفرقهم
-  const playersListHtml = Object.entries(players).map(([id, p], index) => {
-    const tClass = p.team ? `team-${p.team}` : '';
-    const tText = p.team ? ` [فريق ${p.team}]` : '';
-    const hue = (index * 67 + 195) % 360;
-    const skinTones = ['#f4c7a1','#d99a72','#8d5b43','#f0b98d'];
-    const skin = skinTones[index % skinTones.length];
-    const hair = ['#302338','#171923','#60402d','#291c1b'][index % 4];
-    return `<div class="host-player-card ${tClass}">
-      <span class="host-player-avatar" style="--avatar-hue:${hue};--avatar-skin:${skin};--avatar-hair:${hair}" role="img" aria-label="صورة ${escapeHtml(p.name)}">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path class="avatar-body" d="M9 64c1-15 9-23 23-23s22 8 23 23"/><path class="avatar-neck" d="M26 39h12v10H26z"/><ellipse class="avatar-face" cx="32" cy="27" rx="15" ry="18"/><path class="avatar-hair" d="M17 27c-2-14 5-22 16-22 12 0 17 9 14 22-3-2-5-7-6-10-5 5-13 8-24 8z"/><circle cx="26" cy="28" r="1.4" fill="#34221e"/><circle cx="38" cy="28" r="1.4" fill="#34221e"/><path d="M28 35q4 3 8 0" fill="none" stroke="#9b554c" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </span>
-      <span class="host-player-info"><strong>${escapeHtml(p.name)}</strong>${tText ? `<small>${escapeHtml(tText.trim())}</small>` : ''}</span>
-      <span class="host-player-online" title="متصل"></span>
-    </div>`;
-  }).join('');
-  const playerCount = Object.keys(players).length;
 
   document.getElementById('stage').innerHTML = `
     <div class="host-dashboard">
@@ -179,11 +177,11 @@ window.startBuzzerTool = function(code){
   hostDetailGameId = null;
   if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
   const session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzerFallback:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
 };
 
 window.resetToLobby = function(code){
-  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, votes:{}, mafia:null, silentdraw:null, buzzer:null });
+  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
   db.ref('strokes/'+code+'_A').set(null);
   db.ref('strokes/'+code+'_B').set(null);
 };

@@ -6,6 +6,12 @@ let ACTIVE_ROOM_CODE = null;
 let ACTIVE_PLAYER_ID = null;
 let lastPlayerRoom = null;
 let playerDetailGameId = null;
+let playerRoomRef = null;
+function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
+function showSessionEnded(){
+  detachPlayerRoom();
+  app.innerHTML = `<div class="phone"><div class="card"><h2>انتهت الجلسة</h2><p class="muted">لم تعد هذه اللعبة متاحة. اطلب من المنظّم رابطًا جديدًا.</p></div></div>`;
+}
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
@@ -14,13 +20,18 @@ function renderPlayer(code, invitedGameId){
   const guestNameKey = `guestPlayerName_${code}_${invitedGameId || 'default'}`;
   const guestIdKey = `guestPlayerId_${code}_${invitedGameId || 'default'}`;
 
-  function attach(id, name){
+  function attach(id, name, record){
     CURRENT_PLAYER_NAME = name;
     ACTIVE_ROOM_CODE = code;
     ACTIVE_PLAYER_ID = id;
+    detachPlayerRoom();
+    playerRoomRef = roomRef;
     roomRef.on('value', snap => {
       const room = snap.val();
-      if (!room) { app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">انتهت الجلسة</h2><p class="muted">لم تعد هذه اللعبة متاحة.</p><button class="btn" style="margin-top:14px;" onclick="renderHost()">الرئيسية</button></div></div>`; return; }
+      if (!room || !room.status) { showSessionEnded(); return; }
+      // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
+      const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
+      if (inviteOpen && !(room.players && room.players[id])) roomRef.child('players/' + id).set(record);
       dispatchPlayerRender(code, id, name, room, invitedGameId);
     });
   }
@@ -40,24 +51,30 @@ function renderPlayer(code, invitedGameId){
       document.getElementById('guestNameInput').addEventListener('keydown', event => { if (event.key === 'Enter') enter(); });
       return;
     }
-    const myId = localStorage.getItem(guestIdKey) || `guest_${roomRef.child('players').push().key}`;
-    localStorage.setItem(guestIdKey, myId);
-    roomRef.child('players/' + myId).set({ name:savedName, gameId:invitedGameId, guest:true });
-    attach(myId, savedName);
+    // لا نُنشئ غرفة وهمية إذا كان الرابط قديمًا أو الرمز خاطئًا
+    roomRef.once('value').then(snap => {
+      if (!snap.exists() || !snap.val().status) { showSessionEnded(); return; }
+      const myId = localStorage.getItem(guestIdKey) || `guest_${roomRef.child('players').push().key}`;
+      localStorage.setItem(guestIdKey, myId);
+      const record = { name:savedName, gameId:invitedGameId, guest:true };
+      roomRef.child('players/' + myId).set(record);
+      attach(myId, savedName, record);
+    });
     return;
   }
 
   if (!signedInUser) { renderGoogleSignIn(); return; }
   const myId = signedInUser.uid;
   const name = (signedInUser.displayName || signedInUser.email || 'لاعب').slice(0, 30);
-  roomRef.child('players/' + myId).set({ name, gameId:null, uid:myId });
-  attach(myId, name);
+  const record = { name, gameId:null, uid:myId };
+  roomRef.child('players/' + myId).set(record);
+  attach(myId, name, record);
 }
 
 function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   lastPlayerRoom = room;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
-  if (window.cleanupSilentCanvas) window.cleanupSilentCanvas();
+  if (!(room.status === 'in_game' && room.activeGame === 'silentdraw') && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (invitedGameId) {
     renderInvitedGame(code, myId, name, room, invitedGameId);
     return;
@@ -81,7 +98,7 @@ function renderInvitedGame(code, myId, name, room, gameId){
   }
   const game = GAMES_LIST.find(g => g.id === gameId);
   if (!game) { app.innerHTML = `<div class="phone"><div class="card"><h2>رابط لعبة غير صالح</h2></div></div>`; return; }
-  if (room.status === 'in_game' && room.activeGame === gameId) {
+  if ((room.status === 'in_game' || room.status === 'trivia_setup') && room.activeGame === gameId) {
     if (gameId === 'mafia') return renderMafiaPlayer(code, myId, name, room);
     if (gameId === 'silentdraw') return renderSilentDrawPlayer(code, myId, name, room);
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
@@ -121,7 +138,6 @@ function renderPlayerGameNotice(code, myId, name, room){
   const title = game ? game.title : (room.activeTool === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
   const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
-    <button class="btn btn-ghost" onclick="hideGameDetail()">عرض الألعاب</button>
     <div class="detail-icon">${game ? gameIconHtml(game, 'detail-icon-image') : iconImageHtml('assets/icons/answer-buzzer.svg', 'detail-icon-image')}</div>
     <h2 style="font-family:'Cairo';">${escapeHtml(title)}</h2>
     <p class="muted">اللعبة بدأت. المنظّم هو من يعرض اللعبة ويتحكم بها من شاشته؛ تابعوا الشاشة الرئيسية وشاركوا معه.</p>
@@ -137,6 +153,8 @@ function setVersionFooterVisibility(visible){
 }
 
 function renderGoogleSignIn(){
+  if (typeof detachHostRoom === 'function') detachHostRoom();
+  detachPlayerRoom();
   setVersionFooterVisibility(true);
   app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><button class="btn btn-ghost" id="adminGuestBtn" style="width:100%; margin-top:10px;">دخول Admin</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
   const signIn = async () => {
@@ -145,6 +163,7 @@ function renderGoogleSignIn(){
       await firebase.auth().signInWithPopup(provider);
     }
     catch (error) {
+      if (error.code === 'auth/popup-blocked') { try { await firebase.auth().signInWithRedirect(provider); return; } catch (_) {} }
       const messages = {
         'auth/operation-not-allowed': 'تسجيل الدخول عبر Google غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method ← Google.',
         'auth/unauthorized-domain': 'نطاق الموقع الحالي غير مسموح في Firebase. أضفه في Authentication ← Settings ← Authorized domains.',
