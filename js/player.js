@@ -49,6 +49,10 @@ function dispatchPlayerRender(code, myId, name, room){
   lastPlayerRoom = room;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (window.cleanupSilentCanvas) window.cleanupSilentCanvas();
+  if (room.status === 'in_tool' && room.activeTool === 'buzzer') {
+    renderBuzzerPlayer(code, myId, name, room);
+    return;
+  }
   if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') {
     renderPlayerGameNotice(code, myId, name, room);
     return;
