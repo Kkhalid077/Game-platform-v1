@@ -113,9 +113,10 @@ function renderBuzzerHost(code, room, directState){
     app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
       <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
       <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>جرس الإجابة</h1>
-      <div class="buzzer-join"><button type="button" class="btn" id="buzzerCopyLink" onclick="copyBuzzerJoinLink('${code}')">نسخ الرابط</button><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
+      <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
       <p class="muted">يسجّل اللاعبون أسماءهم من رابط الجرس، ثم يضغطون من هواتفهم للإجابة.</p>
-      <p class="buzzer-network-note">تُرسل الضغطات عبر Firebase مباشرة — يعمل اللاعبون من أي شبكة إنترنت دون الحاجة لنفس شبكة Wi‑Fi.</p>
+      <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين. لأفضل استجابة، اتصلوا جميعاً بشبكة Wi‑Fi نفسها.':'الاتصال المباشر غير مدعوم في هذا المتصفح؛ تُرسل الضغطات عبر Firebase.'}</p>
+      <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
       <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
       <div id="buzzerTimerMount"></div><section id="buzzerWinner" class="buzzer-winner-card"></section>
@@ -124,6 +125,8 @@ function renderBuzzerHost(code, room, directState){
     const qr=document.getElementById('buzzerQr');
     if(qr) new QRCode(qr,{text:joinGameUrl(code,'buzzer'),width:88,height:88});
   }
+  const peerCount=document.getElementById('buzzerPeerCount');
+  if(peerCount)peerCount.textContent=connectedRtcPlayers();
   const lock=document.getElementById('buzzerLock');
   lock.textContent=state.locked?'فتح الأزرار':'قفل الأزرار';
   lock.onclick=()=>buzzerToggleLock(code,!state.locked);
@@ -151,7 +154,7 @@ function renderBuzzerPlayer(code, myId, name, room, directState){
   if(room.buzzerTransport==='rtc')startBuzzerRtcPlayer(code,myId,room.buzzerSession);
   const state=buzzerState(room,directState||(rtcPlayerCode===code?rtcPlayerState:null)), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
   if(!document.getElementById('buzzerPlayerRoot')){
-    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">جرس الإجابة</span><h1>أهلاً ${escapeHtml(name)}</h1><p class="buzzer-network-note">اضغط عند معرفة الإجابة — يعمل الجرس من أي اتصال إنترنت.</p><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
+    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">جرس الإجابة</span><h1>أهلاً ${escapeHtml(name)}</h1><p class="buzzer-network-note">لأفضل استجابة، تأكد أن هاتفك وجهاز المنظّم على شبكة Wi‑Fi نفسها.</p><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
   }
   const button=document.getElementById('buzzerDome');
   const rtcExpected=room.buzzerTransport==='rtc',rtcSupported=!!window.RTCPeerConnection,rtcConnected=rtcPlayerChannel&&rtcPlayerChannel.readyState==='open';
@@ -188,14 +191,6 @@ window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHo
 window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=buzzerNow()+500;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt});};
 window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('rooms/'+code+'/buzzer/timer').set(null);};
 window.buzzerFullscreen=function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.();};
-window.copyBuzzerJoinLink=function(code){
-  const url=joinGameUrl(code,'buzzer');
-  const btn=document.getElementById('buzzerCopyLink');
-  const markCopied=()=>{if(!btn)return;const label=btn.dataset.label||'نسخ الرابط';btn.dataset.label=label;btn.textContent='تم النسخ';clearTimeout(btn._copyTimer);btn._copyTimer=setTimeout(()=>{if(btn)btn.textContent=label;},1600);};
-  const fallback=()=>{const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');markCopied();}catch(e){window.prompt('انسخ رابط الجرس',url);}document.body.removeChild(ta);};
-  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(url).then(markCopied).catch(fallback);
-  else fallback();
-};
 window.buzzerToggleSound=function(){buzzerMuted=!buzzerMuted;localStorage.setItem('buzzerMuted',buzzerMuted?'1':'0');if(!buzzerMuted){buzzerUnlockAudio();buzzerPlayTone(740,0.16);}const b=document.querySelector('.buzzer-controls button:last-child');if(b)b.textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';};
 
 let buzzerAudio=null, buzzerMuted=localStorage.getItem('buzzerMuted')==='1', lastBuzzerWinner=null;
