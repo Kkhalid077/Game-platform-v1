@@ -53,7 +53,7 @@ function dispatchPlayerRender(code, myId, name, room){
   else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawPlayer(code, myId, name, room);
-  else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎮 اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
+  else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
 }
 
 window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
@@ -73,13 +73,13 @@ function renderPlayerVoting(code, myId, name, room){
     const isReady = votes[myId] === g.id;
     return `<div class="game-card ${isReady?'selected':''}" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div>
-      ${isReady ? '<div class="vote-badge" style="background:var(--green);">أنت جاهز ✓</div>' : '<div class="vote-badge">التفاصيل</div>'}
+      ${isReady ? '<div class="vote-badge" style="background:var(--green);">أنت جاهز </div>' : '<div class="vote-badge">التفاصيل</div>'}
     </div>`;
   }).join('');
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="leaveRoomAsPlayer('${code}','${myId}')">مغادرة الغرفة</button>
-    <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} 👋</h2>
+    <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} </h2>
     <p class="muted">اختر لعبة لعرض شرحها والاستعداد لها:</p>
     <div class="games-grid">${cardsHtml}</div>
     <p class="muted">بانتظار المضيف لبدء اللعبة…</p>
@@ -114,7 +114,7 @@ function renderJoinScreen(){
     <button class="btn" id="joinCodeBtn" style="width:100%; margin-top:12px;">دخول</button>
     <p class="muted" id="codeError" style="color:var(--accent-2);"></p>
     <div style="margin-top:18px; border-top:1px solid #3a3650; padding-top:14px;">
-      <button class="btn btn-ghost" id="qrScanBtn" style="width:100%;">📷 أو امسح رمز QR</button>
+      <button class="btn btn-ghost" id="qrScanBtn" style="width:100%;"> أو امسح رمز QR</button>
       <div id="qrArea" style="margin-top:12px; display:none;">
         <video id="qrVideo" style="width:100%; border-radius:12px;" playsinline muted></video>
         <p class="muted" id="qrError"></p>

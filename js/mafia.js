@@ -101,35 +101,35 @@ function renderMafiaHost(code, room){
 
   if (m.phase==='role_reveal'){
     narrator = 'كل لاعب يشاهد بطاقة دوره الآن على جواله. تأكد الجميع رأوا أدوارهم.';
-    control = `<button class="btn" onclick="mafiaNext('${code}','to_night')">ابدأ الجولة الأولى 🌙</button>`;
+    control = `<button class="btn" onclick="mafiaNext('${code}','to_night')">ابدأ الجولة الأولى </button>`;
   } else if (m.phase==='night_mafia'){
     const v = Object.keys((m.nightVotes&&m.nightVotes.mafia)||{}).length;
     narrator = `الجولة ${m.round} — اطلب من الجميع إغلاق أعينهم. المافيا يختارون ضحيتهم (${v} صوّتوا).`;
-    control = `<button class="btn" onclick="mafiaNext('${code}','to_police')">التالي: دور الشرطي 👮</button>`;
+    control = `<button class="btn" onclick="mafiaNext('${code}','to_police')">التالي: دور الشرطي </button>`;
   } else if (m.phase==='night_police'){
     narrator = 'الشرطي يختار الآن شخصًا للتحقيق معه.';
-    control = `<button class="btn" onclick="mafiaNext('${code}','to_doctor')">التالي: دور الطبيب ⚕️</button>`;
+    control = `<button class="btn" onclick="mafiaNext('${code}','to_doctor')">التالي: دور الطبيب </button>`;
   } else if (m.phase==='night_doctor'){
     narrator = 'الطبيب يختار الآن شخصًا ليحميه.';
-    control = `<button class="btn" onclick="mafiaNext('${code}','reveal')">كشف نتيجة الليل 🔦</button>`;
+    control = `<button class="btn" onclick="mafiaNext('${code}','reveal')">كشف نتيجة الليل </button>`;
   } else if (m.phase==='reveal'){
-    narrator = m.lastNightVictim ? `💀 قُتل الليلة: ${escapeHtml(players[m.lastNightVictim]?.name||'')}` : '✅ نجا الجميع الليلة!';
-    control = `<button class="btn" onclick="mafiaNext('${code}','to_discussion')">ابدأ النقاش 🗣️</button>`;
+    narrator = m.lastNightVictim ? ` قُتل الليلة: ${escapeHtml(players[m.lastNightVictim]?.name||'')}` : ' نجا الجميع الليلة!';
+    control = `<button class="btn" onclick="mafiaNext('${code}','to_discussion')">ابدأ النقاش </button>`;
   } else if (m.phase==='discussion'){
     narrator = 'افتحوا أعينكم! كل شخص يتكلم مرة واحدة الآن، ثم انتقل للتصويت.';
-    control = `<button class="btn" onclick="mafiaNext('${code}','to_voting')">ابدأ التصويت 🗳️</button>`;
+    control = `<button class="btn" onclick="mafiaNext('${code}','to_voting')">ابدأ التصويت </button>`;
   } else if (m.phase==='voting'){
     const v = Object.keys(m.dayVotes||{}).length;
     narrator = `التصويت جارٍ (${v}/${aliveIds.length} صوّتوا).`;
     control = `<button class="btn" onclick="mafiaNext('${code}','reveal_vote')">إعلان نتيجة التصويت</button>`;
   } else if (m.phase==='vote_reveal'){
     narrator = m.lastDayEliminated
-      ? `🚪 تم إخراج: ${escapeHtml(players[m.lastDayEliminated]?.name||'')} (${ROLE_META[m.roles[m.lastDayEliminated]].name})`
-      : '🤝 تعادل الأصوات — لم يخرج أحد.';
-    control = `<button class="btn" onclick="mafiaNext('${code}','to_next_round')">الجولة التالية 🌙</button>`;
+      ? ` تم إخراج: ${escapeHtml(players[m.lastDayEliminated]?.name||'')} (${ROLE_META[m.roles[m.lastDayEliminated]].name})`
+      : ' تعادل الأصوات — لم يخرج أحد.';
+    control = `<button class="btn" onclick="mafiaNext('${code}','to_next_round')">الجولة التالية </button>`;
   } else if (m.phase==='ended'){
-    narrator = m.winner==='mafia' ? '🔪 فازت المافيا!' : '🎉 فاز المواطنون!';
-    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة 🔁</button>`;
+    narrator = m.winner==='mafia' ? ' فازت المافيا!' : ' فاز المواطنون!';
+    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة </button>`;
   }
 
   const rolesHtml = Object.keys(players).map(id => {
@@ -140,9 +140,9 @@ function renderMafiaHost(code, room){
 
   document.getElementById('stage').innerHTML = `
     <div style="margin-bottom:15px;">
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')">🛑 إنهاء اللعبة والعودة للوحة التحكم</button>
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للوحة التحكم</button>
     </div>
-    <h2 style="font-family:'Cairo'; color:var(--accent);">من هم المافيا؟ 🕵️</h2>
+    <h2 style="font-family:'Cairo'; color:var(--accent);">من هم المافيا؟ </h2>
     <p class="narrator">${narrator}</p>
     ${control}
     <div class="players-box">
@@ -169,7 +169,7 @@ function renderMafiaPlayer(code, myId, name, room){
 
   if (!iAmAlive){
     app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">💀 خرجت من اللعبة</h2>
+      <h2 style="font-family:'Cairo';"> خرجت من اللعبة</h2>
       ${roleCard}
       <p class="muted">شاهد شاشة الحكم لمتابعة اللعبة.</p>
     </div></div>`;
@@ -189,14 +189,14 @@ function renderMafiaPlayer(code, myId, name, room){
       const myVote = (m.nightVotes && m.nightVotes.mafia && m.nightVotes.mafia[myId]) || null;
       const targets = aliveIds.filter(id=>id!==myId && m.roles[id]!=='mafia');
       app.innerHTML = `<div class="phone"><div class="card">
-        <h2 style="font-family:'Cairo';">🔪 اختر ضحية</h2>
+        <h2 style="font-family:'Cairo';"> اختر ضحية</h2>
         <div class="target-list">${targets.map(id=>`
           <button class="target-btn ${myVote===id?'picked':''}" onclick="mafiaVote('${code}','${myId}','${id}')">${escapeHtml(players[id].name)}</button>
         `).join('')}</div>
-        ${myVote ? '<p class="muted">تم التصويت ✓ يمكنك تغيير رأيك</p>' : ''}
+        ${myVote ? '<p class="muted">تم التصويت  يمكنك تغيير رأيك</p>' : ''}
       </div></div>`;
     } else {
-      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🌙 أغلق عينيك</h2><p class="muted">الجميع نائمون الآن…</p></div></div>`;
+      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> أغلق عينيك</h2><p class="muted">الجميع نائمون الآن…</p></div></div>`;
     }
 
   } else if (m.phase==='night_police'){
@@ -204,41 +204,41 @@ function renderMafiaPlayer(code, myId, name, room){
       const myResult = m.policeResults && m.policeResults[myId] && m.policeResults[myId].round===m.round ? m.policeResults[myId] : null;
       const targets = aliveIds.filter(id=>id!==myId);
       app.innerHTML = `<div class="phone"><div class="card">
-        <h2 style="font-family:'Cairo';">👮 اختر من تحقق معه</h2>
+        <h2 style="font-family:'Cairo';"> اختر من تحقق معه</h2>
         <div class="target-list">${targets.map(id=>`
           <button class="target-btn ${myResult && myResult.targetId===id?'picked':''}" onclick="policeInvestigate('${code}','${myId}','${id}')">${escapeHtml(players[id].name)}</button>
         `).join('')}</div>
-        ${myResult ? `<p class="muted" style="font-size:16px; font-weight:700;">${escapeHtml(players[myResult.targetId].name)}${myResult.isMafia ? 'هو من المافيا 🔴' : 'ليس من المافيا 🟢'}</p>` : ''}
+        ${myResult ? `<p class="muted" style="font-size:16px; font-weight:700;">${escapeHtml(players[myResult.targetId].name)}${myResult.isMafia ? 'هو من المافيا ' : 'ليس من المافيا '}</p>` : ''}
       </div></div>`;
     } else {
-      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🌙 أغلق عينيك</h2><p class="muted">الشرطي يحقق الآن…</p></div></div>`;
+      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> أغلق عينيك</h2><p class="muted">الشرطي يحقق الآن…</p></div></div>`;
     }
 
   } else if (m.phase==='night_doctor'){
     if (myRole==='doctor'){
       const myProtect = m.nightVotes && m.nightVotes.doctorTarget;
       app.innerHTML = `<div class="phone"><div class="card">
-        <h2 style="font-family:'Cairo';">⚕️ اختر من تحميه</h2>
+        <h2 style="font-family:'Cairo';"> اختر من تحميه</h2>
         <div class="target-list">${aliveIds.map(id=>`
           <button class="target-btn ${myProtect===id?'picked':''}" onclick="doctorProtect('${code}','${id}')">${escapeHtml(players[id].name)}${id===myId?' (أنت)':''}</button>
         `).join('')}</div>
       </div></div>`;
     } else {
-      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🌙 أغلق عينيك</h2><p class="muted">الطبيب يحمي أحدهم الآن…</p></div></div>`;
+      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> أغلق عينيك</h2><p class="muted">الطبيب يحمي أحدهم الآن…</p></div></div>`;
     }
 
   } else if (m.phase==='reveal'){
-    const txt = m.lastNightVictim ? `💀 ${escapeHtml(players[m.lastNightVictim]?.name||'')} قُتل الليلة` : '✅ نجا الجميع الليلة!';
+    const txt = m.lastNightVictim ? ` ${escapeHtml(players[m.lastNightVictim]?.name||'')} قُتل الليلة` : ' نجا الجميع الليلة!';
     app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${txt}</h2><p class="muted">استعد للنقاش…</p></div></div>`;
 
   } else if (m.phase==='discussion'){
-    app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🗣️ وقت النقاش</h2><p class="muted">تكلم عندما يأتي دورك. سيبدأ التصويت قريبًا.</p></div></div>`;
+    app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> وقت النقاش</h2><p class="muted">تكلم عندما يأتي دورك. سيبدأ التصويت قريبًا.</p></div></div>`;
 
   } else if (m.phase==='voting'){
     const myVote = m.dayVotes && m.dayVotes[myId];
     const targets = aliveIds.filter(id=>id!==myId);
     app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">🗳️ صوّت لإخراج أحد</h2>
+      <h2 style="font-family:'Cairo';"> صوّت لإخراج أحد</h2>
       <div class="target-list">
         ${targets.map(id=>`<button class="target-btn ${myVote===id?'picked':''}" onclick="dayVote('${code}','${myId}','${id}')">${escapeHtml(players[id].name)}</button>`).join('')}
         <button class="target-btn ${myVote==='abstain'?'picked':''}" onclick="dayVote('${code}','${myId}','abstain')">امتناع عن التصويت</button>
@@ -246,13 +246,13 @@ function renderMafiaPlayer(code, myId, name, room){
     </div></div>`;
 
   } else if (m.phase==='vote_reveal'){
-    const txt = m.lastDayEliminated ? `🚪 تم إخراج ${escapeHtml(players[m.lastDayEliminated]?.name||'')}` : '🤝 تعادل — لم يخرج أحد';
+    const txt = m.lastDayEliminated ? ` تم إخراج ${escapeHtml(players[m.lastDayEliminated]?.name||'')}` : ' تعادل — لم يخرج أحد';
     app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${txt}</h2><p class="muted">الجولة التالية تبدأ قريبًا…</p></div></div>`;
 
   } else if (m.phase==='ended'){
     const allRoles = Object.keys(players).map(id=>`${escapeHtml(players[id].name)}: ${ROLE_META[m.roles[id]].icon} ${ROLE_META[m.roles[id]].name}`).join('<br>');
     app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">${m.winner==='mafia' ? '🔪 فازت المافيا!' : '🎉 فاز المواطنون!'}</h2>
+      <h2 style="font-family:'Cairo';">${m.winner==='mafia' ? ' فازت المافيا!' : ' فاز المواطنون!'}</h2>
       <p class="muted">${allRoles}</p>
     </div></div>`;
   }

@@ -118,10 +118,10 @@ window.submitSilentGuess = function(code, team, actualWord){
   if (!guess) return;
   const fb = document.getElementById('guessFeedback');
   if (normalizeAr(guess) === normalizeAr(actualWord)){
-    if (fb) fb.innerHTML = '<span style="color:var(--green); font-weight:700;">🎉 صحيح! أحسنت</span>';
+    if (fb) fb.innerHTML = '<span style="color:var(--green); font-weight:700;"> صحيح! أحسنت</span>';
     window.silentDrawMarkCorrect(code, team);
   } else {
-    if (fb) fb.innerHTML = '<span style="color:var(--accent-2);">❌ ليست الكلمة، حاول مرة أخرى</span>';
+    if (fb) fb.innerHTML = '<span style="color:var(--accent-2);"> ليست الكلمة، حاول مرة أخرى</span>';
   }
   input.value = '';
 };
@@ -303,16 +303,16 @@ function renderSilentDrawHost(code, room){
 
   if (sd.phase==='round_start'){
     narrator = `الجولة ${sd.round} — الموجّهون يشاهدون صور أشكالهم الآن سرًا.`;
-    control = `<button type="button" class="btn" id="beginDrawingBtn">ابدأ الرسم <span aria-hidden="true">✏️</span></button>`;
+    control = `<button type="button" class="btn" id="beginDrawingBtn">ابدأ الرسم <span aria-hidden="true"></span></button>`;
   } else if (sd.phase==='drawing'){
-    narrator = `⏱️ <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
+    narrator = ` <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
     control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لفريق A</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لفريق B</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
   } else if (sd.phase==='round_result'){
-    narrator = `نتيجة الجولة: فريق A ${sd.results.A==='correct'?'✅':'❌'} — فريق B ${sd.results.B==='correct'?'✅':'❌'}`;
-    control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية 🔁</button>`;
+    narrator = `نتيجة الجولة: فريق A ${sd.results.A==='correct'?'':''} — فريق B ${sd.results.B==='correct'?'':''}`;
+    control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية </button>`;
   } else if (sd.phase==='ended'){
-    narrator = `🏆 فاز الفريق ${sd.winner}!`;
-    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة 🔁</button>`;
+    narrator = ` فاز الفريق ${sd.winner}!`;
+    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة </button>`;
   }
 
   if (showBoards){
@@ -321,15 +321,15 @@ function renderSilentDrawHost(code, room){
         <h4 style="font-family:'Cairo';">لوحة الرسام — فريق ${t}: ${escapeHtml(teamLabel(t))}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="340" height="300"></canvas></div>
         <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
-        <p class="muted">${sd.results[t]==='correct' ? '✅ خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? '⏳ ينتظرون التخمين' : '❌ لم يخمّنوا')}</p>
+        <p class="muted">${sd.results[t]==='correct' ? ' خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? ' ينتظرون التخمين' : ' لم يخمّنوا')}</p>
       </div>`).join('')}</div>`;
   }
 
   document.getElementById('stage').innerHTML = `
     <div style="margin-bottom:15px;">
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')">🛑 إنهاء اللعبة والعودة للوحة التحكم</button>
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للوحة التحكم</button>
     </div>
-    <h2 style="font-family:'Cairo'; color:var(--accent);">الرسم الصامت 🤫</h2>
+    <h2 style="font-family:'Cairo'; color:var(--accent);">الرسم الصامت </h2>
     <p class="narrator">${narrator}</p>
     <div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">الترتيب (الفوز عند 3 نقاط)</h3>${silentDrawRankingHtml(sd, players)}</div>
     ${boards}
@@ -355,7 +355,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
 
   if (!myTeam){
     cleanupSilentCanvas();
-    app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">👀 أنت متفرج</h2><p class="muted">انضممت بعد بدء اللعبة، شاهد شاشة الحكم.</p></div></div>`;
+    app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> أنت متفرج</h2><p class="muted">انضممت بعد بدء اللعبة، شاهد شاشة الحكم.</p></div></div>`;
     return;
   }
 
@@ -366,13 +366,13 @@ function renderSilentDrawPlayer(code, myId, name, room){
   if (sd.phase==='round_start'){
     app.innerHTML = isGuide
       ? `<div class="phone"><div class="card">
-          <h2 style="font-family:'Cairo';">أنت الموجّه 🤫</h2>
+          <h2 style="font-family:'Cairo';">أنت الموجّه </h2>
           ${renderIllustration(sd.words[myTeam])}
           <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
           <p class="muted">وضّح لـ ${escapeHtml(teammateName)} بالإشارة فقط، بدون أي كلام!</p>
         </div></div>`
       : `<div class="phone"><div class="card">
-          <h2 style="font-family:'Cairo';">أنت الرسام 🎨</h2>
+          <h2 style="font-family:'Cairo';">أنت الرسام </h2>
           <p class="muted">${escapeHtml(teammateName)} يعرف الشكل وسيوجهك بالإشارة فقط. راقبه جيدًا وحاول تكتشف ماذا ترسم!</p>
         </div></div>`;
     return;
@@ -386,12 +386,12 @@ function renderSilentDrawPlayer(code, myId, name, room){
         ${renderIllustration(sd.words[myTeam])}
         <p style="font-family:'Cairo'; font-size:26px; color:var(--accent);">${escapeHtml(sd.words[myTeam])}</p>
         <p class="muted">بدون كلام! فقط إشارات لصديقك.</p>
-        <p class="muted">${sd.results[myTeam]==='correct' ? '🎉 صديقك خمّن الكلمة!' : ''}</p>
+        <p class="muted">${sd.results[myTeam]==='correct' ? ' صديقك خمّن الكلمة!' : ''}</p>
       </div></div>`;
     } else if (sd.results[myTeam] === 'correct') {
       cleanupSilentCanvas();
       app.innerHTML = `<div class="phone"><div class="card">
-        <h2 style="font-family:'Cairo'; color:var(--green);">🎉 أحسنت! خمّنت صح</h2>
+        <h2 style="font-family:'Cairo'; color:var(--green);"> أحسنت! خمّنت صح</h2>
         <p class="muted">بانتظار الفريق الآخر أو انتهاء الجولة…</p>
       </div></div>`;
     } else {
@@ -403,7 +403,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
           </div>
           <button class="btn btn-ghost" ${sd.undosLeft[myTeam]<=0?'disabled':''} onclick="silentDrawUndo('${code}','${myTeam}')" style="margin-top:10px;">تراجع (${sd.undosLeft[myTeam]} متبقية)</button>
           <input type="text" id="guessInput" placeholder="ماذا ترسم؟ اكتب تخمينك" style="margin-top:14px;" />
-          <button class="btn" style="width:100%; margin-top:8px;" onclick="submitSilentGuess('${code}','${myTeam}','${escapeHtml(sd.words[myTeam])}')">تحقق ✅</button>
+          <button class="btn" style="width:100%; margin-top:8px;" onclick="submitSilentGuess('${code}','${myTeam}','${escapeHtml(sd.words[myTeam])}')">تحقق </button>
           <div id="guessFeedback" class="muted" style="margin-top:8px;"></div>
         </div>
       </div>`;
@@ -415,8 +415,8 @@ function renderSilentDrawPlayer(code, myId, name, room){
   if (sd.phase==='round_result'){
     app.innerHTML = `<div class="phone"><div class="card">
       <h2 style="font-family:'Cairo';">نتيجة الجولة</h2>
-      <p class="muted">فريق A: ${sd.results.A==='correct'?'✅ صحيح':'❌ لم يخمّنوا'} — الكلمة: ${escapeHtml(sd.words.A)}</p>
-      <p class="muted">فريق B: ${sd.results.B==='correct'?'✅ صحيح':'❌ لم يخمّنوا'} — الكلمة: ${escapeHtml(sd.words.B)}</p>
+      <p class="muted">فريق A: ${sd.results.A==='correct'?' صحيح':' لم يخمّنوا'} — الكلمة: ${escapeHtml(sd.words.A)}</p>
+      <p class="muted">فريق B: ${sd.results.B==='correct'?' صحيح':' لم يخمّنوا'} — الكلمة: ${escapeHtml(sd.words.B)}</p>
       <div class="players-box">${silentDrawRankingHtml(sd, players)}</div>
       <p class="muted">الجولة التالية تبدأ قريبًا…</p>
     </div></div>`;
@@ -425,7 +425,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
 
   if (sd.phase==='ended'){
     app.innerHTML = `<div class="phone"><div class="card">
-      <h2 style="font-family:'Cairo';">🏆 فاز الفريق ${sd.winner}!</h2>
+      <h2 style="font-family:'Cairo';"> فاز الفريق ${sd.winner}!</h2>
       <div class="players-box">${silentDrawRankingHtml(sd, players)}</div>
     </div></div>`;
   }

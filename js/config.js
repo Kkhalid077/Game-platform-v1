@@ -20,7 +20,7 @@ const app = document.getElementById('app');
    ===================================================================== */
 const GAMES_LIST = [
   {
-    id: 'mafia', title: 'من هم المافيا؟', icon: '🕵️', available: true, minPlayers: 4,
+    id: 'mafia', title: 'من هم المافيا؟', icon: 'مافيا', available: true, minPlayers: 4,
     desc: 'لعبة استنتاج اجتماعي: مافيا تتربص بالمجموعة، وشرطي وطبيب يحاولون حمايتها.',
     rules: [
       'كل لاعب يحصل على دور سري (مافيا، شرطي، طبيب، أو مواطن) يظهر على جواله فقط.',
@@ -30,7 +30,7 @@ const GAMES_LIST = [
     ]
   },
   {
-    id: 'silentdraw', title: 'الرسم الصامت', icon: '🤫', available: true, minPlayers: 4, needsTeams: true,
+    id: 'silentdraw', title: 'الرسم الصامت', icon: 'رسم', available: true, minPlayers: 4, needsTeams: true,
     desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد صورة توضيحية ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
     rules: [
       'ينقسم اللاعبون إلى فريقين (A و B) بناءً على اختيارهم أو تلقائيًا.',
@@ -41,33 +41,33 @@ const GAMES_LIST = [
       'أول فريق يخمّن 3 كلمات صحيحة يفوز باللعبة!'
     ]
   },
-  { id: 'clicker', title: 'أسرع ضغطة',     icon: '⚡', available: false, minPlayers: 2, desc: '', rules: [] },
-  { id: 'trivia',  title: 'أسئلة وتحديات', icon: '🧠', available: false, minPlayers: 2, desc: '', rules: [] }
+  { id: 'clicker', title: 'أسرع ضغطة',     icon: 'سرعة', available: false, minPlayers: 2, desc: '', rules: [] },
+  { id: 'trivia',  title: 'أسئلة وتحديات', icon: 'أسئلة', available: false, minPlayers: 2, desc: '', rules: [] }
 ];
 
 const ROLE_META = {
-  mafia:   { name:'مافيا',  icon:'🔪', cls:'role-mafia',   desc:'تعرف على زملائك بالمافيا. كل ليلة تختارون معًا ضحية.' },
-  police:  { name:'شرطي',   icon:'👮', cls:'role-police',  desc:'كل ليلة تحقق من شخص لتعرف إن كان مافيا.' },
-  doctor:  { name:'طبيب',   icon:'⚕️', cls:'role-doctor',  desc:'كل ليلة تحمي شخصًا واحدًا من القتل.' },
-  citizen: { name:'مواطن',  icon:'🙂', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
+  mafia:   { name:'مافيا',  icon:'مافيا', cls:'role-mafia',   desc:'تعرف على زملائك بالمافيا. كل ليلة تختارون معًا ضحية.' },
+  police:  { name:'شرطي',   icon:'شرطي', cls:'role-police',  desc:'كل ليلة تحقق من شخص لتعرف إن كان مافيا.' },
+  doctor:  { name:'طبيب',   icon:'طبيب', cls:'role-doctor',  desc:'كل ليلة تحمي شخصًا واحدًا من القتل.' },
+  citizen: { name:'مواطن',  icon:'مواطن', cls:'role-citizen', desc:'ناقش، استنتج، وصوّت بذكاء لكشف المافيا.' }
 };
 
 // بنك الكلمات والصور
 const WORD_BANK = [
-  {w:'تفاحة', img:'https://cdn-icons-png.flaticon.com/512/415/415733.png', e:'🍎'},
-  {w:'سيارة', img:'https://cdn-icons-png.flaticon.com/512/744/744465.png', e:'🚗'},
-  {w:'شمس',   img:'https://cdn-icons-png.flaticon.com/512/869/869869.png', e:'☀️'},
-  {w:'بيتزا', img:'https://cdn-icons-png.flaticon.com/512/3595/3595455.png', e:'🍕'},
-  {w:'موزة',  img:'https://cdn-icons-png.flaticon.com/512/2909/2909761.png', e:'🍌'},
-  {w:'نجمة',  img:'https://cdn-icons-png.flaticon.com/512/1828/1828884.png', e:'⭐'},
-  {w:'قطة',   img:'https://cdn-icons-png.flaticon.com/512/616/616430.png', e:'🐱'},
-  {w:'كلب',   img:'https://cdn-icons-png.flaticon.com/512/616/616408.png', e:'🐶'},
-  {w:'طائرة', img:'https://cdn-icons-png.flaticon.com/512/789/789393.png', e:'✈️'},
-  {w:'بيت',   img:'https://cdn-icons-png.flaticon.com/512/619/619153.png', e:'🏠'},
-  {w:'مظلة',  img:'https://cdn-icons-png.flaticon.com/512/3208/3208726.png', e:'☂️'},
-  {w:'كرة',   img:'https://cdn-icons-png.flaticon.com/512/33/33736.png', e:'⚽'},
-  {w:'ساعة',  img:'https://cdn-icons-png.flaticon.com/512/2088/2088617.png', e:'⏰'},
-  {w:'هاتف',  img:'https://cdn-icons-png.flaticon.com/512/15/15874.png', e:'📱'},
-  {w:'مفتاح', img:'https://cdn-icons-png.flaticon.com/512/807/807241.png', e:'🔑'},
-  {w:'قهوة',  img:'https://cdn-icons-png.flaticon.com/512/751/751621.png', e:'☕'}
+  {w:'تفاحة', img:'https://cdn-icons-png.flaticon.com/512/415/415733.png', e:'تفاحة'},
+  {w:'سيارة', img:'https://cdn-icons-png.flaticon.com/512/744/744465.png', e:'سيارة'},
+  {w:'شمس',   img:'https://cdn-icons-png.flaticon.com/512/869/869869.png', e:'شمس'},
+  {w:'بيتزا', img:'https://cdn-icons-png.flaticon.com/512/3595/3595455.png', e:'بيتزا'},
+  {w:'موزة',  img:'https://cdn-icons-png.flaticon.com/512/2909/2909761.png', e:'موزة'},
+  {w:'نجمة',  img:'https://cdn-icons-png.flaticon.com/512/1828/1828884.png', e:'نجمة'},
+  {w:'قطة',   img:'https://cdn-icons-png.flaticon.com/512/616/616430.png', e:'قطة'},
+  {w:'كلب',   img:'https://cdn-icons-png.flaticon.com/512/616/616408.png', e:'كلب'},
+  {w:'طائرة', img:'https://cdn-icons-png.flaticon.com/512/789/789393.png', e:'طائرة'},
+  {w:'بيت',   img:'https://cdn-icons-png.flaticon.com/512/619/619153.png', e:'بيت'},
+  {w:'مظلة',  img:'https://cdn-icons-png.flaticon.com/512/3208/3208726.png', e:'مظلة'},
+  {w:'كرة',   img:'https://cdn-icons-png.flaticon.com/512/33/33736.png', e:'كرة'},
+  {w:'ساعة',  img:'https://cdn-icons-png.flaticon.com/512/2088/2088617.png', e:'ساعة'},
+  {w:'هاتف',  img:'https://cdn-icons-png.flaticon.com/512/15/15874.png', e:'هاتف'},
+  {w:'مفتاح', img:'https://cdn-icons-png.flaticon.com/512/807/807241.png', e:'مفتاح'},
+  {w:'قهوة',  img:'https://cdn-icons-png.flaticon.com/512/751/751621.png', e:'قهوة'}
 ];

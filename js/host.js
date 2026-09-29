@@ -125,7 +125,7 @@ function renderHostLobby(code, room){
         <div class="games-grid host-games-grid">${cardsHtml}</div>
         <section class="host-tools-section" aria-labelledby="host-tools-heading">
           <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">الأدوات</h2><p>أدوات تفاعلية تستخدمها أثناء الجلسة.</p></div>
-          <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">🔔</span><span class="game-title">استوديو الأسئلة</span><span class="vote-badge">أسرع ضغطة</span></button>
+          <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">زر</span><span class="game-title">استوديو الأسئلة</span><span class="vote-badge">أسرع ضغطة</span></button>
         </section>
       </main>
     </div>
@@ -136,9 +136,9 @@ function renderHostLobby(code, room){
 function renderHostGenericPlaceholder(code, room){
   const g = GAMES_LIST.find(x=>x.id===room.activeGame);
   document.getElementById('stage').innerHTML = `
-    <h2 style="font-family:'Cairo'; color:var(--accent);">🎮 ${g ? g.title : ''}</h2>
+    <h2 style="font-family:'Cairo'; color:var(--accent);"> ${g ? g.title : ''}</h2>
     <p class="muted">هذه اللعبة قيد التطوير حاليًا.</p>
-    <button class="btn btn-danger" onclick="resetToLobby('${code}')">🛑 إنهاء اللعبة والعودة للرئيسية</button>
+    <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للرئيسية</button>
   `;
 }
 
@@ -151,6 +151,7 @@ window.startGame = function(gameId, code){
 
 window.startBuzzerTool = function(code){
   hostDetailGameId = null;
+  if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
   db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', buzzer:{ winner:null, locked:false, timer:null, round:0 } });
 };
 

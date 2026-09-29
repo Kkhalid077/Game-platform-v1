@@ -346,3 +346,7 @@
   .buzzer-dome.is-winner{background:radial-gradient(circle at 34% 25%,#bbf7d0,#34d399 48%,#047857);box-shadow:0 15px 0 #065f46,0 26px 42px rgba(0,0,0,.38);color:#052e2b}
   .buzzer-player-status{font-weight:800;font-size:16px;color:var(--text-dim)}
   @media(max-width:520px){.buzzer-panel{padding:20px 15px;border-radius:20px}.buzzer-controls .btn{flex:1;min-width:130px;margin:3px}.host-tool-card{width:100%}}
+
+  .game-icon-badge{font-size:17px!important;font-weight:800}
+  .role-icon{font-family:Cairo,sans-serif;font-size:19px;font-weight:800}
+  .illustration-fallback{display:grid;place-items:center;width:140px;height:140px;margin:12px auto;border-radius:12px;background:var(--surface-2);font-family:Cairo,sans-serif;font-size:24px;font-weight:800}

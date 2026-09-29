@@ -12,7 +12,7 @@ function renderIllustration(wordText){
   if (found && found.img) {
     return `<img src="${found.img}" class="illustration-img" alt="${escapeHtml(wordText)}" />`;
   }
-  return `<div style="font-size:70px;">${found ? found.e : '❓'}</div>`;
+  return `<div class="illustration-fallback">${escapeHtml(found ? found.e : wordText)}</div>`;
 }
 
 function normalizeAr(s){
@@ -90,8 +90,8 @@ function teamSelectorHtml(game, room, code, myId, isHost){
     return `
       <div class="team-selector-box">
         <p style="margin:0 0 10px 0; font-weight:700; font-size:14px;">توزيع الفرق حتى الآن:</p>
-        <div class="chip team-A">🔵 فريق A: ${teamAName.join('، ') || 'لا أحد بعد'}</div>
-        <div class="chip team-B">🔴 فريق B: ${teamBName.join('، ') || 'لا أحد بعد'}</div>
+        <div class="chip team-A"> فريق A: ${teamAName.join('، ') || 'لا أحد بعد'}</div>
+        <div class="chip team-B"> فريق B: ${teamBName.join('، ') || 'لا أحد بعد'}</div>
         <div class="muted">من لم يختر فريقًا سيُوزَّع تلقائيًا عند البدء</div>
       </div>`;
   }
@@ -132,7 +132,7 @@ function gameDetailHtml(game, room, code, myId, isHost){
       <div style="text-align:center; margin-top:10px;">
         ${isHost
           ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
-          : `<button class="btn ${iAmReady ? 'btn-ghost' : ''}" onclick="toggleReady('${code}','${myId}','${game.id}')">${iAmReady ? 'إلغاء الجهوزية' : 'أنا جاهز ✅'}</button>`}
+          : `<button class="btn ${iAmReady ? 'btn-ghost' : ''}" onclick="toggleReady('${code}','${myId}','${game.id}')">${iAmReady ? 'إلغاء الجهوزية' : 'أنا جاهز '}</button>`}
       </div>
     </div>
   `;
