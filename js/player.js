@@ -8,6 +8,7 @@ let lastPlayerRoom = null;
 let playerDetailGameId = null;
 
 function renderPlayer(code){
+  setVersionFooterVisibility(false);
   const roomRef = db.ref('rooms/' + code);
   let myId = localStorage.getItem('player_id_' + code);
 
@@ -84,6 +85,7 @@ function renderPlayerVoting(code, myId, name, room){
 
 /* ================= ENTRY POINT ================= */
 function renderEntryChoice(){
+  setVersionFooterVisibility(true);
   app.innerHTML = `<div class="phone"><div class="card">
     <h2 style="font-family:'Cairo';">منصة الألعاب</h2>
     <p class="muted">اختر دورك:</p>
@@ -92,6 +94,12 @@ function renderEntryChoice(){
   </div></div>`;
   document.getElementById('chooseHostBtn').onclick = () => renderHost();
   document.getElementById('choosePlayerBtn').onclick = () => renderJoinScreen();
+}
+
+function setVersionFooterVisibility(visible){
+  const footer = document.querySelector('.site-footer');
+  if (footer) footer.classList.toggle('is-entry-visible', visible);
+  document.body.classList.toggle('has-version-footer', visible);
 }
 
 function renderJoinScreen(){

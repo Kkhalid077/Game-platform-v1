@@ -6,6 +6,7 @@ let lastHostRoom = null;
 let hostDetailGameId = null;
 
 function renderHost(){
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
   const savedCode = localStorage.getItem('hostRoomCode');
   if (savedCode) {
     db.ref('rooms/' + savedCode).once('value', snap => {
