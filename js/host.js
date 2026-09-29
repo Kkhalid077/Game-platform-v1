@@ -28,7 +28,6 @@ function initHostRoom(code, isNew){
     <div class="top-bar" style="display:flex; gap:8px;">
       <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" id="leaveRoomBtn">مغادرة الغرفة</button>
     </div>
-    <div class="brand">🎮 منصة <b>الألعاب</b></div>
     <div class="stage" id="stage"></div>
   `;
   document.getElementById('leaveRoomBtn').onclick = () => hostLeaveRoom(code);
