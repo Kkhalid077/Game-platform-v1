@@ -3,6 +3,12 @@
   const footer = document.querySelector('.site-footer');
   if (!footer) return;
 
+  // Show the last known value immediately while the source fingerprint loads.
+  try {
+    const savedVersion = localStorage.getItem('gamePlatformVersion');
+    if (savedVersion) footer.textContent = `رقم الإصدار ${savedVersion}`;
+  } catch (_) {}
+
   const files = [
     'index.html',
     'css/style.css',
