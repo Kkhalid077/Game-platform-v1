@@ -75,10 +75,20 @@ function renderHostLobby(code, room){
   }).join('');
 
   // عرض اللاعبين وفرقهم
-  const playersListHtml = Object.values(players).map(p => {
+  const playersListHtml = Object.entries(players).map(([id, p], index) => {
     const tClass = p.team ? `team-${p.team}` : '';
     const tText = p.team ? ` [فريق ${p.team}]` : '';
-    return `<span class="chip host-player-chip ${tClass}"><span class="host-player-dot"></span>${escapeHtml(p.name)}${tText}</span>`;
+    const hue = (index * 67 + 195) % 360;
+    const skinTones = ['#f4c7a1','#d99a72','#8d5b43','#f0b98d'];
+    const skin = skinTones[index % skinTones.length];
+    const hair = ['#302338','#171923','#60402d','#291c1b'][index % 4];
+    return `<div class="host-player-card ${tClass}">
+      <span class="host-player-avatar" style="--avatar-hue:${hue};--avatar-skin:${skin};--avatar-hair:${hair}" role="img" aria-label="صورة ${escapeHtml(p.name)}">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><path class="avatar-body" d="M9 64c1-15 9-23 23-23s22 8 23 23"/><path class="avatar-neck" d="M26 39h12v10H26z"/><ellipse class="avatar-face" cx="32" cy="27" rx="15" ry="18"/><path class="avatar-hair" d="M17 27c-2-14 5-22 16-22 12 0 17 9 14 22-3-2-5-7-6-10-5 5-13 8-24 8z"/><circle cx="26" cy="28" r="1.4" fill="#34221e"/><circle cx="38" cy="28" r="1.4" fill="#34221e"/><path d="M28 35q4 3 8 0" fill="none" stroke="#9b554c" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
+      <span class="host-player-info"><strong>${escapeHtml(p.name)}</strong>${tText ? `<small>${escapeHtml(tText.trim())}</small>` : ''}</span>
+      <span class="host-player-online" title="متصل"></span>
+    </div>`;
   }).join('');
   const playerCount = Object.keys(players).length;
 
@@ -86,8 +96,8 @@ function renderHostLobby(code, room){
     <div class="host-lobby">
       <header class="host-welcome">
         <span class="host-eyebrow"><span class="host-live-dot"></span> مساحة المنظم</span>
-        <h1>جهّزوا أجواء اللعب</h1>
-        <p>شارك رمز الغرفة، تابع انضمام أصدقائك، ثم اختَر اللعبة.</p>
+        <h1>إدارة الغرفة</h1>
+        <p>شارك رمز الدعوة، تابع اللاعبين، واختروا اللعبة.</p>
       </header>
       <section class="host-room-grid" aria-label="معلومات الغرفة والانضمام">
         <div class="host-room-card">

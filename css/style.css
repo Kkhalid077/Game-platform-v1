@@ -189,9 +189,9 @@
   .host-welcome h1{font-family:'Cairo',sans-serif;font-size:clamp(26px,4vw,38px);margin:7px 0 2px;line-height:1.45}
   .host-welcome p,.host-section-heading p{color:var(--text-dim);font-size:14px;margin:3px 0 0}
   .host-live-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#34d399;box-shadow:0 0 12px rgba(52,211,153,.8)}
-  .host-room-grid{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr);gap:16px;align-items:stretch}
+  .host-room-grid{direction:ltr;display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr);gap:16px;align-items:stretch}
   .host-room-card,.host-panel{border:1px solid rgba(196,181,253,.16);background:linear-gradient(145deg,rgba(42,32,72,.94),rgba(25,20,48,.96));backdrop-filter:blur(12px);border-radius:24px;box-shadow:0 16px 38px rgba(0,0,0,.2)}
-  .host-room-card{padding:22px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:188px}
+  .host-room-card{direction:rtl;padding:22px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:188px}
   .host-room-card .room-code{font-size:clamp(38px,5vw,54px);line-height:1.3;margin:5px 0 8px}
   .host-room-status{display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:13px}
   .host-status-separator{color:#7c6cf0}
@@ -202,9 +202,20 @@
   .host-section-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
   .host-section-heading h2{font-family:'Cairo',sans-serif;font-size:21px;margin:2px 0 0}
   .host-count,.host-game-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:rgba(167,139,250,.14);border:1px solid rgba(196,181,253,.2);color:#c4b5fd;font-family:'Cairo';font-weight:900;font-size:18px;flex:none}
-  .host-player-list{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:50px}
-  .host-player-chip{margin:0;padding:9px 14px;display:inline-flex;align-items:center;gap:8px}
-  .host-player-dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.65)}
+  .host-player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;min-height:50px}
+  .host-player-card{direction:rtl;display:flex;align-items:center;gap:11px;min-width:0;padding:10px 12px;border:1px solid rgba(196,181,253,.14);border-radius:17px;background:rgba(255,255,255,.035);transition:transform .18s ease,border-color .18s ease}
+  .host-player-card:hover{transform:translateY(-2px);border-color:rgba(196,181,253,.4)}
+  .host-player-card.team-A{border-color:rgba(59,130,246,.42)}
+  .host-player-card.team-B{border-color:rgba(251,113,133,.42)}
+  .host-player-avatar{width:48px;height:48px;display:grid;place-items:center;flex:none;border-radius:15px;overflow:hidden;background:linear-gradient(145deg,hsl(var(--avatar-hue) 72% 56%),hsl(calc(var(--avatar-hue) + 42) 70% 35%));box-shadow:inset 0 1px rgba(255,255,255,.28),0 5px 12px rgba(0,0,0,.2)}
+  .host-player-avatar svg{width:48px;height:48px}
+  .avatar-body{fill:rgba(255,255,255,.88)}
+  .avatar-neck,.avatar-face{fill:var(--avatar-skin)}
+  .avatar-hair{fill:var(--avatar-hair)}
+  .host-player-info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+  .host-player-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+  .host-player-info small{color:var(--text-dim);font-size:11px}
+  .host-player-online{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 9px rgba(52,211,153,.8);flex:none}
   .host-empty{width:100%;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;padding:18px;border:1px dashed rgba(196,181,253,.22);border-radius:16px;color:var(--text-dim);text-align:center}
   .host-empty span{font-weight:800;color:var(--text)}
   .host-empty small{font-size:12px}
