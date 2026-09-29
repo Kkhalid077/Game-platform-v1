@@ -113,7 +113,7 @@ function renderBuzzerHost(code, room, directState){
     app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
       <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
       <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>جرس الإجابة</h1>
-      <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
+      <div class="buzzer-join"><button type="button" class="btn" id="buzzerCopyLink" onclick="copyBuzzerJoinLink('${code}')">نسخ الرابط</button><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
       <p class="muted">يسجّل اللاعبون أسماءهم من رابط الجرس، ثم يضغطون من هواتفهم للإجابة.</p>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين. لأفضل استجابة، اتصلوا جميعاً بشبكة Wi‑Fi نفسها.':'الاتصال المباشر غير مدعوم في هذا المتصفح؛ تُرسل الضغطات عبر Firebase.'}</p>
       <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
@@ -191,6 +191,14 @@ window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHo
 window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=buzzerNow()+500;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt});};
 window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('rooms/'+code+'/buzzer/timer').set(null);};
 window.buzzerFullscreen=function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.();};
+window.copyBuzzerJoinLink=function(code){
+  const url=joinGameUrl(code,'buzzer');
+  const btn=document.getElementById('buzzerCopyLink');
+  const markCopied=()=>{if(!btn)return;const label=btn.dataset.label||'نسخ الرابط';btn.dataset.label=label;btn.textContent='تم النسخ';clearTimeout(btn._copyTimer);btn._copyTimer=setTimeout(()=>{if(btn)btn.textContent=label;},1600);};
+  const fallback=()=>{const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');markCopied();}catch(e){window.prompt('انسخ رابط الجرس',url);}document.body.removeChild(ta);};
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(url).then(markCopied).catch(fallback);
+  else fallback();
+};
 window.buzzerToggleSound=function(){buzzerMuted=!buzzerMuted;localStorage.setItem('buzzerMuted',buzzerMuted?'1':'0');if(!buzzerMuted){buzzerUnlockAudio();buzzerPlayTone(740,0.16);}const b=document.querySelector('.buzzer-controls button:last-child');if(b)b.textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';};
 
 let buzzerAudio=null, buzzerMuted=localStorage.getItem('buzzerMuted')==='1', lastBuzzerWinner=null;
