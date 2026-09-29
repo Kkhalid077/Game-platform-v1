@@ -116,7 +116,16 @@ function renderGoogleSignIn(){
   app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
   document.getElementById('googleSignInBtn').onclick = async () => {
     try { await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    catch (error) { document.getElementById('authError').textContent = 'تعذر تسجيل الدخول. فعّل Google من إعدادات Firebase ثم حاول مرة أخرى.'; }
+    catch (error) {
+      const messages = {
+        'auth/operation-not-allowed': 'تسجيل الدخول عبر Google غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method ← Google.',
+        'auth/unauthorized-domain': 'نطاق الموقع الحالي غير مسموح في Firebase. أضفه في Authentication ← Settings ← Authorized domains.',
+        'auth/popup-blocked': 'المتصفح حجب نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.',
+        'auth/popup-closed-by-user': 'أُغلقت نافذة تسجيل الدخول قبل إكمال العملية.'
+      };
+      console.error('Google sign-in failed:', error.code, error);
+      document.getElementById('authError').textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
+    }
   };
 }
 
