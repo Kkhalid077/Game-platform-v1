@@ -244,9 +244,9 @@
     .host-room-grid .join-info h3{font-size:15px}
   }
 
-  /* Host dashboard: room controls in a compact sidebar, games in the main area. */
+  /* Host dashboard */
   .stage:has(.host-dashboard){align-items:stretch;padding:16px;min-height:100vh}
-  .host-dashboard{direction:ltr;display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;width:100%;min-height:calc(100vh - 32px);text-align:right}
+  .host-dashboard{width:100%;min-height:calc(100vh - 32px);text-align:right}
   .host-sidebar,.host-games-main{direction:rtl;min-width:0;border:1px solid rgba(196,181,253,.14);background:linear-gradient(150deg,rgba(37,29,65,.9),rgba(21,17,42,.94));box-shadow:0 16px 42px rgba(0,0,0,.22)}
   .host-sidebar{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:20px}
   .host-room-card{min-height:0;padding:4px 4px 12px;border:0;border-bottom:1px solid rgba(196,181,253,.14);background:none;box-shadow:none;border-radius:0;align-items:center;text-align:center}
@@ -270,6 +270,15 @@
   .host-leave-button{width:100%;margin:0;padding:8px 10px;color:#fda4af;border-color:rgba(251,113,133,.38);font-size:11px}
   .host-games-main{display:flex;flex-direction:column;padding:24px 28px;border-radius:20px}
   .host-games-header{margin:0 0 18px}
+  .host-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .account-menu{position:relative;flex:none}
+  .account-button{border:1px solid rgba(196,181,253,.32);border-radius:12px;background:rgba(167,139,250,.14);color:var(--text);padding:9px 13px;font-family:'Cairo',sans-serif;font-weight:800;cursor:pointer}
+  .account-button:hover{background:rgba(167,139,250,.25)}
+  .account-popover{display:none;position:absolute;z-index:10;top:calc(100% + 8px);left:0;width:230px;padding:14px;border:1px solid rgba(196,181,253,.24);border-radius:14px;background:#211a3f;box-shadow:0 16px 34px rgba(0,0,0,.32)}
+  .account-popover.is-open{display:flex;flex-direction:column;gap:6px}
+  .account-popover strong{font-family:'Cairo',sans-serif;font-size:13px}
+  .account-popover span{direction:ltr;text-align:right;color:var(--text-dim);font-size:12px;overflow-wrap:anywhere}
+  .account-signout{width:100%;margin-top:7px;padding:7px 10px;color:#fda4af;border-color:rgba(251,113,133,.38);font-size:11px}
   .host-games-header h1{font-family:'Cairo',sans-serif;font-size:25px;line-height:1.35;margin:3px 0 0}
   .host-games-header p{color:var(--text-dim);font-size:13px;margin:2px 0 0}
   .host-games-grid{grid-template-columns:repeat(auto-fit,minmax(165px,1fr));max-width:none;width:100%;gap:13px;margin:0;align-content:start}
@@ -287,6 +296,7 @@
     .host-players-panel{max-height:136px}
     .host-leave-button{grid-column:1 / -1}
     .host-games-main{padding:17px 14px;border-radius:16px}
+    .host-page-header{align-items:flex-start}
     .host-games-header{margin-bottom:12px}
     .host-games-header h1{font-size:21px}
     .host-games-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -294,6 +304,9 @@
     .host-games-grid .game-icon-badge{width:46px;height:46px;font-size:23px}
   }
   @media(max-width:480px){
+    .host-page-header{gap:9px}
+    .account-button{padding:8px 10px;font-size:12px}
+    .account-popover{left:auto;right:0;width:min(230px,calc(100vw - 48px))}
     .host-sidebar{grid-template-columns:1fr 1fr}
     .host-players-panel{grid-column:1 / -1;max-height:126px}
     .host-room-card,.host-qr-card{border-left:0}

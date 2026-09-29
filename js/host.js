@@ -49,6 +49,15 @@ window.showHostGameDetail = function(gameId){
   db.ref('sessions/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+window.toggleAccountInfo = function(){ document.getElementById('accountPopover')?.classList.toggle('is-open'); };
+window.signOut = function(){ firebase.auth().signOut(); };
+
+function accountInfoHtml(){
+  const user = firebase.auth().currentUser;
+  const name = escapeHtml(user?.displayName || 'المستخدم');
+  const email = escapeHtml(user?.email || '');
+  return `<div class="account-menu"><button type="button" class="account-button" onclick="toggleAccountInfo()" aria-expanded="false">الحساب</button><div class="account-popover" id="accountPopover"><strong>${name}</strong><span>${email}</span><button type="button" class="btn btn-ghost account-signout" onclick="signOut()">تسجيل الخروج</button></div></div>`;
+}
 
 function renderHostLobby(code, room){
   if (hostDetailGameId) {
@@ -95,30 +104,14 @@ function renderHostLobby(code, room){
 
   document.getElementById('stage').innerHTML = `
     <div class="host-dashboard">
-      <aside class="host-sidebar" aria-label="معلومات الجلسة">
-        <section class="host-room-card">
-          <span class="host-section-kicker">جلسة اللعب</span>
-          <p class="muted">اختر لعبة، ثم شارك رمز QR الخاص بها فقط مع المشاركين.</p>
-        </section>
-
-        <section class="host-players-panel">
-          <div class="host-sidebar-heading">
-            <span>المشاركون</span>
-            <b>${playerCount}</b>
-          </div>
-          <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>اختر لعبة أولاً</span><small>سيظهر المشاركون بعد فتح رابط اللعبة</small></div>'}</div>
-        </section>
-
-        <button type="button" class="btn btn-ghost host-leave-button" onclick="hostLeaveRoom('${code}')">إنهاء الجلسة</button>
-      </aside>
-
       <main class="host-games-main">
-        <header class="host-games-header">
+        <header class="host-games-header host-page-header">
           <div>
             <span class="host-section-kicker">لوحة التحكم</span>
             <h1>اختر لعبة</h1>
             <p>اختر بطاقة لقراءة التعليمات وبدء اللعبة وعرضها للاعبين.</p>
           </div>
+          ${accountInfoHtml()}
         </header>
         <div class="games-grid host-games-grid">${cardsHtml}</div>
         <section class="host-tools-section" aria-labelledby="host-tools-heading">
