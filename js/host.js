@@ -36,7 +36,9 @@ function dispatchHostRender(code, room){
   lastHostRoom = room;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
   if (room.status === 'voting') renderHostLobby(code, room);
+  else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
   else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
+  else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
   else renderHostGenericPlaceholder(code, room);
@@ -147,6 +149,7 @@ window.startGame = function(gameId, code){
   hostDetailGameId = null;
   if (gameId === 'mafia') { startMafiaGame(code); return; }
   if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
+  if (gameId === 'trivia') { startTriviaSetup(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
