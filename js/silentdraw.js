@@ -178,7 +178,7 @@ function renderSilentDrawHost(code, room){
   if (showBoards){
     boards = `<div class="draw-layout">${['A','B'].map(t => `
       <div class="team-board">
-        <h4 style="font-family:'Cairo';">فريق ${t} —${escapeHtml(teamLabel(t))}</h4>
+        <h4 style="font-family:'Cairo';">لوحة الرسام — فريق ${t}: ${escapeHtml(teamLabel(t))}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="340" height="300"></canvas></div>
         <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
         <p class="muted">${sd.results[t]==='correct' ? '✅ خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? '⏳ ينتظرون التخمين' : '❌ لم يخمّنوا')}</p>
@@ -214,6 +214,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
   }
 
   const isGuide = sd.guideOf[myTeam] === myId;
+  const isDrawer = sd.drawerOf[myTeam] === myId;
   const teammateId = sd.teams[myTeam].find(id => id !== myId);
   const teammateName = players[teammateId]?.name || '';
 
@@ -241,6 +242,8 @@ function renderSilentDrawPlayer(code, myId, name, room){
         <p class="muted">بدون كلام! فقط إشارات لصديقك.</p>
         <p class="muted">${sd.results[myTeam]==='correct' ? '🎉 صديقك خمّن الكلمة!' : ''}</p>
       </div></div>`;
+    } else if (!isDrawer) {
+      app.innerHTML = `<div class="phone"><div class="card"><p class="muted">انتظر دورك في الرسم.</p></div></div>`;
     } else if (sd.results[myTeam] === 'correct') {
       app.innerHTML = `<div class="phone"><div class="card">
         <h2 style="font-family:'Cairo'; color:var(--green);">🎉 أحسنت! خمّنت صح</h2>
@@ -251,7 +254,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
         <div class="card" style="max-width:100%;">
           <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
           <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-            ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50\%; background:${c}; border:2px solid #fff;"></button>`).join('')}
+            ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
           </div>
           <button class="btn btn-ghost" ${sd.undosLeft[myTeam]<=0?'disabled':''} onclick="silentDrawUndo('${code}','${myTeam}')" style="margin-top:10px;">تراجع (${sd.undosLeft[myTeam]} متبقية)</button>
           <input type="text" id="guessInput" placeholder="ماذا ترسم؟ اكتب تخمينك" style="margin-top:14px;" />

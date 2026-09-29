@@ -81,11 +81,14 @@ function teamSelectorHtml(game, room, code, myId, isHost){
       </div>`;
   }
   const myTeam = players[myId]?.team || null;
+  const roster = team => Object.values(players).filter(p => p.team === team).map(p => escapeHtml(p.name));
   return `
     <div class="team-selector-box">
       <p style="margin:0 0 10px 0; font-weight:700; font-size:14px;">اختر فريقك (اختياري):</p>
-      <button class="btn-team ${myTeam==='A'?'selected-a':''}" onclick="setPlayerTeam('${code}','${myId}','A')">🔵 فريق A</button>
-      <button class="btn-team ${myTeam==='B'?'selected-b':''}" onclick="setPlayerTeam('${code}','${myId}','B')">🔴 فريق B</button>
+      <button class="btn-team ${myTeam==='A'?'selected-a':''}" onclick="setPlayerTeam('${code}','${myId}','A')">فريق A (${roster('A').length})</button>
+      <button class="btn-team ${myTeam==='B'?'selected-b':''}" onclick="setPlayerTeam('${code}','${myId}','B')">فريق B (${roster('B').length})</button>
+      <div class="muted">أعضاء فريق A: ${roster('A').join('، ') || 'لم ينضم أحد بعد'}</div>
+      <div class="muted">أعضاء فريق B: ${roster('B').join('، ') || 'لم ينضم أحد بعد'}</div>
       <div style="font-size:12px; margin-top:6px; color:var(--text-dim);">${myTeam ? `أنت حاليًا في فريق ${myTeam}` : 'لم تختر فريقًا (سيتم توزيعك تلقائيًا)'}</div>
     </div>`;
 }

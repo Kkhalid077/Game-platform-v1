@@ -25,18 +25,11 @@ function initHostRoom(code, isNew){
 
   app.innerHTML = `
     <div class="top-bar" style="display:flex; gap:8px;">
-      <button class="btn btn-ghost" id="newRoomBtn">غرفة جديدة</button>
       <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" id="leaveRoomBtn">مغادرة الغرفة</button>
     </div>
     <div class="brand">🎮 منصة <b>الألعاب</b></div>
     <div class="stage" id="stage"></div>
   `;
-  document.getElementById('newRoomBtn').onclick = () => {
-    if (confirm('سيتم إنشاء غرفة جديدة وفقدان الاتصال باللاعبين الحاليين. متابعة؟')) {
-      localStorage.removeItem('hostRoomCode');
-      renderHost();
-    }
-  };
   document.getElementById('leaveRoomBtn').onclick = () => hostLeaveRoom(code);
 
   roomRef.on('value', snap => dispatchHostRender(code, snap.val()));

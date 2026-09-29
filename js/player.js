@@ -85,10 +85,10 @@ function renderPlayerVoting(code, myId, name, room){
 /* ================= ENTRY POINT ================= */
 function renderEntryChoice(){
   app.innerHTML = `<div class="phone"><div class="card">
-    <h2 style="font-family:'Cairo';">🎮 منصة الألعاب</h2>
+    <h2 style="font-family:'Cairo';">منصة الألعاب</h2>
     <p class="muted">اختر دورك:</p>
-    <button class="btn" style="width:100%;" id="chooseHostBtn">🖥️ أنا المضيف</button>
-    <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="choosePlayerBtn">📱 أنا لاعب</button>
+    <button class="btn" style="width:100%;" id="chooseHostBtn">أنا المنظم</button>
+    <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="choosePlayerBtn">أنا لاعب</button>
   </div></div>`;
   document.getElementById('chooseHostBtn').onclick = () => renderHost();
   document.getElementById('choosePlayerBtn').onclick = () => renderJoinScreen();
