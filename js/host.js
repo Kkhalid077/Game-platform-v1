@@ -55,9 +55,6 @@ function renderHostLobby(code, room){
   }
 
   const players = room.players || {};
-  const votes = room.votes || {};
-  const tally = {};
-  Object.values(votes).forEach(g => tally[g] = (tally[g]||0)+1);
 
   const cardsHtml = GAMES_LIST.map(g => {
     if (!g.available) {
@@ -70,7 +67,7 @@ function renderHostLobby(code, room){
     return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
       <div class="game-icon-badge">${g.icon}</div>
       <div class="game-title">${g.title}</div>
-      <div class="vote-badge">${tally[g.id]||0} جاهز</div>
+      <div class="vote-badge">الحد الأدنى ${g.minPlayers}</div>
     </div>`;
   }).join('');
 
@@ -122,7 +119,7 @@ function renderHostLobby(code, room){
           <div>
             <span class="host-section-kicker">لوحة التحكم</span>
             <h1>اختر لعبة</h1>
-            <p>اختر بطاقة لقراءة التعليمات وبدء اللعبة.</p>
+            <p>اختر بطاقة لقراءة التعليمات وبدء اللعبة وعرضها للاعبين.</p>
           </div>
         </header>
         <div class="games-grid host-games-grid">${cardsHtml}</div>

@@ -109,11 +109,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
 }
 
 function gameDetailHtml(game, room, code, myId, isHost){
-  const votes = room.votes || {};
   const players = room.players || {};
-  const readyIds = Object.keys(votes).filter(id => votes[id] === game.id);
-  const readyNames = readyIds.map(id => players[id]?.name).filter(Boolean);
-  const iAmReady = myId && votes[myId] === game.id;
   const totalPlayers = Object.keys(players).length;
 
   return `
@@ -125,14 +121,11 @@ function gameDetailHtml(game, room, code, myId, isHost){
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
       <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
       ${teamSelectorHtml(game, room, code, myId, isHost)}
-      <div class="players-box">
-        <h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">جاهزون (${readyNames.length})</h3>
-        <div>${readyNames.map(n => `<span class="chip">${escapeHtml(n)}</span>`).join('') || '<span class="muted">لا أحد جاهز بعد</span>'}</div>
-      </div>
+      ${isHost ? `<div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">اللاعبون (${totalPlayers})</h3><div>${Object.values(players).map(p => `<span class="chip">${escapeHtml(p.name)}</span>`).join('') || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost
           ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
-          : `<button class="btn ${iAmReady ? 'btn-ghost' : ''}" onclick="toggleReady('${code}','${myId}','${game.id}')">${iAmReady ? 'إلغاء الجهوزية' : 'أنا جاهز '}</button>`}
+          : `<button class="btn btn-ghost" onclick="hideGameDetail()">العودة إلى الألعاب</button>`}
       </div>
     </div>
   `;

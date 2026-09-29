@@ -48,13 +48,12 @@ function renderPlayer(code){
 function dispatchPlayerRender(code, myId, name, room){
   lastPlayerRoom = room;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
-  const isSilentDrawScreen = room.status === 'in_game' && room.activeGame === 'silentdraw';
-  if (!isSilentDrawScreen && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
-  if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);
-  else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
-  else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
-  else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawPlayer(code, myId, name, room);
-  else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';"> اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;
+  if (window.cleanupSilentCanvas) window.cleanupSilentCanvas();
+  if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') {
+    renderPlayerGameNotice(code, myId, name, room);
+    return;
+  }
+  renderPlayerVoting(code, myId, name, room);
 }
 
 window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
@@ -67,23 +66,34 @@ function renderPlayerVoting(code, myId, name, room){
     return;
   }
 
-  const votes = room.votes || {};
-
   const cardsHtml = GAMES_LIST.map(g => {
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
-    const isReady = votes[myId] === g.id;
-    return `<div class="game-card ${isReady?'selected':''}" onclick="showGameDetail('${g.id}')">
+    return `<div class="game-card" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div>
-      ${isReady ? '<div class="vote-badge" style="background:var(--green);">أنت جاهز </div>' : '<div class="vote-badge">التفاصيل</div>'}
+      <div class="vote-badge">${g.needsTeams ? 'انضم إلى فريق' : 'التفاصيل'}</div>
     </div>`;
   }).join('');
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="leaveRoomAsPlayer('${code}','${myId}')">مغادرة الغرفة</button>
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} </h2>
-    <p class="muted">اختر لعبة لعرض شرحها والاستعداد لها:</p>
+    <p class="muted">تصفّح الألعاب وانضم إلى فريق في الألعاب الجماعية. المنظّم يبدأ اللعبة ويعرضها على شاشته.</p>
     <div class="games-grid">${cardsHtml}</div>
-    <p class="muted">بانتظار المضيف لبدء اللعبة…</p>
+    <p class="muted">بانتظار المنظّم لبدء اللعبة…</p>
+  </div></div>`;
+}
+
+function renderPlayerGameNotice(code, myId, name, room){
+  const game = GAMES_LIST.find(g => g.id === room.activeGame);
+  const title = game ? game.title : (room.activeTool === 'buzzer' ? 'استوديو الأسئلة' : 'اللعبة');
+  const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
+  app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
+    <button class="btn btn-ghost" onclick="hideGameDetail()">عرض الألعاب</button>
+    <div class="detail-icon">${game?.icon || '🎮'}</div>
+    <h2 style="font-family:'Cairo';">${escapeHtml(title)}</h2>
+    <p class="muted">اللعبة بدأت. المنظّم هو من يعرض اللعبة ويتحكم بها من شاشته؛ تابعوا الشاشة الرئيسية وشاركوا معه.</p>
+    ${teamHtml}
+    <p class="muted">أهلاً ${escapeHtml(name)}</p>
   </div></div>`;
 }
 
@@ -92,9 +102,9 @@ function renderEntryChoice(){
   setVersionFooterVisibility(true);
   app.innerHTML = `<div class="phone"><div class="card">
     <h2 style="font-family:'Cairo';">منصة الألعاب</h2>
-    <p class="muted">اختر دورك:</p>
-    <button class="btn" style="width:100%;" id="chooseHostBtn">أنا المنظم</button>
-    <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="choosePlayerBtn">أنا لاعب</button>
+    <p class="muted">ابدأ جلسة اللعب أو انضم إلى غرفة موجودة.</p>
+    <button class="btn" style="width:100%;" id="chooseHostBtn">إنشاء غرفة</button>
+    <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="choosePlayerBtn">الدخول إلى غرفة</button>
   </div></div>`;
   document.getElementById('chooseHostBtn').onclick = () => renderHost();
   document.getElementById('choosePlayerBtn').onclick = () => renderJoinScreen();
