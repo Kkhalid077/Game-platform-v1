@@ -49,14 +49,28 @@ window.showHostGameDetail = function(gameId){
   db.ref('sessions/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
-window.toggleAccountInfo = function(){ document.getElementById('accountPopover')?.classList.toggle('is-open'); };
+window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
 window.signOut = function(){ firebase.auth().signOut(); };
 
 function accountInfoHtml(){
   const user = firebase.auth().currentUser;
   const name = escapeHtml(user?.displayName || 'المستخدم');
   const email = escapeHtml(user?.email || '');
-  return `<div class="account-menu"><button type="button" class="account-button" onclick="toggleAccountInfo()" aria-expanded="false">الحساب</button><div class="account-popover" id="accountPopover"><strong>${name}</strong><span>${email}</span><button type="button" class="btn btn-ghost account-signout" onclick="signOut()">تسجيل الخروج</button></div></div>`;
+  const photo = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="صورة ${name}">` : `<span>${escapeHtml(name.charAt(0))}</span>`;
+  return `<div class="account-menu">
+    <button type="button" class="account-avatar-button" onclick="toggleAccountInfo()" aria-label="إظهار معلومات الحساب">${photo}</button>
+    <div class="account-modal" id="accountModal" role="dialog" aria-modal="true" aria-label="معلومات الحساب">
+      <article class="account-card">
+        <button type="button" class="account-close" onclick="toggleAccountInfo()" aria-label="إغلاق">×</button>
+        <div class="account-profile-image">${photo}</div>
+        <span class="host-section-kicker">حساب Google</span>
+        <h2>${name}</h2>
+        <p class="account-email">${email}</p>
+        <section class="account-game-name"><span>اسم المستخدم في الألعاب</span><strong>${name}</strong><small>سيظهر هذا الاسم للاعبين أثناء المشاركة.</small></section>
+        <button type="button" class="btn btn-ghost account-signout" onclick="signOut()">تسجيل الخروج</button>
+      </article>
+    </div>
+  </div>`;
 }
 
 function renderHostLobby(code, room){
