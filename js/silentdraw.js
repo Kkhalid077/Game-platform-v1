@@ -124,11 +124,17 @@ function setupSilentCanvas(code, team){
   let drawing = false, pts = [];
   function getPos(e){
     const r = canvas.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    const cx = e.clientX - r.left;
+    const cy = e.clientY - r.top;
     return { x: cx/r.width, y: cy/r.height };
   }
-  function start(e){ e.preventDefault(); drawing=true; pts=[getPos(e)]; }
+  function start(e){
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    drawing = true;
+    pts = [getPos(e)];
+    canvas.setPointerCapture(e.pointerId);
+  }
   function move(e){
     if (!drawing) return; e.preventDefault();
     const p = getPos(e); const prev = pts[pts.length-1] || p;
@@ -137,15 +143,16 @@ function setupSilentCanvas(code, team){
   }
   function end(){
     if (!drawing) return; drawing=false;
-    if (pts.length>1) strokesRef.push({ points: pts.slice(), color: currentColor, size:4 });
+    if (pts.length > 1) {
+      strokesRef.push({ points: pts.slice(), color: currentColor, size:4 })
+        .catch(error => console.error('تعذر حفظ الرسم:', error));
+    }
     pts=[];
   }
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  window.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start, {passive:false});
-  canvas.addEventListener('touchmove', move, {passive:false});
-  canvas.addEventListener('touchend', end);
+  canvas.addEventListener('pointerdown', start);
+  canvas.addEventListener('pointermove', move);
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointercancel', end);
 }
 
 function silentDrawRankingHtml(sd, players){
