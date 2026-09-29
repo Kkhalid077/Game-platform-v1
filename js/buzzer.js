@@ -104,23 +104,6 @@ function buzzerTimerHtml(timer){
   return `<div class="buzzer-timer" data-start="${timer.startedAt}" data-duration="${timer.duration}"><span>المؤقت</span><strong>${remaining}</strong><i></i></div>`;
 }
 
-window.copyBuzzerJoinLink = async function(code, button){
-  const link = joinGameUrl(code, 'buzzer');
-  try {
-    await navigator.clipboard.writeText(link);
-  } catch (_error) {
-    const input = document.createElement('textarea');
-    input.value = link;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    input.remove();
-  }
-  const originalText = button.textContent;
-  button.textContent = 'تم نسخ الرابط';
-  setTimeout(() => { button.textContent = originalText; }, 1800);
-};
-
 function renderBuzzerHost(code, room, directState){
   if(room.buzzerTransport==='rtc')startBuzzerRtcHost(code,room.buzzerSession,room);
   const state=buzzerState(room,directState||(rtcHostCode===code?rtcHostState:null)), players=room.players||{}, winner=state.winner&&players[state.winner];
@@ -130,7 +113,7 @@ function renderBuzzerHost(code, room, directState){
     app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
       <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
       <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>جرس الإجابة</h1>
-      <div class="buzzer-join"><div><span>مشاركة جرس الإجابة</span><small>أرسل الرابط للاعبين للانضمام مباشرة.</small></div><button type="button" class="btn buzzer-copy-link" onclick="copyBuzzerJoinLink('${code}', this)">نسخ الرابط</button></div>
+      <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
       <p class="muted">يسجّل اللاعبون أسماءهم من رابط الجرس، ثم يضغطون من هواتفهم للإجابة.</p>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين. لأفضل استجابة، اتصلوا جميعاً بشبكة Wi‑Fi نفسها.':'الاتصال المباشر غير مدعوم في هذا المتصفح؛ تُرسل الضغطات عبر Firebase.'}</p>
       <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
@@ -139,6 +122,8 @@ function renderBuzzerHost(code, room, directState){
       <div id="buzzerTimerMount"></div><section id="buzzerWinner" class="buzzer-winner-card"></section>
       <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><div id="buzzerRoster"></div></section>
     </main></div>`;
+    const qr=document.getElementById('buzzerQr');
+    if(qr) new QRCode(qr,{text:joinGameUrl(code,'buzzer'),width:88,height:88});
   }
   const peerCount=document.getElementById('buzzerPeerCount');
   if(peerCount)peerCount.textContent=connectedRtcPlayers();
@@ -158,7 +143,7 @@ function renderBuzzerHost(code, room, directState){
   const rosterKey=JSON.stringify(Object.entries(players).map(([id,p])=>[id,p.name,state.winner===id]));
   if(roster.dataset.key!==rosterKey){
     roster.dataset.key=rosterKey;
-    roster.innerHTML=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('')||'<p class="muted">لا يوجد مشاركون بعد. انسخ رابط الجرس وشاركه معهم.</p>';
+    roster.innerHTML=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('')||'<p class="muted">لا يوجد مشاركون بعد. شارك رمز QR أو رابط الجرس.</p>';
     document.getElementById('buzzerPlayerCount').textContent=Object.keys(players).length;
   }
   updateBuzzerTimerMount(state.timer);
