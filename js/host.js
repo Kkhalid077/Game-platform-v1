@@ -34,6 +34,7 @@ function initHostRoom(code, isNew){
 function dispatchHostRender(code, room){
   if (!room) return;
   lastHostRoom = room;
+  if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.stopLocalBuzzerSync) stopLocalBuzzerSync();
   if (room.status === 'voting') renderHostLobby(code, room);
   else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
@@ -152,7 +153,9 @@ window.startGame = function(gameId, code){
 window.startBuzzerTool = function(code){
   hostDetailGameId = null;
   if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
-  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  const enter=()=>db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  if(window.LOCAL_BUZZER_ENABLED) localBuzzerRequest(code,'start').then(enter).catch(error=>{console.error(error);enter();});
+  else enter();
 };
 
 window.resetToLobby = function(code){

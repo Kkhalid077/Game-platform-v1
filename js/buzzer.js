@@ -1,7 +1,30 @@
 /* =====================================================================
    LIVE TOOL — QUESTION STUDIO BUZZER
    ===================================================================== */
-function buzzerState(room){ return Object.assign({ winner:null, locked:false, timer:null, round:0 }, room.buzzer || {}); }
+let localBuzzerSource=null, localBuzzerCode=null, localBuzzerCallback=null, localBuzzerState=null;
+
+function buzzerState(room,override){ return Object.assign({ winner:null, locked:false, timer:null, round:0 }, override || room.buzzer || {}); }
+
+function localBuzzerRequest(code,action,data={}){
+  return fetch(`/api/buzzer/${encodeURIComponent(code)}/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(response=>{if(!response.ok)throw new Error('تعذر الوصول إلى خادم الشبكة المحلية');return response.json();});
+}
+
+function startLocalBuzzerSync(code,callback){
+  if(!window.LOCAL_BUZZER_ENABLED)return false;
+  if(localBuzzerSource&&localBuzzerCode===code){localBuzzerCallback=callback;return true;}
+  stopLocalBuzzerSync();localBuzzerCode=code;localBuzzerCallback=callback;
+  localBuzzerSource=new EventSource(`/api/buzzer/${encodeURIComponent(code)}/events`);
+  localBuzzerSource.onmessage=event=>{
+    if(localBuzzerCode!==code)return;
+    try{localBuzzerState=JSON.parse(event.data);if(localBuzzerCallback)localBuzzerCallback(localBuzzerState);}catch(error){console.error('Invalid local buzzer state',error);}
+  };
+  return true;
+}
+
+function stopLocalBuzzerSync(){
+  if(localBuzzerSource)localBuzzerSource.close();
+  localBuzzerSource=null;localBuzzerCode=null;localBuzzerCallback=null;localBuzzerState=null;
+}
 
 function buzzerTimerHtml(timer){
   if(!timer || !timer.duration || !timer.startedAt) return '';
@@ -9,8 +32,9 @@ function buzzerTimerHtml(timer){
   return `<div class="buzzer-timer" data-start="${timer.startedAt}" data-duration="${timer.duration}"><span>المؤقت</span><strong>${remaining}</strong><i></i></div>`;
 }
 
-function renderBuzzerHost(code, room){
-  const state=buzzerState(room), players=room.players||{}, winner=state.winner&&players[state.winner];
+function renderBuzzerHost(code, room, localState){
+  if(window.LOCAL_BUZZER_ENABLED)startLocalBuzzerSync(code,state=>{if(lastHostRoom)renderBuzzerHost(code,lastHostRoom,state);});
+  const state=buzzerState(room,localState||(window.LOCAL_BUZZER_ENABLED?localBuzzerState:null)), players=room.players||{}, winner=state.winner&&players[state.winner];
   if(state.winner&&state.winner!==lastBuzzerWinner){lastBuzzerWinner=state.winner;buzzerPlayWinner();}
   else if(!state.winner)lastBuzzerWinner=null;
   if(!document.getElementById('buzzerHostRoot')){
@@ -19,6 +43,7 @@ function renderBuzzerHost(code, room){
       <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>استوديو الأسئلة</h1>
       <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
       <p class="muted">يعرض اللاعبون أسماءهم عند الانضمام إلى الغرفة، ثم يضغطون من هواتفهم للإجابة.</p>
+      ${window.LOCAL_BUZZER_ENABLED?'<p class="buzzer-network-note">أولوية الضغطة والمزامنة تعملان عبر الشبكة المحلية.</p>':'<p class="buzzer-network-note">لتسريع الضغطة محلياً، شغّل <code>python server.py</code> على جهاز المنظّم وافتح المنصة من عنوان الشبكة الذي يظهر.</p>'}
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
       <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
       <div id="buzzerTimerMount"></div><section id="buzzerWinner" class="buzzer-winner-card"></section>
@@ -50,8 +75,9 @@ function renderBuzzerHost(code, room){
   startBuzzerTimerDisplay();
 }
 
-function renderBuzzerPlayer(code, myId, name, room){
-  const state=buzzerState(room), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
+function renderBuzzerPlayer(code, myId, name, room, localState){
+  if(window.LOCAL_BUZZER_ENABLED)startLocalBuzzerSync(code,state=>{if(lastPlayerRoom)renderBuzzerPlayer(code,myId,name,lastPlayerRoom,state);});
+  const state=buzzerState(room,localState||(window.LOCAL_BUZZER_ENABLED?localBuzzerState:null)), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
   if(!document.getElementById('buzzerPlayerRoot')){
     app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">استوديو الأسئلة</span><h1>أهلاً ${escapeHtml(name)}</h1><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
   }
@@ -73,15 +99,16 @@ function updateBuzzerTimerMount(timer,mountId='buzzerTimerMount'){
 
 window.buzzerPress=function(code,playerId){
   buzzerUnlockAudio(); buzzerPlayTone(740,0.16);
+  if(window.LOCAL_BUZZER_ENABLED){localBuzzerRequest(code,'press',{playerId}).catch(error=>console.error(error));return;}
   db.ref('rooms/'+code+'/buzzer').transaction(state=>{
     if(!state||state.locked||state.winner) return;
     state.winner=playerId; state.pressedAt=Date.now(); return state;
   });
 };
-window.buzzerReset=function(code){buzzerUnlockAudio();db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
-window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();db.ref('rooms/'+code+'/buzzer/locked').set(locked);};
-window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt:Date.now()});};
-window.buzzerStopTimer=function(code){db.ref('rooms/'+code+'/buzzer/timer').set(null);};
+window.buzzerReset=function(code){buzzerUnlockAudio();if(window.LOCAL_BUZZER_ENABLED){localBuzzerRequest(code,'reset').catch(error=>console.error(error));return;}db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
+window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(window.LOCAL_BUZZER_ENABLED){localBuzzerRequest(code,'lock',{locked}).catch(error=>console.error(error));return;}db.ref('rooms/'+code+'/buzzer/locked').set(locked);};
+window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();if(window.LOCAL_BUZZER_ENABLED){localBuzzerRequest(code,'timer',{duration}).catch(error=>console.error(error));return;}db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt:Date.now()});};
+window.buzzerStopTimer=function(code){if(window.LOCAL_BUZZER_ENABLED){localBuzzerRequest(code,'timer',{duration:0}).catch(error=>console.error(error));return;}db.ref('rooms/'+code+'/buzzer/timer').set(null);};
 window.buzzerFullscreen=function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.();};
 window.buzzerToggleSound=function(){buzzerMuted=!buzzerMuted;localStorage.setItem('buzzerMuted',buzzerMuted?'1':'0');if(!buzzerMuted){buzzerUnlockAudio();buzzerPlayTone(740,0.16);}const b=document.querySelector('.buzzer-controls button:last-child');if(b)b.textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';};
 
