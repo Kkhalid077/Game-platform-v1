@@ -11,7 +11,8 @@ function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
   const roomRef = db.ref('rooms/' + code);
   const signedInUser = firebase.auth().currentUser;
-  const myId = signedInUser.uid;
+  const guestNameKey = `guestPlayerName_${code}_${invitedGameId || 'default'}`;
+  const guestIdKey = `guestPlayerId_${code}_${invitedGameId || 'default'}`;
 
   function attach(id, name){
     CURRENT_PLAYER_NAME = name;
@@ -24,8 +25,32 @@ function renderPlayer(code, invitedGameId){
     });
   }
 
+  if (invitedGameId) {
+    const savedName = localStorage.getItem(guestNameKey);
+    if (!savedName) {
+      const gameTitle = GAMES_LIST.find(game => game.id === invitedGameId)?.title || (invitedGameId === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
+      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${escapeHtml(gameTitle)}</h2><p class="muted">اكتب اسمك للانضمام إلى اللعبة.</p><input type="text" id="guestNameInput" maxlength="30" placeholder="اسمك" autofocus><button class="btn" id="guestEnterBtn" style="width:100%; margin-top:12px;">دخول اللعبة</button></div></div>`;
+      const enter = () => {
+        const name = document.getElementById('guestNameInput').value.trim();
+        if (!name) return;
+        localStorage.setItem(guestNameKey, name);
+        renderPlayer(code, invitedGameId);
+      };
+      document.getElementById('guestEnterBtn').onclick = enter;
+      document.getElementById('guestNameInput').addEventListener('keydown', event => { if (event.key === 'Enter') enter(); });
+      return;
+    }
+    const myId = localStorage.getItem(guestIdKey) || `guest_${roomRef.child('players').push().key}`;
+    localStorage.setItem(guestIdKey, myId);
+    roomRef.child('players/' + myId).set({ name:savedName, gameId:invitedGameId, guest:true });
+    attach(myId, savedName);
+    return;
+  }
+
+  if (!signedInUser) { renderGoogleSignIn(); return; }
+  const myId = signedInUser.uid;
   const name = (signedInUser.displayName || signedInUser.email || 'لاعب').slice(0, 30);
-  roomRef.child('players/' + myId).set({ name, gameId: invitedGameId || null, uid: myId });
+  roomRef.child('players/' + myId).set({ name, gameId:null, uid:myId });
   attach(myId, name);
 }
 
@@ -148,10 +173,10 @@ function renderAdminNameEntry(){
 }
 
 firebase.auth().onAuthStateChanged(user => {
-  if (!user) { if (localStorage.getItem('adminGuestName')) renderHost(); else renderGoogleSignIn(); return; }
   const params = new URLSearchParams(location.search);
   const sessionParam = params.get('session');
   const gameParam = params.get('game');
   if (sessionParam && gameParam) renderPlayer(sessionParam.trim(), gameParam.trim());
+  else if (!user) { if (localStorage.getItem('adminGuestName')) renderHost(); else renderGoogleSignIn(); }
   else renderHost();
 });
