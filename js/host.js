@@ -9,7 +9,7 @@ function renderHost(){
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
   const savedCode = localStorage.getItem('hostSessionCode');
   if (savedCode) {
-    db.ref('sessions/' + savedCode).once('value', snap => {
+    db.ref('rooms/' + savedCode).once('value', snap => {
       if (snap.exists()) initHostRoom(savedCode, false);
       else { localStorage.removeItem('hostSessionCode'); initHostRoom(makeRoomCode(), true); }
     });
@@ -21,7 +21,7 @@ function renderHost(){
 function initHostRoom(code, isNew){
   ACTIVE_HOST_CODE = code;
   localStorage.setItem('hostSessionCode', code);
-  const roomRef = db.ref('sessions/' + code);
+  const roomRef = db.ref('rooms/' + code);
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
 
   app.innerHTML = `
@@ -46,7 +46,7 @@ function dispatchHostRender(code, room){
 
 window.showHostGameDetail = function(gameId){
   hostDetailGameId = gameId;
-  db.ref('sessions/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
+  db.ref('rooms/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
@@ -151,24 +151,24 @@ window.startGame = function(gameId, code){
   if (gameId === 'mafia') { startMafiaGame(code); return; }
   if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
   if (gameId === 'trivia') { startTriviaSetup(code); return; }
-  db.ref('sessions/'+code).update({ status:'in_game', activeGame: gameId });
+  db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
 window.startBuzzerTool = function(code){
   hostDetailGameId = null;
   if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
   const session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  db.ref('sessions/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
 };
 
 window.resetToLobby = function(code){
-  db.ref('sessions/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, votes:{}, mafia:null, silentdraw:null, buzzer:null });
+  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, votes:{}, mafia:null, silentdraw:null, buzzer:null });
   db.ref('strokes/'+code+'_A').set(null);
   db.ref('strokes/'+code+'_B').set(null);
 };
 
 window.hostLeaveRoom = function(code){
-  db.ref('sessions/'+code).remove();
+  db.ref('rooms/'+code).remove();
   db.ref('strokes/'+code+'_A').remove();
   db.ref('strokes/'+code+'_B').remove();
   localStorage.removeItem('hostSessionCode');

@@ -9,7 +9,7 @@ let playerDetailGameId = null;
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
-  const roomRef = db.ref('sessions/' + code);
+  const roomRef = db.ref('rooms/' + code);
   const signedInUser = firebase.auth().currentUser;
   const myId = signedInUser.uid;
 

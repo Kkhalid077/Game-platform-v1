@@ -46,11 +46,11 @@ function startBuzzerRtcHost(code,session,room){
   if(!session){
     if(rtcHostCode===code&&rtcHostSession)return true;
     session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-    db.ref('sessions/'+code).update({buzzerSession:session,buzzerRtc:null});
+    db.ref('rooms/'+code).update({buzzerSession:session,buzzerRtc:null});
   }
   if(rtcHostCode===code&&rtcHostSession===session)return true;
   closeBuzzerRtcHost();rtcHostCode=code;rtcHostSession=session;rtcHostState=buzzerState(room);
-  rtcHostSignals=db.ref(`sessions/${code}/buzzerRtc/${session}`);
+  rtcHostSignals=db.ref(`rooms/${code}/buzzerRtc/${session}`);
   rtcHostSignalHandler=snapshot=>acceptRtcOffer(snapshot.key,snapshot,session);
   rtcHostSignals.on('child_added',rtcHostSignalHandler);
   return true;
@@ -70,7 +70,7 @@ async function startBuzzerRtcPlayer(code,playerId,session){
   channel.onclose=()=>{rtcPlayerStatus='failed';refreshRtcPlayer(code,playerId);};
   channel.onmessage=event=>{try{const message=JSON.parse(event.data);if(message.type==='state'){rtcPlayerState=message.state;rtcPlayerStatus='connected';refreshRtcPlayer(code,playerId);}}catch(error){console.warn('Invalid direct buzzer message',error);}};
   connection.onconnectionstatechange=()=>{if(connection.connectionState==='connected')rtcPlayerStatus='connected';else if(['failed','disconnected'].includes(connection.connectionState))rtcPlayerStatus='failed';refreshRtcPlayer(code,playerId);};
-  rtcPlayerSignal=db.ref(`sessions/${code}/buzzerRtc/${session}`).push();
+  rtcPlayerSignal=db.ref(`rooms/${code}/buzzerRtc/${session}`).push();
   rtcPlayerSignal.child('answer').on('value',async snapshot=>{
     const answer=snapshot.val();if(!answer||connection.remoteDescription||rtcPlayerConnection!==connection)return;
     try{await connection.setRemoteDescription(new RTCSessionDescription(answer));}
@@ -181,15 +181,15 @@ window.buzzerPress=function(code,playerId){
     return;
   }
   if(rtcPlayerSession)return;
-  db.ref('sessions/'+code+'/buzzer').transaction(state=>{
+  db.ref('rooms/'+code+'/buzzer').transaction(state=>{
     if(!state||state.locked||state.winner) return;
     state.winner=playerId; state.pressedAt=Date.now(); return state;
   });
 };
-window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.round=(state.round||0)+1;}))return;db.ref('sessions/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
-window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.locked=locked;}))return;db.ref('sessions/'+code+'/buzzer/locked').set(locked);};
-window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=buzzerNow()+1500;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('sessions/'+code+'/buzzer/timer').set({duration,startedAt});};
-window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('sessions/'+code+'/buzzer/timer').set(null);};
+window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.round=(state.round||0)+1;}))return;db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
+window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.locked=locked;}))return;db.ref('rooms/'+code+'/buzzer/locked').set(locked);};
+window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=buzzerNow()+1500;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt});};
+window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('rooms/'+code+'/buzzer/timer').set(null);};
 window.buzzerFullscreen=function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.();};
 window.buzzerToggleSound=function(){buzzerMuted=!buzzerMuted;localStorage.setItem('buzzerMuted',buzzerMuted?'1':'0');if(!buzzerMuted){buzzerUnlockAudio();buzzerPlayTone(740,0.16);}const b=document.querySelector('.buzzer-controls button:last-child');if(b)b.textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';};
 

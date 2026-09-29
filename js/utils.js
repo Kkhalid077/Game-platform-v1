@@ -75,11 +75,11 @@ window.setDrawColor = function(c){ currentColor = c; };
 
 // تغيير الفريق
 window.setPlayerTeam = function(code, myId, team){
-  db.ref('sessions/'+code+'/players/'+myId+'/team').once('value', snap => {
+  db.ref('rooms/'+code+'/players/'+myId+'/team').once('value', snap => {
     if (snap.val() === team) {
-      db.ref('sessions/'+code+'/players/'+myId+'/team').remove();
+      db.ref('rooms/'+code+'/players/'+myId+'/team').remove();
     } else {
-      db.ref('sessions/'+code+'/players/'+myId+'/team').set(team);
+      db.ref('rooms/'+code+'/players/'+myId+'/team').set(team);
     }
   });
 };
@@ -137,6 +137,6 @@ function gameDetailHtml(game, room, code, myId, isHost){
   `;
 }
 window.toggleReady = function(code, myId, gameId){
-  const ref = db.ref('sessions/'+code+'/votes/'+myId);
+  const ref = db.ref('rooms/'+code+'/votes/'+myId);
   ref.once('value', snap => { snap.val() === gameId ? ref.remove() : ref.set(gameId); });
 };
