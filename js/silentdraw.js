@@ -18,6 +18,9 @@ window.startSilentDrawGame = function(code){
       else teamB.push(id);
     });
 
+    while (teamA.length < 2 && teamB.length > 2) teamA.push(teamB.pop());
+    while (teamB.length < 2 && teamA.length > 2) teamB.push(teamA.pop());
+
     teamA = shuffle(teamA);
     teamB = shuffle(teamB);
 
@@ -33,7 +36,7 @@ window.startSilentDrawGame = function(code){
         words:{ A: pickRandomWordPair().w, B: pickRandomWordPair().w },
         undosLeft:{ A:3, B:3 },
         correctCount:{ A:0, B:0 },
-        results:{ A:null, B:null },
+        results:{ A:null, B:null }, awarded:{ A:false, B:false },
         timerEnd:null, winner:null
       }
     });
@@ -50,9 +53,27 @@ window.silentDrawFinishRound = function(code){
     const sd = snap.val(); if (!sd) return;
     const results = { A: sd.results.A || 'wrong', B: sd.results.B || 'wrong' };
     const correctCount = {...sd.correctCount};
-    ['A','B'].forEach(t => { if (results[t]==='correct') correctCount[t] = (correctCount[t]||0)+1; });
+    ['A','B'].forEach(t => { if (results[t]==='correct' && !(sd.awarded && sd.awarded[t])) correctCount[t] = (correctCount[t]||0)+1; });
     const winner = correctCount.A>=3 ? 'A' : (correctCount.B>=3 ? 'B' : null);
     sdRef.update({ results, correctCount, phase: winner ? 'ended' : 'round_result', winner });
+  });
+};
+
+window.silentDrawAwardPoint = function(code, team){
+  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  sdRef.once('value', snap => {
+    const sd = snap.val();
+    if (!sd || sd.phase !== 'drawing' || (sd.awarded && sd.awarded[team])) return;
+    const correctCount = {...sd.correctCount};
+    correctCount[team] = (correctCount[team] || 0) + 1;
+    const winner = correctCount[team] >= 3 ? team : null;
+    sdRef.update({
+      correctCount,
+      results:{...sd.results, [team]:'correct'},
+      awarded:{...(sd.awarded || {}), [team]:true},
+      phase: winner ? 'ended' : 'drawing',
+      winner
+    });
   });
 };
 
@@ -93,7 +114,7 @@ window.silentDrawNextRound = function(code){
       guideOf:{ A: sd.drawerOf.A, B: sd.drawerOf.B },
       drawerOf:{ A: sd.guideOf.A, B: sd.guideOf.B },
       words:{ A: pickRandomWordPair().w, B: pickRandomWordPair().w },
-      undosLeft:{ A:3, B:3 }, results:{ A:null, B:null }, timerEnd:null
+      undosLeft:{ A:3, B:3 }, results:{ A:null, B:null }, awarded:{ A:false, B:false }, timerEnd:null
     });
   });
 };
@@ -121,7 +142,7 @@ function setupSilentCanvas(code, team){
     Object.values(snap.val()||{}).forEach(s => drawSegment(ctx, canvas, s));
   });
 
-  let drawing = false, pts = [];
+  let drawing = false, pts = [], activeStrokeRef = null;
   function getPos(e){
     const r = canvas.getBoundingClientRect();
     const cx = e.clientX - r.left;
@@ -133,21 +154,21 @@ function setupSilentCanvas(code, team){
     e.preventDefault();
     drawing = true;
     pts = [getPos(e)];
+    activeStrokeRef = strokesRef.push();
     canvas.setPointerCapture(e.pointerId);
   }
   function move(e){
     if (!drawing) return; e.preventDefault();
     const p = getPos(e); const prev = pts[pts.length-1] || p;
     pts.push(p);
+    const stroke = { points:pts.slice(), color:currentColor, size:4 };
     drawSegment(ctx, canvas, { points:[prev,p], color:currentColor, size:4 });
+    activeStrokeRef.set(stroke).catch(error => console.error('تعذر بث الرسم:', error));
   }
   function end(){
     if (!drawing) return; drawing=false;
-    if (pts.length > 1) {
-      strokesRef.push({ points: pts.slice(), color: currentColor, size:4 })
-        .catch(error => console.error('تعذر حفظ الرسم:', error));
-    }
-    pts=[];
+    if (pts.length < 2 && activeStrokeRef) activeStrokeRef.remove();
+    pts=[]; activeStrokeRef=null;
   }
   canvas.addEventListener('pointerdown', start);
   canvas.addEventListener('pointermove', move);
@@ -173,7 +194,7 @@ function renderSilentDrawHost(code, room){
     control = `<button class="btn" onclick="silentDrawBeginDrawing('${code}')">ابدأ الرسم 🎨</button>`;
   } else if (sd.phase==='drawing'){
     narrator = `⏱️ <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
-    control = `<button class="btn" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة والتقييم</button>`;
+    control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لفريق A</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لفريق B</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
   } else if (sd.phase==='round_result'){
     narrator = `نتيجة الجولة: فريق A ${sd.results.A==='correct'?'✅':'❌'} — فريق B ${sd.results.B==='correct'?'✅':'❌'}`;
     control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية 🔁</button>`;

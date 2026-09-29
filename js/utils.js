@@ -35,10 +35,12 @@ function mirrorCanvasFrom(strokeKey, canvasId){
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
   const sRef = db.ref('strokes/'+strokeKey);
-  sRef.off('child_added');
-  sRef.on('child_added', snap => drawSegment(ctx, canvas, snap.val()));
+  sRef.off('value');
+  sRef.on('value', snap => {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    Object.values(snap.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
+  });
 }
 let hostTimerInterval = null;
 function startHostTimerWatch(timerEnd){
