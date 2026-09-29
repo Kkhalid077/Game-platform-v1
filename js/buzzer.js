@@ -97,7 +97,7 @@ function updateRtcHostState(code,update){
 
 function buzzerTimerHtml(timer){
   if(!timer || !timer.duration || !timer.startedAt) return '';
-  const remaining=Math.max(0,Math.ceil(timer.duration-(Date.now()-timer.startedAt)/1000));
+  const remaining=Math.min(timer.duration,Math.max(0,Math.ceil(timer.duration-(Date.now()-timer.startedAt)/1000)));
   return `<div class="buzzer-timer" data-start="${timer.startedAt}" data-duration="${timer.duration}"><span>المؤقت</span><strong>${remaining}</strong><i></i></div>`;
 }
 
@@ -185,7 +185,7 @@ window.buzzerPress=function(code,playerId){
 };
 window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.round=(state.round||0)+1;}))return;db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
 window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.locked=locked;}))return;db.ref('rooms/'+code+'/buzzer/locked').set(locked);};
-window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.timer={duration,startedAt:Date.now()};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt:Date.now()});};
+window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=Date.now()+1000;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt});};
 window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('rooms/'+code+'/buzzer/timer').set(null);};
 window.buzzerFullscreen=function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.();};
 window.buzzerToggleSound=function(){buzzerMuted=!buzzerMuted;localStorage.setItem('buzzerMuted',buzzerMuted?'1':'0');if(!buzzerMuted){buzzerUnlockAudio();buzzerPlayTone(740,0.16);}const b=document.querySelector('.buzzer-controls button:last-child');if(b)b.textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';};
@@ -200,6 +200,6 @@ let lastBuzzerSecond=null;
 function startBuzzerTimerDisplay(){
   if(buzzerDisplayInterval)return;
   lastBuzzerSecond=null;
-  const update=()=>{const el=document.querySelector('.buzzer-timer');if(!el){clearInterval(buzzerDisplayInterval);buzzerDisplayInterval=null;return;}const duration=Number(el.dataset.duration),remaining=Math.max(0,Math.ceil(duration-(Date.now()-Number(el.dataset.start))/1000));el.querySelector('strong').textContent=remaining;el.classList.toggle('is-low',remaining<=5);el.querySelector('i').style.width=`${Math.max(0,remaining/duration*100)}%`;if(remaining!==lastBuzzerSecond){lastBuzzerSecond=remaining;if(remaining>0&&remaining<=5)buzzerPlayTone(880,.07);}};
+  const update=()=>{const el=document.querySelector('.buzzer-timer');if(!el){clearInterval(buzzerDisplayInterval);buzzerDisplayInterval=null;return;}const duration=Number(el.dataset.duration),remaining=Math.min(duration,Math.max(0,Math.ceil(duration-(Date.now()-Number(el.dataset.start))/1000)));el.querySelector('strong').textContent=remaining;el.classList.toggle('is-low',remaining<=5);el.querySelector('i').style.width=`${Math.max(0,remaining/duration*100)}%`;if(remaining!==lastBuzzerSecond){lastBuzzerSecond=remaining;if(remaining>0&&remaining<=5)buzzerPlayTone(880,.07);}};
   update();buzzerDisplayInterval=setInterval(update,250);
 }
