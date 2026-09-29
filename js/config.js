@@ -14,11 +14,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const app = document.getElementById('app');
-const ADMIN_EMAILS = ['khalid25355@gmail.com'];
-
-function isAdminAccount(user){
-  return !!user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase());
-}
 
 /* =====================================================================
    SECTION 2 — GAME CATALOG & WORD BANK WITH IMAGE SUPPORT

@@ -50,7 +50,10 @@ window.showHostGameDetail = function(gameId){
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
-window.signOut = function(){ firebase.auth().signOut(); };
+window.signOut = function(){
+  if (firebase.auth().currentUser) firebase.auth().signOut();
+  else { localStorage.removeItem('adminGuestName'); renderGoogleSignIn(); }
+};
 window.saveGameUsername = async function(){
   const user = firebase.auth().currentUser;
   const input = document.getElementById('gameUsernameInput');
@@ -70,9 +73,10 @@ window.saveGameUsername = async function(){
 
 function accountInfoHtml(){
   const user = firebase.auth().currentUser;
-  const name = escapeHtml(user?.displayName || 'المستخدم');
+  const isAdminGuest = !user && !!localStorage.getItem('adminGuestName');
+  const name = escapeHtml(user?.displayName || localStorage.getItem('adminGuestName') || 'المستخدم');
   const email = escapeHtml(user?.email || '');
-  const accountType = isAdminAccount(user) ? 'حساب مسؤول' : 'حساب Google';
+  const accountType = isAdminGuest ? 'Admin' : 'حساب Google';
   const photo = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="صورة ${name}">` : `<span>${escapeHtml(name.charAt(0))}</span>`;
   return `<div class="account-menu">
     <button type="button" class="account-avatar-button" onclick="toggleAccountInfo()" aria-label="إظهار معلومات الحساب">${photo}</button>
@@ -82,8 +86,8 @@ function accountInfoHtml(){
         <div class="account-profile-image">${photo}</div>
         <span class="host-section-kicker">${accountType}</span>
         <h2>${name}</h2>
-        <p class="account-email">${email}</p>
-        <section class="account-game-name"><label for="gameUsernameInput">اسم المستخدم في الألعاب</label><input id="gameUsernameInput" type="text" maxlength="30" value="${name}" autocomplete="nickname"><small>سيظهر هذا الاسم للاعبين أثناء المشاركة.</small><button type="button" class="btn account-save-name" onclick="saveGameUsername()">حفظ الاسم</button><small id="usernameStatus"></small></section>
+        ${email ? `<p class="account-email">${email}</p>` : ''}
+        ${isAdminGuest ? `<section class="account-game-name"><span>الاسم المستخدم في لوحة التحكم</span><strong>${name}</strong></section>` : `<section class="account-game-name"><label for="gameUsernameInput">اسم المستخدم في الألعاب</label><input id="gameUsernameInput" type="text" maxlength="30" value="${name}" autocomplete="nickname"><small>سيظهر هذا الاسم للاعبين أثناء المشاركة.</small><button type="button" class="btn account-save-name" onclick="saveGameUsername()">حفظ الاسم</button><small id="usernameStatus"></small></section>`}
         <button type="button" class="btn btn-ghost account-signout" onclick="signOut()">تسجيل الخروج</button>
       </article>
     </div>

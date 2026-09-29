@@ -6,7 +6,6 @@ let ACTIVE_ROOM_CODE = null;
 let ACTIVE_PLAYER_ID = null;
 let lastPlayerRoom = null;
 let playerDetailGameId = null;
-let adminLoginRequested = false;
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
@@ -114,17 +113,11 @@ function setVersionFooterVisibility(visible){
 
 function renderGoogleSignIn(){
   setVersionFooterVisibility(true);
-  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><button class="btn btn-ghost" id="adminSignInBtn" style="width:100%; margin-top:10px;">دخول المسؤول</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
-  const signIn = async (adminOnly) => {
-    adminLoginRequested = adminOnly;
+  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><button class="btn btn-ghost" id="adminGuestBtn" style="width:100%; margin-top:10px;">دخول Admin</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
+  const signIn = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    if (adminOnly) provider.setCustomParameters({ login_hint:ADMIN_EMAILS[0], prompt:'select_account' });
     try {
-      const result = await firebase.auth().signInWithPopup(provider);
-      if (adminOnly && !isAdminAccount(result.user)) {
-        await firebase.auth().signOut();
-        document.getElementById('authError').textContent = 'هذا الحساب غير مصرح له بدخول المسؤول.';
-      }
+      await firebase.auth().signInWithPopup(provider);
     }
     catch (error) {
       const messages = {
@@ -137,14 +130,25 @@ function renderGoogleSignIn(){
       document.getElementById('authError').textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
     }
   };
-  document.getElementById('googleSignInBtn').onclick = () => signIn(false);
-  document.getElementById('adminSignInBtn').onclick = () => signIn(true);
+  document.getElementById('googleSignInBtn').onclick = signIn;
+  document.getElementById('adminGuestBtn').onclick = renderAdminNameEntry;
+}
+
+function renderAdminNameEntry(){
+  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">دخول Admin</h2><p class="muted">اكتب الاسم الذي سيظهر في لوحة التحكم.</p><input type="text" id="adminNameInput" maxlength="30" placeholder="الاسم" autofocus><button class="btn" id="adminEnterBtn" style="width:100%; margin-top:12px;">دخول</button><button class="btn btn-ghost" id="adminBackBtn" style="width:100%; margin-top:10px;">رجوع</button></div></div>`;
+  const enter = () => {
+    const name = document.getElementById('adminNameInput').value.trim();
+    if (!name) return;
+    localStorage.setItem('adminGuestName', name);
+    renderHost();
+  };
+  document.getElementById('adminEnterBtn').onclick = enter;
+  document.getElementById('adminNameInput').addEventListener('keydown', event => { if (event.key === 'Enter') enter(); });
+  document.getElementById('adminBackBtn').onclick = renderGoogleSignIn;
 }
 
 firebase.auth().onAuthStateChanged(user => {
-  if (!user) { renderGoogleSignIn(); return; }
-  if (adminLoginRequested && !isAdminAccount(user)) { firebase.auth().signOut(); return; }
-  adminLoginRequested = false;
+  if (!user) { if (localStorage.getItem('adminGuestName')) renderHost(); else renderGoogleSignIn(); return; }
   const params = new URLSearchParams(location.search);
   const sessionParam = params.get('session');
   const gameParam = params.get('game');
