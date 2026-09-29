@@ -12,7 +12,7 @@ window.startSilentDrawGame = function(code){
   roomRef.child('players').once('value', snap => {
     const players = snap.val() || {};
     const ids = Object.keys(players);
-    if (ids.length < 4) { alert('تحتاج 4 لاعبين على الأقل (فريقين) لبدء الرسم الصامت'); return; }
+    if (ids.length < 4) { alert('تحتاج 4 لاعبين على الأقل (فريقين) لبدء إشارة ورسمة'); return; }
 
     // توزيع اللاعبين بناءً على اختيارهم، مع موازنة متبقي اللاعبين تلقائياً
     let teamA = ids.filter(id => players[id].team === 'A');
@@ -329,7 +329,7 @@ function renderSilentDrawHost(code, room){
     <div style="margin-bottom:15px;">
       <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للوحة التحكم</button>
     </div>
-    <h2 style="font-family:'Cairo'; color:var(--accent);">الرسم الصامت </h2>
+    <h2 style="font-family:'Cairo'; color:var(--accent);">إشارة ورسمة</h2>
     <p class="narrator">${narrator}</p>
     <div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">الترتيب (الفوز عند 3 نقاط)</h3>${silentDrawRankingHtml(sd, players)}</div>
     ${boards}

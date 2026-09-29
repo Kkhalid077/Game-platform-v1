@@ -67,9 +67,9 @@ function renderPlayerVoting(code, myId, name, room){
   }
 
   const cardsHtml = GAMES_LIST.map(g => {
-    if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
+    if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     return `<div class="game-card" onclick="showGameDetail('${g.id}')">
-      <div class="game-icon-badge">${g.icon}</div><div class="game-title">${g.title}</div>
+      <div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div>
       <div class="vote-badge">${g.needsTeams ? 'انضم إلى فريق' : 'التفاصيل'}</div>
     </div>`;
   }).join('');
@@ -85,11 +85,11 @@ function renderPlayerVoting(code, myId, name, room){
 
 function renderPlayerGameNotice(code, myId, name, room){
   const game = GAMES_LIST.find(g => g.id === room.activeGame);
-  const title = game ? game.title : (room.activeTool === 'buzzer' ? 'استوديو الأسئلة' : 'اللعبة');
+  const title = game ? game.title : (room.activeTool === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
   const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <button class="btn btn-ghost" onclick="hideGameDetail()">عرض الألعاب</button>
-    <div class="detail-icon">${game?.icon || '🎮'}</div>
+    <div class="detail-icon">${game ? gameIconHtml(game, 'detail-icon-image') : iconImageHtml('assets/icons/answer-buzzer.svg', 'detail-icon-image')}</div>
     <h2 style="font-family:'Cairo';">${escapeHtml(title)}</h2>
     <p class="muted">اللعبة بدأت. المنظّم هو من يعرض اللعبة ويتحكم بها من شاشته؛ تابعوا الشاشة الرئيسية وشاركوا معه.</p>
     ${teamHtml}

@@ -5,6 +5,12 @@ function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){ const j=Math
 function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinUrl(code){ return location.origin + location.pathname + '?room=' + code; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function iconImageHtml(src, className='game-icon-image'){
+  return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" />`;
+}
+function gameIconHtml(game, className='game-icon-image'){
+  return iconImageHtml(game.icon, className);
+}
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 
 function renderIllustration(wordText){
@@ -115,7 +121,7 @@ function gameDetailHtml(game, room, code, myId, isHost){
   return `
     <div class="game-detail">
       <button class="btn btn-ghost" onclick="${isHost ? 'hideHostGameDetail()' : 'hideGameDetail()'}">→ رجوع</button>
-      <div class="detail-icon">${game.icon}</div>
+      <div class="detail-icon">${gameIconHtml(game, 'detail-icon-image')}</div>
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>

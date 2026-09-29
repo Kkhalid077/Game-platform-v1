@@ -142,7 +142,7 @@ function renderMafiaHost(code, room){
     <div style="margin-bottom:15px;">
       <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للوحة التحكم</button>
     </div>
-    <h2 style="font-family:'Cairo'; color:var(--accent);">من هم المافيا؟ </h2>
+    <h2 style="font-family:'Cairo'; color:var(--accent);">ليلة المافيا</h2>
     <p class="narrator">${narrator}</p>
     ${control}
     <div class="players-box">

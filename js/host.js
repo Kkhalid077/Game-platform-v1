@@ -59,13 +59,13 @@ function renderHostLobby(code, room){
   const cardsHtml = GAMES_LIST.map(g => {
     if (!g.available) {
       return `<div class="game-card disabled">
-        <div class="game-icon-badge">${g.icon}</div>
+        <div class="game-icon-badge">${gameIconHtml(g)}</div>
         <div class="game-title">${g.title}</div>
         <div class="coming-soon">قريبًا</div>
       </div>`;
     }
     return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
-      <div class="game-icon-badge">${g.icon}</div>
+      <div class="game-icon-badge">${gameIconHtml(g)}</div>
       <div class="game-title">${g.title}</div>
       <div class="vote-badge">الحد الأدنى ${g.minPlayers}</div>
     </div>`;
@@ -125,7 +125,7 @@ function renderHostLobby(code, room){
         <div class="games-grid host-games-grid">${cardsHtml}</div>
         <section class="host-tools-section" aria-labelledby="host-tools-heading">
           <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">الأدوات</h2><p>أدوات تفاعلية تستخدمها أثناء الجلسة.</p></div>
-          <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">زر</span><span class="game-title">استوديو الأسئلة</span><span class="vote-badge">أسرع ضغطة</span></button>
+          <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
         </section>
       </main>
     </div>

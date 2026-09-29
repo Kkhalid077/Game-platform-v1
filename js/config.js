@@ -20,7 +20,7 @@ const app = document.getElementById('app');
    ===================================================================== */
 const GAMES_LIST = [
   {
-    id: 'mafia', title: 'من هم المافيا؟', icon: 'مافيا', available: true, minPlayers: 4,
+    id: 'mafia', title: 'ليلة المافيا', icon: 'assets/icons/mafia-night.svg', available: true, minPlayers: 4,
     desc: 'لعبة استنتاج اجتماعي: مافيا تتربص بالمجموعة، وشرطي وطبيب يحاولون حمايتها.',
     rules: [
       'كل لاعب يحصل على دور سري (مافيا، شرطي، طبيب، أو مواطن) يظهر على جواله فقط.',
@@ -30,7 +30,7 @@ const GAMES_LIST = [
     ]
   },
   {
-    id: 'silentdraw', title: 'الرسم الصامت', icon: 'رسم', available: true, minPlayers: 4, needsTeams: true,
+    id: 'silentdraw', title: 'إشارة ورسمة', icon: 'assets/icons/signal-sketch.svg', available: true, minPlayers: 4, needsTeams: true,
     desc: 'فريقان (شخصان لكل فريق): أحدكما يشاهد صورة توضيحية ويوجّه صديقه بالإشارة فقط بلا كلام، والآخر يرسم حتى يكتشف الكلمة بنفسه.',
     rules: [
       'ينقسم اللاعبون إلى فريقين (A و B) بناءً على اختيارهم أو تلقائيًا.',
@@ -41,8 +41,8 @@ const GAMES_LIST = [
       'أول فريق يخمّن 3 كلمات صحيحة يفوز باللعبة!'
     ]
   },
-  { id: 'clicker', title: 'أسرع ضغطة',     icon: 'سرعة', available: false, minPlayers: 2, desc: '', rules: [] },
-  { id: 'trivia', title: 'أسئلة وتحديات', icon: 'أسئلة', available: true, minPlayers: 2, needsTeams: true,
+  { id: 'clicker', title: 'سباق النقر',     icon: 'assets/icons/click-race.svg', available: false, minPlayers: 2, desc: '', rules: [] },
+  { id: 'trivia', title: 'تحدي المعرفة', icon: 'assets/icons/knowledge-challenge.svg', available: true, minPlayers: 2, needsTeams: true,
     desc: 'لعبة معلومات وتحديات بنظام فريقين. اختاروا الفئات، جاوبوا عن الأسئلة، واجمعوا النقاط حتى نهاية الجولة.',
     rules: ['اختروا 6 فئات من الفئات المتاحة ثم حددوا وسائل المساعدة قبل بدء الجولة.', 'كل فئة تضم 5 أسئلة بقيم متدرجة من 100 إلى 500 نقطة.', 'الفريق الذي يختار السؤال يجيب عنه؛ يقرر المضيف صحة الإجابة ويسجل النقاط.', 'في نهاية الأسئلة يفوز الفريق صاحب أعلى رصيد.'] }
 ];

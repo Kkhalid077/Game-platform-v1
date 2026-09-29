@@ -109,7 +109,7 @@ function renderBuzzerHost(code, room, directState){
   if(!document.getElementById('buzzerHostRoot')){
     app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
       <button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button>
-      <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>استوديو الأسئلة</h1>
+      <span class="host-section-kicker">الأدوات · تفاعل مباشر</span><h1>جرس الإجابة</h1>
       <div class="buzzer-join"><div><span>رمز انضمام اللاعبين</span><strong>${escapeHtml(code)}</strong></div><div id="buzzerQr" aria-label="رمز QR للانضمام"></div></div>
       <p class="muted">يعرض اللاعبون أسماءهم عند الانضمام إلى الغرفة، ثم يضغطون من هواتفهم للإجابة.</p>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين. لأفضل استجابة، اتصلوا جميعاً بشبكة Wi‑Fi نفسها.':'الاتصال المباشر غير مدعوم في هذا المتصفح؛ تُرسل الضغطات عبر Firebase.'}</p>
@@ -151,7 +151,7 @@ function renderBuzzerPlayer(code, myId, name, room, directState){
   if(room.buzzerTransport==='rtc')startBuzzerRtcPlayer(code,myId,room.buzzerSession);
   const state=buzzerState(room,directState||(rtcPlayerCode===code?rtcPlayerState:null)), first=state.winner&&room.players&&room.players[state.winner], won=state.winner===myId;
   if(!document.getElementById('buzzerPlayerRoot')){
-    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">استوديو الأسئلة</span><h1>أهلاً ${escapeHtml(name)}</h1><p class="buzzer-network-note">لأفضل استجابة، تأكد أن هاتفك وجهاز المنظّم على شبكة Wi‑Fi نفسها.</p><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
+    app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><span class="host-section-kicker">جرس الإجابة</span><h1>أهلاً ${escapeHtml(name)}</h1><p class="buzzer-network-note">لأفضل استجابة، تأكد أن هاتفك وجهاز المنظّم على شبكة Wi‑Fi نفسها.</p><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p></main></div>`;
   }
   const button=document.getElementById('buzzerDome');
   const rtcExpected=room.buzzerTransport==='rtc',rtcSupported=!!window.RTCPeerConnection,rtcConnected=rtcPlayerChannel&&rtcPlayerChannel.readyState==='open';
