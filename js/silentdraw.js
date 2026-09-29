@@ -44,7 +44,12 @@ window.startSilentDrawGame = function(code){
 };
 
 window.silentDrawBeginDrawing = function(code){
-  db.ref('rooms/'+code+'/silentdraw').update({ phase:'drawing', timerEnd: Date.now()+90000, results:{A:null,B:null} });
+  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  sdRef.update({ phase:'drawing', timerEnd: Date.now()+90000, results:{A:null,B:null}, awarded:{A:false,B:false} })
+    .catch(error => {
+      console.error('تعذر بدء الرسم:', error);
+      alert('تعذر بدء الرسم. تحقق من اتصال المنظم بالإنترنت ثم حاول مرة أخرى.');
+    });
 };
 
 window.silentDrawFinishRound = function(code){
@@ -191,7 +196,7 @@ function renderSilentDrawHost(code, room){
 
   if (sd.phase==='round_start'){
     narrator = `الجولة ${sd.round} — الموجّهون يشاهدون صور أشكالهم الآن سرًا.`;
-    control = `<button class="btn" onclick="silentDrawBeginDrawing('${code}')">ابدأ الرسم 🎨</button>`;
+    control = `<button class="btn" id="beginDrawingBtn">ابدأ الرسم <span aria-hidden="true">✏️</span></button>`;
   } else if (sd.phase==='drawing'){
     narrator = `⏱️ <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
     control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لفريق A</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لفريق B</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
@@ -228,6 +233,8 @@ function renderSilentDrawHost(code, room){
     mirrorCanvasFrom(code+'_A', 'canvasA');
     mirrorCanvasFrom(code+'_B', 'canvasB');
   }
+  const beginDrawingBtn = document.getElementById('beginDrawingBtn');
+  if (beginDrawingBtn) beginDrawingBtn.onclick = () => window.silentDrawBeginDrawing(code);
   if (sd.phase==='drawing') startHostTimerWatch(sd.timerEnd);
 }
 

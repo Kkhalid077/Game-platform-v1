@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<meta name="theme-color" content="#100b25">
+<meta name="description" content="منصة ألعاب جماعية تفاعلية للعب مع الأصدقاء.">
 <title>منصة الألعاب الجماعية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +18,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 </head>
 <body>
-<div id="app"></div>
+<main id="app" aria-live="polite" aria-atomic="false"></main>
 
 <!-- ملفات المنصة: كل ملف مسؤول عن جزء واضح، ويجب تحميلها بهذا الترتيب بالضبط -->
 <script src="js/config.js"></script>       <!-- إعدادات Firebase + قائمة الألعاب + بنك الكلمات -->
