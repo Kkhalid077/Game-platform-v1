@@ -6,6 +6,7 @@ let ACTIVE_ROOM_CODE = null;
 let ACTIVE_PLAYER_ID = null;
 let lastPlayerRoom = null;
 let playerDetailGameId = null;
+let adminLoginRequested = false;
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
@@ -113,9 +114,18 @@ function setVersionFooterVisibility(visible){
 
 function renderGoogleSignIn(){
   setVersionFooterVisibility(true);
-  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
-  document.getElementById('googleSignInBtn').onclick = async () => {
-    try { await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><button class="btn btn-ghost" id="adminSignInBtn" style="width:100%; margin-top:10px;">دخول المسؤول</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
+  const signIn = async (adminOnly) => {
+    adminLoginRequested = adminOnly;
+    const provider = new firebase.auth.GoogleAuthProvider();
+    if (adminOnly) provider.setCustomParameters({ login_hint:ADMIN_EMAILS[0], prompt:'select_account' });
+    try {
+      const result = await firebase.auth().signInWithPopup(provider);
+      if (adminOnly && !isAdminAccount(result.user)) {
+        await firebase.auth().signOut();
+        document.getElementById('authError').textContent = 'هذا الحساب غير مصرح له بدخول المسؤول.';
+      }
+    }
     catch (error) {
       const messages = {
         'auth/operation-not-allowed': 'تسجيل الدخول عبر Google غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method ← Google.',
@@ -127,10 +137,14 @@ function renderGoogleSignIn(){
       document.getElementById('authError').textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
     }
   };
+  document.getElementById('googleSignInBtn').onclick = () => signIn(false);
+  document.getElementById('adminSignInBtn').onclick = () => signIn(true);
 }
 
 firebase.auth().onAuthStateChanged(user => {
   if (!user) { renderGoogleSignIn(); return; }
+  if (adminLoginRequested && !isAdminAccount(user)) { firebase.auth().signOut(); return; }
+  adminLoginRequested = false;
   const params = new URLSearchParams(location.search);
   const sessionParam = params.get('session');
   const gameParam = params.get('game');

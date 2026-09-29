@@ -51,11 +51,28 @@ window.showHostGameDetail = function(gameId){
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
 window.signOut = function(){ firebase.auth().signOut(); };
+window.saveGameUsername = async function(){
+  const user = firebase.auth().currentUser;
+  const input = document.getElementById('gameUsernameInput');
+  const status = document.getElementById('usernameStatus');
+  const name = input?.value.trim();
+  if (!user || !name || name.length < 2) { status.textContent = 'اكتب اسمًا من حرفين على الأقل.'; return; }
+  try {
+    await user.updateProfile({ displayName:name });
+    if (ACTIVE_ROOM_CODE && ACTIVE_PLAYER_ID) await db.ref(`rooms/${ACTIVE_ROOM_CODE}/players/${ACTIVE_PLAYER_ID}/name`).set(name);
+    status.textContent = 'تم حفظ الاسم. سيظهر في الألعاب.';
+    if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom);
+  } catch (error) {
+    console.error('Username update failed:', error);
+    status.textContent = 'تعذر حفظ الاسم. حاول مرة أخرى.';
+  }
+};
 
 function accountInfoHtml(){
   const user = firebase.auth().currentUser;
   const name = escapeHtml(user?.displayName || 'المستخدم');
   const email = escapeHtml(user?.email || '');
+  const accountType = isAdminAccount(user) ? 'حساب مسؤول' : 'حساب Google';
   const photo = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="صورة ${name}">` : `<span>${escapeHtml(name.charAt(0))}</span>`;
   return `<div class="account-menu">
     <button type="button" class="account-avatar-button" onclick="toggleAccountInfo()" aria-label="إظهار معلومات الحساب">${photo}</button>
@@ -63,10 +80,10 @@ function accountInfoHtml(){
       <article class="account-card">
         <button type="button" class="account-close" onclick="toggleAccountInfo()" aria-label="إغلاق">×</button>
         <div class="account-profile-image">${photo}</div>
-        <span class="host-section-kicker">حساب Google</span>
+        <span class="host-section-kicker">${accountType}</span>
         <h2>${name}</h2>
         <p class="account-email">${email}</p>
-        <section class="account-game-name"><span>اسم المستخدم في الألعاب</span><strong>${name}</strong><small>سيظهر هذا الاسم للاعبين أثناء المشاركة.</small></section>
+        <section class="account-game-name"><label for="gameUsernameInput">اسم المستخدم في الألعاب</label><input id="gameUsernameInput" type="text" maxlength="30" value="${name}" autocomplete="nickname"><small>سيظهر هذا الاسم للاعبين أثناء المشاركة.</small><button type="button" class="btn account-save-name" onclick="saveGameUsername()">حفظ الاسم</button><small id="usernameStatus"></small></section>
         <button type="button" class="btn btn-ghost account-signout" onclick="signOut()">تسجيل الخروج</button>
       </article>
     </div>
