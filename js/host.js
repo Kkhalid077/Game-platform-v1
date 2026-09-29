@@ -93,52 +93,41 @@ function renderHostLobby(code, room){
   const playerCount = Object.keys(players).length;
 
   document.getElementById('stage').innerHTML = `
-    <div class="host-lobby">
-      <header class="host-welcome">
-        <span class="host-eyebrow"><span class="host-live-dot"></span> مساحة المنظم</span>
-        <h1>إدارة الغرفة</h1>
-        <p>شارك رمز الدعوة، تابع اللاعبين، واختروا اللعبة.</p>
-      </header>
-      <section class="host-room-grid" aria-label="معلومات الغرفة والانضمام">
-        <div class="host-room-card">
+    <div class="host-dashboard">
+      <aside class="host-sidebar" aria-label="معلومات الغرفة">
+        <section class="host-room-card">
           <span class="host-section-kicker">رمز الغرفة</span>
           <p class="room-code">${code}</p>
-          <div class="host-room-status"><span class="host-live-dot"></span> الغرفة نشطة <span class="host-status-separator">•</span> ${playerCount} لاعب</div>
-        </div>
-        <div class="join-row">
-          <div class="join-info">
-            <span class="join-kicker">انضم إلى اللعبة</span>
-            <h3>امسح الرمز أو افتح الرابط</h3>
-            <div class="link-text">${joinUrl(code)}</div>
-            <button class="btn btn-ghost" id="copyBtn">نسخ رابط الانضمام</button>
+          <div class="host-room-status"><span class="host-live-dot"></span> الغرفة نشطة</div>
+        </section>
+
+        <section class="host-qr-card">
+          <span>امسح للانضمام</span>
+          <div id="qr"></div>
+        </section>
+
+        <section class="host-players-panel">
+          <div class="host-sidebar-heading">
+            <span>اللاعبون المتصلون</span>
+            <b>${playerCount}</b>
           </div>
-          <div class="join-qr"><span>امسح للانضمام</span><div id="qr"></div></div>
-        </div>
-      </section>
+          <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>بانتظار أول لاعب</span><small>امسح رمز QR للانضمام</small></div>'}</div>
+        </section>
+      </aside>
 
-      <section class="host-panel">
-        <div class="host-section-heading">
-          <div><span class="host-section-kicker">الردهة</span><h2>اللاعبون</h2><p>الأصدقاء الموجودون في الغرفة الآن</p></div>
-          <span class="host-count">${playerCount}</span>
-        </div>
-        <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>بانتظار أول لاعب</span><small>أرسل رمز الغرفة أو امسح رمز QR للانضمام</small></div>'}</div>
-      </section>
-
-      <section class="host-panel host-games-panel">
-        <div class="host-section-heading">
-          <div><span class="host-section-kicker">اختروا وجهتكم</span><h2>الألعاب</h2><p>اختر لعبة لعرض تفاصيلها والتحكم في بدايتها</p></div>
-          <span class="host-game-mark" aria-hidden="true">✦</span>
-        </div>
-        <div class="games-grid">${cardsHtml}</div>
-      </section>
+      <main class="host-games-main">
+        <header class="host-games-header">
+          <div>
+            <span class="host-section-kicker">لوحة التحكم</span>
+            <h1>اختر لعبة</h1>
+            <p>اختر بطاقة لقراءة التعليمات وبدء اللعبة.</p>
+          </div>
+        </header>
+        <div class="games-grid host-games-grid">${cardsHtml}</div>
+      </main>
     </div>
   `;
   new QRCode(document.getElementById('qr'), { text: joinUrl(code), width:120, height:120 });
-  document.getElementById('copyBtn').onclick = () => {
-    navigator.clipboard.writeText(joinUrl(code)).then(()=>{
-      document.getElementById('copyBtn').textContent = 'تم النسخ ✓';
-    });
-  };
 }
 
 function renderHostGenericPlaceholder(code, room){
