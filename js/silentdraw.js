@@ -1,6 +1,12 @@
 /* =====================================================================
    SECTION 7 — SILENT DRAW MODULE WITH TEAM SELECTION
    ===================================================================== */
+function silentDrawTeamIds(sd, team){
+  const members = sd && sd.teams && sd.teams[team];
+  if (Array.isArray(members)) return members;
+  return Object.values(members || {});
+}
+
 window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
   roomRef.child('players').once('value', snap => {
@@ -44,11 +50,17 @@ window.startSilentDrawGame = function(code){
 };
 
 window.silentDrawBeginDrawing = async function(code){
-  const sdRef = db.ref('rooms/'+code+'/silentdraw');
+  const roomRef = db.ref('rooms/'+code);
+  const sdRef = roomRef.child('silentdraw');
   const button = document.getElementById('beginDrawingBtn');
   if (button){ button.disabled = true; button.textContent = 'جارٍ بدء الرسم…'; }
   try {
-    await sdRef.update({ phase:'drawing', timerEnd: Date.now()+90000, results:{A:null,B:null}, awarded:{A:false,B:false} });
+    await roomRef.update({
+      'silentdraw/phase':'drawing',
+      'silentdraw/timerEnd':Date.now()+90000,
+      'silentdraw/results':{A:null,B:null},
+      'silentdraw/awarded':{A:false,B:false}
+    });
     const phaseSnap = await sdRef.child('phase').once('value');
     if (phaseSnap.val() !== 'drawing') throw new Error('تأكد الخادم من عدم بدء الجولة');
   } catch (error) {
@@ -188,7 +200,7 @@ function setupSilentCanvas(code, team){
 }
 
 function silentDrawRankingHtml(sd, players){
-  const teamLabel = t => sd.teams[t].map(id => players[id]?.name || '').join(' و ');
+  const teamLabel = t => silentDrawTeamIds(sd,t).map(id => players[id]?.name || '').join(' و ');
   const ranked = ['A','B'].sort((a,b) => sd.correctCount[b] - sd.correctCount[a]);
   return ranked.map((t,i) => `<div class="chip team-${t}">${i+1}. فريق ${t} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
 }
@@ -196,7 +208,7 @@ function silentDrawRankingHtml(sd, players){
 function renderSilentDrawHost(code, room){
   const sd = room.silentdraw; if (!sd) return;
   const players = room.players || {};
-  const teamLabel = t => sd.teams[t].map(id=>players[id]?.name||'').join(' و ');
+  const teamLabel = t => silentDrawTeamIds(sd,t).map(id=>players[id]?.name||'').join(' و ');
   let narrator = '', control = '', boards = '';
   const showBoards = ['drawing','round_result','ended'].includes(sd.phase);
 
@@ -247,7 +259,9 @@ function renderSilentDrawHost(code, room){
 function renderSilentDrawPlayer(code, myId, name, room){
   const sd = room.silentdraw; if (!sd) return;
   const players = room.players || {};
-  const myTeam = sd.teams.A.includes(myId) ? 'A' : (sd.teams.B.includes(myId) ? 'B' : null);
+  const myTeam = silentDrawTeamIds(sd,'A').some(id => String(id) === String(myId))
+    ? 'A'
+    : (silentDrawTeamIds(sd,'B').some(id => String(id) === String(myId)) ? 'B' : null);
 
   if (!myTeam){
     app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">👀 أنت متفرج</h2><p class="muted">انضممت بعد بدء اللعبة، شاهد شاشة الحكم.</p></div></div>`;
@@ -255,8 +269,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
   }
 
   const isGuide = sd.guideOf[myTeam] === myId;
-  const isDrawer = sd.drawerOf[myTeam] === myId;
-  const teammateId = sd.teams[myTeam].find(id => id !== myId);
+  const teammateId = silentDrawTeamIds(sd,myTeam).find(id => String(id) !== String(myId));
   const teammateName = players[teammateId]?.name || '';
 
   if (sd.phase==='round_start'){
@@ -283,8 +296,6 @@ function renderSilentDrawPlayer(code, myId, name, room){
         <p class="muted">بدون كلام! فقط إشارات لصديقك.</p>
         <p class="muted">${sd.results[myTeam]==='correct' ? '🎉 صديقك خمّن الكلمة!' : ''}</p>
       </div></div>`;
-    } else if (!isDrawer) {
-      app.innerHTML = `<div class="phone"><div class="card"><p class="muted">انتظر دورك في الرسم.</p></div></div>`;
     } else if (sd.results[myTeam] === 'correct') {
       app.innerHTML = `<div class="phone"><div class="card">
         <h2 style="font-family:'Cairo'; color:var(--green);">🎉 أحسنت! خمّنت صح</h2>
