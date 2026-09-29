@@ -50,6 +50,7 @@ function dispatchPlayerRender(code, myId, name, room){
   const isSilentDrawScreen = room.status === 'in_game' && room.activeGame === 'silentdraw';
   if (!isSilentDrawScreen && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);
+  else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawPlayer(code, myId, name, room);
   else app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">🎮 اللعبة قيد التطوير</h2><p class="muted">انظر شاشة المضيف.</p></div></div>`;

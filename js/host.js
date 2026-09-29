@@ -35,6 +35,7 @@ function dispatchHostRender(code, room){
   if (!room) return;
   lastHostRoom = room;
   if (room.status === 'voting') renderHostLobby(code, room);
+  else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
   else renderHostGenericPlaceholder(code, room);
@@ -122,6 +123,10 @@ function renderHostLobby(code, room){
           </div>
         </header>
         <div class="games-grid host-games-grid">${cardsHtml}</div>
+        <section class="host-tools-section" aria-labelledby="host-tools-heading">
+          <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">الأدوات</h2><p>أدوات تفاعلية تستخدمها أثناء الجلسة.</p></div>
+          <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">🔔</span><span class="game-title">استوديو الأسئلة</span><span class="vote-badge">أسرع ضغطة</span></button>
+        </section>
       </main>
     </div>
   `;
@@ -144,8 +149,13 @@ window.startGame = function(gameId, code){
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
+window.startBuzzerTool = function(code){
+  hostDetailGameId = null;
+  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+};
+
 window.resetToLobby = function(code){
-  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, votes:{}, mafia:null, silentdraw:null });
+  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, votes:{}, mafia:null, silentdraw:null, buzzer:null });
   db.ref('strokes/'+code+'_A').set(null);
   db.ref('strokes/'+code+'_B').set(null);
 };
