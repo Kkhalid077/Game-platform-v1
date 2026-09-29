@@ -25,12 +25,8 @@ function initHostRoom(code, isNew){
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
 
   app.innerHTML = `
-    <div class="top-bar" style="display:flex; gap:8px;">
-      <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" id="leaveRoomBtn">مغادرة الغرفة</button>
-    </div>
     <div class="stage" id="stage"></div>
   `;
-  document.getElementById('leaveRoomBtn').onclick = () => hostLeaveRoom(code);
 
   roomRef.on('value', snap => dispatchHostRender(code, snap.val()));
 }
@@ -113,6 +109,8 @@ function renderHostLobby(code, room){
           </div>
           <div class="host-player-list">${playersListHtml || '<div class="host-empty"><span>بانتظار أول لاعب</span><small>امسح رمز QR للانضمام</small></div>'}</div>
         </section>
+
+        <button type="button" class="btn btn-ghost host-leave-button" onclick="hostLeaveRoom('${code}')">مغادرة الغرفة</button>
       </aside>
 
       <main class="host-games-main">

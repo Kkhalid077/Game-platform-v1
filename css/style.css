@@ -245,8 +245,6 @@
   }
 
   /* Host dashboard: room controls in a compact sidebar, games in the main area. */
-  .top-bar{position:fixed;top:14px;right:14px;left:auto;z-index:20}
-  .top-bar .btn{margin:0;font-size:12px;padding:7px 12px}
   .stage:has(.host-dashboard){align-items:stretch;padding:16px;min-height:100vh}
   .host-dashboard{direction:ltr;display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;width:100%;min-height:calc(100vh - 32px);text-align:right}
   .host-sidebar,.host-games-main{direction:rtl;min-width:0;border:1px solid rgba(196,181,253,.14);background:linear-gradient(150deg,rgba(37,29,65,.9),rgba(21,17,42,.94));box-shadow:0 16px 42px rgba(0,0,0,.22)}
@@ -269,6 +267,7 @@
   .host-player-info small{font-size:10px}
   .host-player-online{width:7px;height:7px}
   .host-empty{padding:14px 8px;font-size:12px}
+  .host-leave-button{width:100%;margin:0;padding:8px 10px;color:#fda4af;border-color:rgba(251,113,133,.38);font-size:11px}
   .host-games-main{display:flex;flex-direction:column;padding:24px 28px;border-radius:20px}
   .host-games-header{margin:0 0 18px}
   .host-games-header h1{font-family:'Cairo',sans-serif;font-size:25px;line-height:1.35;margin:3px 0 0}
@@ -279,7 +278,6 @@
   .host-games-grid .game-title{font-size:13px}
   .host-games-grid .vote-badge,.host-games-grid .coming-soon{font-size:10px;margin-top:4px}
   @media(max-width:760px){
-    .top-bar{top:10px;right:10px}
     .stage:has(.host-dashboard){padding:10px;min-height:auto}
     .host-dashboard{grid-template-columns:1fr;gap:10px;min-height:0}
     .host-sidebar{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(145px,.7fr) minmax(0,1.3fr);gap:10px;padding:12px}
@@ -287,6 +285,7 @@
     .host-room-card .room-code{font-size:29px;letter-spacing:6px}
     .host-qr-card #qr canvas,.host-qr-card #qr img{width:86px!important;height:86px!important}
     .host-players-panel{max-height:136px}
+    .host-leave-button{grid-column:1 / -1}
     .host-games-main{padding:17px 14px;border-radius:16px}
     .host-games-header{margin-bottom:12px}
     .host-games-header h1{font-size:21px}
