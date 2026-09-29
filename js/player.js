@@ -47,6 +47,8 @@ function renderPlayer(code){
 
 function dispatchPlayerRender(code, myId, name, room){
   lastPlayerRoom = room;
+  const isSilentDrawScreen = room.status === 'in_game' && room.activeGame === 'silentdraw';
+  if (!isSilentDrawScreen && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (room.status === 'voting') renderPlayerVoting(code, myId, name, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaPlayer(code, myId, name, room);
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawPlayer(code, myId, name, room);

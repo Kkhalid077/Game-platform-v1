@@ -22,12 +22,25 @@ function normalizeAr(s){
     .replace(/\s+/g,'');
 }
 function drawSegment(ctx, canvas, s){
-  if (!s || !s.points || s.points.length < 2) return;
-  ctx.strokeStyle = s.color; ctx.lineWidth = s.size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (!s || !Array.isArray(s.points) || !s.points.length) return;
+  const points = s.points.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (!points.length) return;
+  const lineWidth = Math.max(1, Number(s.size) || 5);
+  ctx.strokeStyle = s.color || '#000000';
+  ctx.fillStyle = s.color || '#000000';
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (points.length === 1) {
+    ctx.beginPath();
+    ctx.arc(points[0].x * canvas.width, points[0].y * canvas.height, lineWidth / 2, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
   ctx.beginPath();
-  s.points.forEach((p,i) => {
-    const x = p.x*canvas.width, y = p.y*canvas.height;
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  points.forEach((p,i) => {
+    const x = p.x * canvas.width, y = p.y * canvas.height;
+    if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
   });
   ctx.stroke();
 }

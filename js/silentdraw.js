@@ -155,48 +155,137 @@ window.silentDrawUndo = function(code, team){
   });
 };
 
+let silentCanvasCleanup = null;
+function cleanupSilentCanvas(){
+  if (silentCanvasCleanup){ silentCanvasCleanup(); silentCanvasCleanup = null; }
+}
+window.cleanupSilentCanvas = cleanupSilentCanvas;
+
 function setupSilentCanvas(code, team){
+  cleanupSilentCanvas();
   const canvas = document.getElementById('drawCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
   const strokesRef = db.ref('strokes/'+code+'_'+team);
+  canvas.style.touchAction = 'none';
+  canvas.style.userSelect = 'none';
+  canvas.style.webkitUserSelect = 'none';
 
-  strokesRef.once('value', snap => {
-    Object.values(snap.val()||{}).forEach(s => drawSegment(ctx, canvas, s));
-  });
+  let drawing = false;
+  let activePointerId = null;
+  let points = [];
+  let activeStrokeRef = null;
+  let activeStrokeColor = currentColor;
+  let disposed = false;
 
-  let drawing = false, pts = [], activeStrokeRef = null;
-  function getPos(e){
-    const r = canvas.getBoundingClientRect();
-    const cx = e.clientX - r.left;
-    const cy = e.clientY - r.top;
-    return { x: cx/r.width, y: cy/r.height };
+  function pointFromEvent(event){
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const touch = event.changedTouches && event.changedTouches[0];
+    const clientX = touch ? touch.clientX : event.clientX;
+    const clientY = touch ? touch.clientY : event.clientY;
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+    return {
+      x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+    };
   }
-  function start(e){
-    if (e.button !== undefined && e.button !== 0) return;
-    e.preventDefault();
-    drawing = true;
-    pts = [getPos(e)];
-    activeStrokeRef = strokesRef.push();
-    canvas.setPointerCapture(e.pointerId);
-  }
-  function move(e){
-    if (!drawing) return; e.preventDefault();
-    const p = getPos(e); const prev = pts[pts.length-1] || p;
-    pts.push(p);
-    const stroke = { points:pts.slice(), color:currentColor, size:4 };
-    drawSegment(ctx, canvas, { points:[prev,p], color:currentColor, size:4 });
+
+  function persistStroke(){
+    if (!activeStrokeRef || points.length === 0) return;
+    const stroke = { points:points.slice(), color:activeStrokeColor, size:5 };
     activeStrokeRef.set(stroke).catch(error => console.error('تعذر بث الرسم:', error));
   }
-  function end(){
-    if (!drawing) return; drawing=false;
-    if (pts.length < 2 && activeStrokeRef) activeStrokeRef.remove();
-    pts=[]; activeStrokeRef=null;
+
+  function begin(event){
+    if (drawing || (event.button !== undefined && event.button !== 0)) return;
+    if (event.cancelable) event.preventDefault();
+    const point = pointFromEvent(event);
+    if (!point) return;
+    drawing = true;
+    activePointerId = event.pointerId ?? 'touch-or-mouse';
+    points = [point];
+    activeStrokeColor = currentColor;
+    activeStrokeRef = strokesRef.push();
+    drawSegment(ctx, canvas, { points, color:activeStrokeColor, size:5 });
+    persistStroke();
+    if (event.pointerId !== undefined && canvas.setPointerCapture){
+      try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+    }
   }
-  canvas.addEventListener('pointerdown', start);
-  canvas.addEventListener('pointermove', move);
-  canvas.addEventListener('pointerup', end);
-  canvas.addEventListener('pointercancel', end);
+
+  function continueStroke(event){
+    if (!drawing) return;
+    if (event.pointerId !== undefined && activePointerId !== event.pointerId) return;
+    if (event.cancelable) event.preventDefault();
+    const point = pointFromEvent(event);
+    if (!point) return;
+    const previous = points[points.length - 1];
+    points.push(point);
+    drawSegment(ctx, canvas, { points:[previous,point], color:activeStrokeColor, size:5 });
+    persistStroke();
+  }
+
+  function finish(event){
+    if (!drawing) return;
+    if (event && event.pointerId !== undefined && activePointerId !== event.pointerId) return;
+    drawing = false;
+    activePointerId = null;
+    points = [];
+    activeStrokeRef = null;
+  }
+
+  function preventCanvasMenu(event){ event.preventDefault(); }
+  function redrawAfterUndo(){
+    strokesRef.once('value').then(snapshot => {
+      if (disposed || document.getElementById('drawCanvas') !== canvas) return;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      Object.values(snapshot.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
+    }).catch(error => console.error('تعذر تحديث اللوحة بعد التراجع:', error));
+  }
+  strokesRef.on('child_removed', redrawAfterUndo);
+  const supportsPointerEvents = 'PointerEvent' in window;
+  if (supportsPointerEvents){
+    canvas.addEventListener('pointerdown', begin);
+    window.addEventListener('pointermove', continueStroke, {passive:false});
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', finish);
+  } else {
+    canvas.addEventListener('mousedown', begin);
+    window.addEventListener('mousemove', continueStroke);
+    window.addEventListener('mouseup', finish);
+    canvas.addEventListener('touchstart', begin, {passive:false});
+    window.addEventListener('touchmove', continueStroke, {passive:false});
+    window.addEventListener('touchend', finish);
+    window.addEventListener('touchcancel', finish);
+  }
+  canvas.addEventListener('contextmenu', preventCanvasMenu);
+
+  strokesRef.once('value').then(snapshot => {
+    if (disposed || document.getElementById('drawCanvas') !== canvas) return;
+    Object.values(snapshot.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
+  }).catch(error => console.error('تعذر تحميل الرسم المحفوظ:', error));
+
+  silentCanvasCleanup = () => {
+    disposed = true;
+    if (supportsPointerEvents){
+      canvas.removeEventListener('pointerdown', begin);
+      window.removeEventListener('pointermove', continueStroke);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+    } else {
+      canvas.removeEventListener('mousedown', begin);
+      window.removeEventListener('mousemove', continueStroke);
+      window.removeEventListener('mouseup', finish);
+      canvas.removeEventListener('touchstart', begin);
+      window.removeEventListener('touchmove', continueStroke);
+      window.removeEventListener('touchend', finish);
+      window.removeEventListener('touchcancel', finish);
+    }
+    canvas.removeEventListener('contextmenu', preventCanvasMenu);
+    strokesRef.off('child_removed', redrawAfterUndo);
+  };
 }
 
 function silentDrawRankingHtml(sd, players){
@@ -258,12 +347,14 @@ function renderSilentDrawHost(code, room){
 
 function renderSilentDrawPlayer(code, myId, name, room){
   const sd = room.silentdraw; if (!sd) return;
+  if (sd.phase !== 'drawing') cleanupSilentCanvas();
   const players = room.players || {};
   const myTeam = silentDrawTeamIds(sd,'A').some(id => String(id) === String(myId))
     ? 'A'
     : (silentDrawTeamIds(sd,'B').some(id => String(id) === String(myId)) ? 'B' : null);
 
   if (!myTeam){
+    cleanupSilentCanvas();
     app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">👀 أنت متفرج</h2><p class="muted">انضممت بعد بدء اللعبة، شاهد شاشة الحكم.</p></div></div>`;
     return;
   }
@@ -289,6 +380,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
 
   if (sd.phase==='drawing'){
     if (isGuide){
+      cleanupSilentCanvas();
       app.innerHTML = `<div class="phone"><div class="card">
         <h2 style="font-family:'Cairo';">تذكير بالمطلوب</h2>
         ${renderIllustration(sd.words[myTeam])}
@@ -297,6 +389,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
         <p class="muted">${sd.results[myTeam]==='correct' ? '🎉 صديقك خمّن الكلمة!' : ''}</p>
       </div></div>`;
     } else if (sd.results[myTeam] === 'correct') {
+      cleanupSilentCanvas();
       app.innerHTML = `<div class="phone"><div class="card">
         <h2 style="font-family:'Cairo'; color:var(--green);">🎉 أحسنت! خمّنت صح</h2>
         <p class="muted">بانتظار الفريق الآخر أو انتهاء الجولة…</p>
