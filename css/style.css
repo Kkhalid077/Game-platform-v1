@@ -977,3 +977,33 @@ body.has-dashboard-footer .site-footer.is-entry-visible{background:rgba(2,11,32,
 @media(max-width:680px){
   .landing-hero{padding-block:46px 50px}
 }
+.landing-page,.landing-page *{font-family:'Thmanyah Sans',sans-serif}
+.landing-brand-name{font-size:30px;font-weight:700;letter-spacing:0}
+.landing-nav-links a{font-size:15px}
+.landing-login,.landing-register,.landing-primary-cta{font-size:15px;font-weight:700}
+.landing-eyebrow{font-size:14px;font-weight:500}
+.landing-hero h1{font-size:clamp(52px,6vw,70px);font-weight:900;line-height:1.28;letter-spacing:0}
+.landing-lead{font-size:17px;line-height:1.95}
+.landing-auth-hint{font-size:13px}
+.landing-section-heading h2{font-size:clamp(26px,3vw,34px);line-height:1.45}
+.landing-section-heading>p{font-size:15px;line-height:1.9}
+.landing-feature h3{font-size:18px;font-weight:700}
+.landing-feature p{font-size:14px;line-height:1.95}
+.landing-showcase-visual-content h3{font-size:20px;font-weight:700}
+.landing-showcase-copy p{font-size:clamp(16px,1.7vw,18px);line-height:1.95}
+.landing-showcase-status{font-size:12px}
+.landing-games-title-group .landing-eyebrow{font-size:14px}
+.landing-footer{font-size:13px}
+@media(max-width:680px){
+  .landing-brand-name{font-size:26px}
+  .landing-nav-links a{font-size:14px}
+  .landing-login,.landing-register{font-size:14px}
+  .landing-hero h1{font-size:clamp(42px,10.5vw,56px);line-height:1.35}
+  .landing-lead{font-size:15px;line-height:1.9}
+  .landing-section-heading h2{font-size:25px}
+  .landing-section-heading>p{font-size:14px;line-height:1.85}
+  .landing-feature h3{font-size:17px}
+  .landing-feature p{font-size:13px}
+  .landing-showcase-visual-content h3{font-size:18px}
+  .landing-showcase-copy p{font-size:14px;line-height:1.9}
+}
