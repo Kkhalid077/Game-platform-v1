@@ -49,13 +49,29 @@ const TRIVIA_BANK = [
     ['ما أكبر حيوان يعيش على الأرض؟','الحوت الأزرق',['الحوت الأزرق','الفيل الأفريقي','الزرافة','القرش الأبيض'],'يعيش في المحيط ويعد أضخم الكائنات.'],
     ['ما اسم صغير الضفدع قبل اكتمال نموه؟','شرغوف',['شرغوف','يرقة','فرخ','جرو'],'يعيش في الماء وله ذيل.']]}
 ];
-const TRIVIA_AIDS=[{id:'fifty',name:'حذف خيارين',icon:'✂️'},{id:'hint',name:'تلميح',icon:'💡'},{id:'double',name:'مضاعفة النقاط',icon:'×2'}];
+const TRIVIA_AIDS=[
+  {id:'fifty',name:'حذف خيارين',icon:'✂️',help:'يحذف المنظّم خيارين خاطئين من خيارات الإجابة.'},
+  {id:'hint',name:'تلميح',icon:'💡',help:'يعرض تلميحًا يساعد الفريق على الوصول إلى الإجابة.'},
+  {id:'double',name:'مضاعفة النقاط',icon:'×2',help:'يضاعف نقاط السؤال الحالي عند الإجابة الصحيحة.'},
+  {id:'steal',name:'سرقة النقاط',icon:'↗️',help:'إذا أخفق الفريق في الإجابة، تُتاح للفريق الآخر فرصة كسب نقاط السؤال.'},
+  {id:'skip',name:'تجاوز السؤال',icon:'⏭️',help:'ينهي السؤال الحالي دون نقاط وينتقل الدور إلى الفريق الآخر.'},
+  {id:'wheel',name:'عجلة الحظ',icon:'🎡',help:'تدير عجلة عشوائية بنتائج ومفاجآت مختلفة.'}
+];
 
 function startTriviaSetup(code){
-  const game=TRIVIA_BANK.map(c=>({id:c.id,name:c.name,icon:c.icon}));
   db.ref('rooms/'+code+'/teamNames').once('value').then(snapshot=>{
     const names=snapshot.val()||{};
-    return db.ref('rooms/'+code).update({status:'trivia_setup',activeGame:'trivia',trivia:{phase:'setup',categories:game.slice(0,6).map(c=>c.id),aids:{fifty:true,hint:true,double:true},usedAids:{},scores:{A:0,B:0},used:{},teams:{A:names.A||'الفريق الأخضر',B:names.B||'الفريق البرتقالي'},turn:'A'}});
+    return db.ref('rooms/'+code).update({status:'trivia_setup',activeGame:'trivia',trivia:{
+      phase:'setup',
+      categories:[],
+      aidsByTeam:{A:[],B:[]},
+      usedAids:{A:{},B:{}},
+      scores:{A:0,B:0},
+      used:{},
+      questionOverrides:{},
+      teams:{A:names.A||'الفريق الأول',B:names.B||'الفريق الثاني'},
+      turn:'A'
+    }});
   }).catch(error=>{
     console.error('Could not start trivia setup:',error);
     alert('تعذر تجهيز اللعبة. تحقق من الاتصال وحاول مرة أخرى.');
@@ -64,47 +80,309 @@ function startTriviaSetup(code){
 function renderTriviaHost(code,room){
   const t=room.trivia||{};
   if(t.phase==='setup') return renderTriviaSetupHost(code,t);
+  if(t.phase==='categories') return renderTriviaCategoriesHost(code,t);
   if(t.phase==='question') return renderTriviaQuestionHost(code,t);
   if(t.phase==='done') return renderTriviaDone(code,t);
   renderTriviaBoard(code,t);
 }
 function renderTriviaSetupHost(code,t){
+  const teamCards=['A','B'].map(team=>{
+    const selected=t.aidsByTeam?.[team]||[];
+    const aidChoices=TRIVIA_AIDS.map(aid=>`<div class="trivia-aid-choice">
+      <label class="trivia-aid"><input type="checkbox" data-trivia-aid="${team}-${aid.id}" ${selected.includes(aid.id)?'checked':''} ${selected.length>=3&&!selected.includes(aid.id)?'disabled':''} onchange="triviaToggleAid('${code}','${team}','${aid.id}',this.checked)"><span>${aid.icon}</span><b>${aid.name}</b></label>
+      <details class="trivia-aid-help"><summary aria-label="شرح ${aid.name}">؟</summary><p>${aid.help}</p></details>
+    </div>`).join('');
+    const teamName=t.teams?.[team]|| (team==='A'?'الفريق الأول':'الفريق الثاني');
+    return `<section class="trivia-team-setup trivia-team-${team.toLowerCase()}">
+      <header class="trivia-team-heading"><span class="trivia-team-label">الفريق ${team==='A'?'الأول':'الثاني'}</span>
+        <div class="trivia-team-name"><strong data-trivia-team-name="${team}">${escapeHtml(teamName)}</strong><button type="button" class="trivia-team-edit" data-trivia-team-toggle="${team}" onclick="triviaToggleTeamEdit('${team}')">تعديل</button></div>
+        <input class="trivia-team-name-input" data-trivia-team-input="${team}" value="${escapeHtml(teamName)}" maxlength="24" aria-label="اسم الفريق ${team==='A'?'الأول':'الثاني'}" hidden oninput="triviaPreviewTeamName('${team}',this.value)" onblur="triviaSaveTeamName('${code}','${team}',this.value)">
+        <small>${selected.length} من 3 وسائل مساعدة مختارة</small>
+      </header><div class="trivia-aid-grid">${aidChoices}</div>
+    </section>`;
+  }).join('');
+  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap">
+    <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>إعداد الفريقين</h1><p>سمّوا الفريقين، ثم يختار كل فريق 3 وسائل مساعدة.</p></div></header>
+    <div class="trivia-team-setup-grid">${teamCards}</div>
+    <button class="btn trivia-start" ${['A','B'].some(team=>(t.aidsByTeam?.[team]||[]).length!==3)?'disabled':''} onclick="triviaShowCategories('${code}')">تحديد الفئات</button>
+  </div>`;
+}
+function renderTriviaCategoriesHost(code,t){
   const selected=t.categories||[];
   const cards=TRIVIA_BANK.map(c=>`<button class="trivia-category ${selected.includes(c.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${c.id}')"><span>${c.icon}</span><b>${c.name}</b><small>${selected.includes(c.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
-  const aids=TRIVIA_AIDS.map(a=>`<label class="trivia-aid"><input type="checkbox" ${t.aids?.[a.id]?'checked':''} onchange="triviaToggleAid('${code}','${a.id}',this.checked)"><span>${a.icon}</span><b>${a.name}</b></label>`).join('');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><header class="trivia-head"><div><span class="host-section-kicker">تحدي المعرفة</span><h1>جهّزوا الجولة</h1><p>اختاروا 6 فئات، ثم فعّلوا وسائل المساعدة التي تريدونها.</p></div></header><div class="trivia-category-grid">${cards}</div><h2 class="trivia-section-title">وسائل المساعدة</h2><div class="trivia-aids">${aids}</div><button class="btn trivia-start" ${selected.length!==6?'disabled':''} onclick="triviaBegin('${code}')">ابدأ اللعبة · ${selected.length}/6 فئات</button></div>`;
+  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap">
+    <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>تحديد الفئات</h1><p>اختاروا 6 فئات للوحة اللعب (${selected.length}/6).</p></div><button class="btn btn-ghost" onclick="triviaBackToTeams('${code}')">العودة للفريقين</button></header>
+    <div class="trivia-category-grid">${cards}</div>
+    <button class="btn trivia-start" ${selected.length!==6?'disabled':''} onclick="triviaBegin('${code}')">ابدأ اللعبة</button>
+  </div>`;
 }
-window.triviaToggleCategory=(code,id)=>{const ref=db.ref(`rooms/${code}/trivia/categories`);ref.once('value',s=>{let a=s.val()||[];a=a.includes(id)?a.filter(x=>x!==id):(a.length<6?[...a,id]:a);ref.set(a);});};
-window.triviaToggleAid=(code,id,on)=>db.ref(`rooms/${code}/trivia/aids/${id}`).set(on);
-window.triviaBegin=code=>db.ref(`rooms/${code}`).update({status:'in_game',trivia:{...lastHostRoom.trivia,phase:'board',used:{},usedAids:{},scores:{A:0,B:0},turn:'A'}});
+window.triviaToggleTeamEdit=team=>{
+  const input=document.querySelector(`[data-trivia-team-input="${team}"]`);
+  const button=document.querySelector(`[data-trivia-team-toggle="${team}"]`);
+  if(!input||!button)return;
+  input.hidden=!input.hidden;
+  button.textContent=input.hidden?'تعديل':'تم';
+  if(!input.hidden){input.focus();input.select();}else input.blur();
+};
+window.triviaPreviewTeamName=(team,name)=>{
+  const display=document.querySelector(`[data-trivia-team-name="${team}"]`);
+  if(display)display.textContent=name.trim()||(team==='A'?'الفريق الأول':'الفريق الثاني');
+};
+window.triviaSaveTeamName=async(code,team,name)=>{
+  if(team!=='A'&&team!=='B')return;
+  const trimmed=name.trim();
+  if(!trimmed||trimmed.length>24){alert('اكتب اسمًا من حرف واحد إلى 24 حرفًا.');return;}
+  try{await db.ref(`rooms/${code}/trivia/teams/${team}`).set(trimmed);}
+  catch(error){console.error('Could not save trivia team name:',error);alert('تعذر حفظ اسم الفريق. تحقق من الاتصال وحاول مرة أخرى.');}
+};
+window.triviaToggleAid=async(code,team,id,on)=>{
+  if(!['A','B'].includes(team)||!TRIVIA_AIDS.some(aid=>aid.id===id))return;
+  const ref=db.ref(`rooms/${code}/trivia/aidsByTeam/${team}`);
+  try{
+    const result=await ref.transaction(current=>{
+      const selected=Array.isArray(current)?current:[];
+      if(on){if(selected.includes(id)||selected.length>=3)return;return [...selected,id];}
+      return selected.filter(aid=>aid!==id);
+    });
+    if(!result.committed&&on){
+      const checkbox=document.querySelector(`[data-trivia-aid="${team}-${id}"]`);
+      if(checkbox)checkbox.checked=false;
+      alert('يمكن لكل فريق اختيار 3 وسائل مساعدة فقط.');
+    }
+  }catch(error){console.error('Could not update trivia aids:',error);alert('تعذر حفظ وسائل المساعدة. تحقق من الاتصال وحاول مرة أخرى.');}
+};
+window.triviaShowCategories=async code=>{
+  try{
+    const ref=db.ref(`rooms/${code}/trivia`),snapshot=await ref.once('value'),trivia=snapshot.val();
+    if(!trivia||['A','B'].some(team=>(trivia.aidsByTeam?.[team]||[]).length!==3)){
+      alert('يجب أن يختار كل فريق 3 وسائل مساعدة.');
+      return;
+    }
+    await ref.child('phase').set('categories');
+  }
+  catch(error){console.error('Could not open trivia categories:',error);alert('تعذر فتح الفئات. تحقق من الاتصال وحاول مرة أخرى.');}
+};
+window.triviaBackToTeams=async code=>{
+  try{await db.ref(`rooms/${code}/trivia/phase`).set('setup');}
+  catch(error){console.error('Could not return to trivia team setup:',error);alert('تعذر العودة لإعداد الفريقين. تحقق من الاتصال وحاول مرة أخرى.');}
+};
+window.triviaToggleCategory=async(code,id)=>{
+  const ref=db.ref(`rooms/${code}/trivia/categories`);
+  try{
+    const result=await ref.transaction(current=>{
+      const selected=Array.isArray(current)?current:[];
+      return selected.includes(id)?selected.filter(item=>item!==id):(selected.length<6?[...selected,id]:undefined);
+    });
+    if(!result.committed)alert('يمكن اختيار 6 فئات فقط.');
+  }catch(error){console.error('Could not update trivia categories:',error);alert('تعذر حفظ الفئات. تحقق من الاتصال وحاول مرة أخرى.');}
+};
+window.triviaBegin=async code=>{
+  try{
+    const snapshot=await db.ref(`rooms/${code}/trivia`).once('value');
+    const trivia=snapshot.val();
+    if(!trivia||trivia.phase!=='categories'||(trivia.categories||[]).length!==6||
+      ['A','B'].some(team=>(trivia.aidsByTeam?.[team]||[]).length!==3)){
+      alert('تأكدوا من اختيار 3 وسائل مساعدة لكل فريق و6 فئات قبل بدء اللعبة.');
+      return;
+    }
+    await db.ref(`rooms/${code}`).update({status:'in_game',trivia:{...trivia,phase:'board',used:{},usedAids:{A:{},B:{}},scores:{A:0,B:0},turn:'A'}});
+  }catch(error){console.error('Could not begin trivia game:',error);alert('تعذر بدء اللعبة. تحقق من الاتصال وحاول مرة أخرى.');}
+};
 function renderTriviaBoard(code,t){
   const categories=(t.categories||[]).map(id=>TRIVIA_BANK.find(c=>c.id===id)).filter(Boolean);
   const cells=categories.map(c=>`<section class="trivia-column"><h3>${c.icon} ${c.name}</h3>${c.qs.map((q,i)=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${(i+1)*100}</button>`}).join('')}</section>`).join('');
   const scores=t.scores||{A:0,B:0};
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><header class="trivia-head"><div><span class="host-section-kicker">لوحة اللعب</span><h1>تحدي المعرفة</h1></div></header><div class="trivia-scoreboard"><div class="trivia-score team-a ${scores.A>scores.B?'is-leading':''}"><span>${escapeHtml(t.teams?.A||'الفريق أ')}</span><b>${scores.A||0}</b><small>نقطة</small></div><div class="trivia-turn">دور الاختيار<br><b>${escapeHtml(t.teams?.[t.turn]||'الفريق أ')}</b><button onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">تبديل الدور</button></div><div class="trivia-score team-b ${scores.B>scores.A?'is-leading':''}"><span>${escapeHtml(t.teams?.B||'الفريق ب')}</span><b>${scores.B||0}</b><small>نقطة</small></div></div><div class="trivia-board">${cells}</div><p class="trivia-footnote">النقاط: 100 · 200 · 300 · 400 · 500</p></div>`;
+  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><header class="trivia-head"><div><span class="host-section-kicker">لوحة اللعب</span><h1>تحدي الفئات</h1></div></header>${t.notice?`<p class="trivia-notice" role="status">${escapeHtml(t.notice)}</p>`:''}<div class="trivia-scoreboard"><div class="trivia-score team-a ${scores.A>scores.B?'is-leading':''}"><span>${escapeHtml(t.teams?.A||'الفريق الأول')}</span><b>${scores.A||0}</b><small>نقطة</small></div><div class="trivia-turn">دور الاختيار<br><b>${escapeHtml(t.teams?.[t.turn]||'الفريق الأول')}</b><button onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">تبديل الدور</button></div><div class="trivia-score team-b ${scores.B>scores.A?'is-leading':''}"><span>${escapeHtml(t.teams?.B||'الفريق الثاني')}</span><b>${scores.B||0}</b><small>نقطة</small></div></div><div class="trivia-board">${cells}</div><p class="trivia-footnote">النقاط: 100 · 200 · 300 · 400 · 500</p></div>`;
 }
 window.triviaSetTurn=(code,team)=>db.ref(`rooms/${code}/trivia/turn`).set(team);
-window.triviaOpenQuestion=(code,key)=>{const [catId,index]=[key.slice(0,key.lastIndexOf('_')),Number(key.slice(key.lastIndexOf('_')+1))];db.ref(`rooms/${code}/trivia`).once('value',s=>{const t=s.val();db.ref(`rooms/${code}/trivia`).update({phase:'question',current:{key,catId,index,team:t.turn,revealed:false}});});};
+window.triviaOpenQuestion=async(code,key)=>{
+  try{
+    const snapshot=await db.ref(`rooms/${code}/trivia`).once('value');
+    const t=snapshot.val();
+    if(!t||t.used?.[key])return;
+    const separator=key.lastIndexOf('_');
+    const catId=key.slice(0,separator),boardIndex=Number(key.slice(separator+1));
+    const index=Number(t.questionOverrides?.[key]??boardIndex);
+    await db.ref(`rooms/${code}/trivia`).update({phase:'question',notice:null,current:{
+      key,catId,index,boardIndex,team:t.turn,revealed:false,points:(boardIndex+1)*100,
+      challengeTeam:t.pendingChallenge?.team||null
+    },pendingChallenge:null});
+  }catch(error){console.error('Could not open trivia question:',error);alert('تعذر فتح السؤال. تحقق من الاتصال وحاول مرة أخرى.');}
+};
 function renderTriviaQuestionHost(code,t){
- const c=TRIVIA_BANK.find(x=>x.id===t.current?.catId),q=c?.qs[t.current?.index];if(!q)return renderTriviaBoard(code,t);
- const pts=(t.current.index+1)*100*(t.current.double?2:1);
- const wrongKeep=q[2].find(x=>x!==q[1]);const shownOptions=t.current.fifty?q[2].filter(x=>x===q[1]||x===wrongKeep):q[2];
- const options=shownOptions.map((x,i)=>`<div class="trivia-option">${String.fromCharCode(65+i)} · ${escapeHtml(x)}</div>`).join('');
- document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><div class="trivia-question-card"><span class="host-section-kicker">${c.icon} ${c.name} · ${pts} نقطة</span><h1>${escapeHtml(q[0])}</h1><div class="trivia-options">${options}</div>${t.current.hint?`<div class="trivia-hint">💡 ${escapeHtml(q[3])}</div>`:''}${t.current.revealed?`<div class="trivia-answer">الإجابة الصحيحة: <strong>${escapeHtml(q[1])}</strong></div>`:''}<div class="trivia-actions">${!t.current.revealed?`<button class="btn" onclick="triviaReveal('${code}')">إظهار الإجابة</button>`:`<button class="btn" onclick="triviaScore('${code}','A',${pts})">نقطة لـ ${escapeHtml(t.teams?.A||'الفريق أ')}</button><button class="btn trivia-b" onclick="triviaScore('${code}','B',${pts})">نقطة لـ ${escapeHtml(t.teams?.B||'الفريق ب')}</button><button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`}<button class="btn btn-ghost" onclick="triviaBack('${code}')">العودة للوحة</button></div><div class="trivia-question-aids">${t.aids?.fifty&&!t.usedAids?.fifty?`<button onclick="triviaUseAid('${code}','fifty')">✂️ حذف خيارين</button>`:''}${t.aids?.hint&&!t.usedAids?.hint?`<button onclick="triviaUseAid('${code}','hint')">💡 تلميح</button>`:''}${t.aids?.double&&!t.usedAids?.double?`<button onclick="triviaUseAid('${code}','double')">×2 مضاعفة النقاط</button>`:''}</div></div></div>`;
+  const current=t.current;
+  const category=TRIVIA_BANK.find(item=>item.id===current?.catId);
+  const question=category?.qs[current?.index];
+  if(!question)return renderTriviaBoard(code,t);
+  const team=current.team||'A',points=(Number(current.points)||100)*(current.double?2:1);
+  const aids=t.aidsByTeam?.[team]||[];
+  const used=t.usedAids?.[team]||{};
+  const wrongKeep=question[2].find(option=>option!==question[1]);
+  const shownOptions=current.fifty?question[2].filter(option=>option===question[1]||option===wrongKeep):question[2];
+  const options=shownOptions.map((option,index)=>`<div class="trivia-option">${String.fromCharCode(65+index)} · ${escapeHtml(option)}</div>`).join('');
+  const aidButtons=aids.filter(id=>id!=='wheel'&&!used[id]).map(id=>{
+    const aid=TRIVIA_AIDS.find(item=>item.id===id);
+    return aid?`<button type="button" onclick="triviaUseAid('${code}','${id}')">${aid.icon} ${aid.name}</button>`:'';
+  }).join('');
+  const answerActions=current.revealed
+    ? `<button class="btn" onclick="triviaScore('${code}','${team}',${points})">نقطة لـ ${escapeHtml(t.teams?.[team]||`الفريق ${team}`)}</button>
+       ${current.stealAvailable&&!current.stealPrompted?`<button class="btn btn-ghost" onclick="triviaOfferSteal('${code}')">الإجابة خاطئة — إتاحة السرقة</button>`:''}
+       ${current.stealAvailable&&current.stealPrompted?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team==='A'?'B':'A'}',${points})">سرقة النقاط لـ ${escapeHtml(t.teams?.[team==='A'?'B':'A']||'الفريق الآخر')}</button>`:''}
+       <button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`
+    : `<button class="btn" onclick="triviaReveal('${code}')">إظهار الإجابة</button>`;
+  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><div class="trivia-question-card">
+    <span class="host-section-kicker">${category.icon} ${category.name} · ${points} نقطة</span>
+    ${current.challengeTeam?`<p class="trivia-challenge-notice">تحدي فردي: يلتزم أحد لاعبي ${escapeHtml(t.teams?.[current.challengeTeam]||'الفريق الآخر')} بالصمت وعدم الإجابة في هذا السؤال.</p>`:''}
+    <h1>${escapeHtml(question[0])}</h1><div class="trivia-options">${options}</div>
+    ${current.hint?`<div class="trivia-hint">💡 ${escapeHtml(question[3])}</div>`:''}
+    ${current.letterHint?`<div class="trivia-hint">حرف من الإجابة: <strong>${escapeHtml(current.letterHint)}</strong></div>`:''}
+    ${current.revealed?`<div class="trivia-answer">الإجابة الصحيحة: <strong>${escapeHtml(question[1])}</strong></div>`:''}
+    ${current.wheelResult?`<p class="trivia-wheel-result" role="status">${escapeHtml(current.wheelResult)}</p>`:''}
+    <div class="trivia-actions">${answerActions}<button class="btn btn-ghost" onclick="triviaBack('${code}')">العودة للوحة</button></div>
+    ${aidButtons?`<div class="trivia-question-aids"><span>وسائل ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</span>${aidButtons}</div>`:''}
+    ${aids.includes('wheel')&&!used.wheel?triviaWheelHtml(code):''}
+  </div></div>`;
 }
 window.triviaReveal=code=>db.ref(`rooms/${code}/trivia/current/revealed`).set(true);
-window.triviaUseAid=(code,id)=>db.ref(`rooms/${code}/trivia`).once('value',s=>{const t=s.val();if(t.usedAids?.[id])return;const patch={};patch[`usedAids/${id}`]=true;if(id==='fifty')patch['current/fifty']=true;if(id==='hint')patch['current/hint']=true;if(id==='double')patch['current/double']=true;db.ref(`rooms/${code}/trivia`).update(patch);});
+window.triviaOfferSteal=async code=>{
+  try{await db.ref(`rooms/${code}/trivia/current/stealPrompted`).set(true);}
+  catch(error){console.error('Could not enable trivia point steal:',error);alert('تعذر إتاحة سرقة النقاط. تحقق من الاتصال وحاول مرة أخرى.');}
+};
+window.triviaUseAid=async(code,id)=>{
+  try{
+    const ref=db.ref(`rooms/${code}/trivia`),snapshot=await ref.once('value'),trivia=snapshot.val();
+    const current=trivia?.current,team=current?.team||'A';
+    if(!current||!(trivia.aidsByTeam?.[team]||[]).includes(id)||trivia.usedAids?.[team]?.[id])return;
+    if(id==='skip'){
+      const usedAids={A:{...(trivia.usedAids?.A||{})},B:{...(trivia.usedAids?.B||{})}};
+      usedAids[team].skip=true;
+      await ref.update({
+        phase:'board',current:null,usedAids,turn:team==='A'?'B':'A',
+        pendingChallenge:current.challengeTeam?{team:current.challengeTeam}:null,
+        notice:`مرّر ${trivia.teams?.[team]||'الفريق صاحب الدور'} السؤال دون استهلاكه.`
+      });
+      return;
+    }
+    if(id==='wheel')return;
+    const patch={};patch[`usedAids/${team}/${id}`]=true;
+    if(id==='fifty')patch['current/fifty']=true;
+    if(id==='hint')patch['current/hint']=true;
+    if(id==='double')patch['current/double']=true;
+    if(id==='steal')patch['current/stealAvailable']=true;
+    await ref.update(patch);
+  }catch(error){console.error('Could not use trivia aid:',error);alert('تعذر استخدام وسيلة المساعدة. تحقق من الاتصال وحاول مرة أخرى.');}
+};
 window.triviaScore=(code,team,pts)=>finishTriviaQuestion(code,team,pts);
 window.triviaSkip=code=>finishTriviaQuestion(code,null,0);
-function finishTriviaQuestion(code,team,pts){db.ref(`rooms/${code}/trivia`).once('value',s=>{const t=s.val();if(!t||!t.current)return;const key=t.current.key,used={...(t.used||{}),[key]:true},scores={...(t.scores||{A:0,B:0})};if(team)scores[team]=(scores[team]||0)+pts;const done=Object.keys(used).length>=30;db.ref(`rooms/${code}`).update({status:'in_game',trivia:{...t,phase:done?'done':'board',used,scores,current:null,turn:t.current.team==='A'?'B':'A'}});});}
-window.triviaBack=code=>db.ref(`rooms/${code}/trivia`).update({phase:'board',current:null});
+async function finishTriviaQuestion(code,team,pts,usedAidId=null){
+  try{
+    const ref=db.ref(`rooms/${code}/trivia`),snapshot=await ref.once('value'),trivia=snapshot.val();
+    if(!trivia?.current)return;
+    const current=trivia.current,key=current.key,used={...(trivia.used||{}),[key]:true};
+    const scores={...(trivia.scores||{A:0,B:0})};
+    if(team)scores[team]=(scores[team]||0)+pts;
+    const usedAids={A:{...(trivia.usedAids?.A||{})},B:{...(trivia.usedAids?.B||{})}};
+    if(usedAidId)usedAids[current.team||'A'][usedAidId]=true;
+    const done=Object.keys(used).length>=30;
+    await db.ref(`rooms/${code}`).update({status:'in_game',trivia:{
+      ...trivia,phase:done?'done':'board',used,scores,usedAids,current:null,
+      turn:current.team==='A'?'B':'A',pendingChallenge:null
+    }});
+  }catch(error){console.error('Could not finish trivia question:',error);alert('تعذر تسجيل نتيجة السؤال. تحقق من الاتصال وحاول مرة أخرى.');}
+}
+const TRIVIA_WHEEL_OUTCOMES=[
+  {id:'bonus',label:'٥٠ نقطة'},
+  {id:'letter',label:'كشف حرف'},
+  {id:'challenge',label:'تحدي فردي'},
+  {id:'replace',label:'سؤال بديل'}
+];
+function triviaWheelHtml(code){
+  return `<section class="trivia-wheel-block" aria-label="عجلة الحظ">
+    <h2>عجلة الحظ</h2><div class="trivia-wheel" id="triviaWheel">
+      ${TRIVIA_WHEEL_OUTCOMES.map((outcome,index)=>`<span class="trivia-wheel-label trivia-wheel-label-${index}">${outcome.label}</span>`).join('')}
+      <span class="trivia-wheel-center">لَمّة</span>
+    </div><button type="button" class="btn trivia-wheel-button" onclick="triviaSpinWheel('${code}',this)">أدر العجلة</button>
+  </section>`;
+}
+window.triviaSpinWheel=async(code,button)=>{
+  const outcomeIndex=Math.floor(Math.random()*TRIVIA_WHEEL_OUTCOMES.length);
+  const wheel=document.getElementById('triviaWheel');
+  if(button)button.disabled=true;
+  try{
+    const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(wheel?.animate&&!reduceMotion){
+      const spin=wheel.animate(
+        [{transform:'rotate(0deg)'},{transform:`rotate(${2160+315-outcomeIndex*90}deg)`}],
+        {duration:2600,easing:'cubic-bezier(.12,.72,.16,1)',fill:'forwards'}
+      );
+      await spin.finished;
+    }else await new Promise(resolve=>setTimeout(resolve,900));
+    await resolveTriviaWheel(code,outcomeIndex);
+  }catch(error){console.error('Could not spin trivia wheel:',error);alert('تعذر تنفيذ عجلة الحظ. حاول مرة أخرى.');if(button)button.disabled=false;}
+};
+async function resolveTriviaWheel(code,outcomeIndex){
+  const outcome=TRIVIA_WHEEL_OUTCOMES[outcomeIndex];
+  const ref=db.ref(`rooms/${code}/trivia`),snapshot=await ref.once('value'),trivia=snapshot.val();
+  const current=trivia?.current,team=current?.team||'A';
+  if(!outcome||!current||!(trivia.aidsByTeam?.[team]||[]).includes('wheel')||trivia.usedAids?.[team]?.wheel)return;
+  const usedAids={A:{...(trivia.usedAids?.A||{})},B:{...(trivia.usedAids?.B||{})}};
+  usedAids[team].wheel=true;
+  if(outcome.id==='letter'){
+    const category=TRIVIA_BANK.find(item=>item.id===current.catId);
+    const answer=category?.qs[current.index]?.[1]?.replace(/\s/g,'')||'؟';
+    const letter=answer[Math.floor(Math.random()*answer.length)];
+    await ref.update({usedAids,current:{...current,letterHint:letter,wheelResult:'كشفت العجلة حرفًا من الإجابة.'}});
+    return;
+  }
+  if(outcome.id==='replace'){
+    const category=TRIVIA_BANK.find(item=>item.id===current.catId);
+    const alternatives=category?.qs.map((_,index)=>index).filter(index=>index!==current.boardIndex&&!trivia.used?.[`${current.catId}_${index}`])||[];
+    const alternateBoardIndex=alternatives[Math.floor(Math.random()*alternatives.length)];
+    if(alternateBoardIndex===undefined)throw new Error('No replacement question is available.');
+    const alternateKey=`${current.catId}_${alternateBoardIndex}`;
+    const alternateQuestionIndex=Number(trivia.questionOverrides?.[alternateKey]??alternateBoardIndex);
+    const questionOverrides={...(trivia.questionOverrides||{}),[current.key]:alternateQuestionIndex,[alternateKey]:current.index};
+    await ref.update({
+      phase:'board',current:null,usedAids,questionOverrides,
+      pendingChallenge:current.challengeTeam?{team:current.challengeTeam}:null,
+      notice:`تغيّر السؤال؛ اختاروا الخانة نفسها مجددًا لعرض السؤال البديل.`
+    });
+    return;
+  }
+  const used={...(trivia.used||{}),[current.key]:true};
+  const scores={...(trivia.scores||{A:0,B:0})};
+  let notice='';
+  if(outcome.id==='bonus'){
+    scores[team]=(scores[team]||0)+50;
+    notice=`كسب ${trivia.teams?.[team]||'الفريق صاحب الدور'} 50 نقطة، وانتهى السؤال.`;
+  }else{
+    const opponent=team==='A'?'B':'A';
+    trivia.pendingChallenge={team:opponent};
+    notice=`انتهى السؤال؛ في السؤال التالي يلتزم لاعب من ${trivia.teams?.[opponent]||'الفريق الآخر'} بالصمت وعدم الإجابة.`;
+  }
+  await db.ref(`rooms/${code}`).update({status:'in_game',trivia:{
+    ...trivia,phase:Object.keys(used).length>=30?'done':'board',used,scores,usedAids,current:null,
+    turn:team==='A'?'B':'A',notice,
+    pendingChallenge:outcome.id==='bonus'&&current.challengeTeam?{team:current.challengeTeam}:null
+  }});
+}
+window.triviaBack=async code=>{
+  try{
+    const ref=db.ref(`rooms/${code}/trivia`),snapshot=await ref.once('value'),trivia=snapshot.val();
+    if(!trivia?.current)return;
+    await ref.update({
+      phase:'board',current:null,
+      pendingChallenge:trivia.current.challengeTeam?{team:trivia.current.challengeTeam}:null
+    });
+  }catch(error){console.error('Could not return to trivia board:',error);alert('تعذر العودة إلى لوحة الفئات. تحقق من الاتصال وحاول مرة أخرى.');}
+};
 function renderTriviaDone(code,t){
   const a=t.scores?.A||0,b=t.scores?.B||0;
-  const winner=a===b?'تعادل!':a>b?(t.teams?.A||'الفريق أ'):(t.teams?.B||'الفريق ب');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap trivia-final"><div class="trivia-question-card">${a!==b?winnerCelebrationHtml():''}<span class="host-section-kicker">نهاية الجولة</span><h1>${a===b?'تعادل رائع!':'🏆 '+escapeHtml(winner)+' يفوز!'}</h1><div class="trivia-scoreboard"><div class="trivia-score team-a"><span>${escapeHtml(t.teams?.A||'الفريق أ')}</span><b>${a}</b></div><div class="trivia-score team-b"><span>${escapeHtml(t.teams?.B||'الفريق ب')}</span><b>${b}</b></div></div><button class="btn" onclick="resetToLobby('${code}')">العودة إلى الردهة</button></div></div>`;
+  const winner=a===b?'تعادل!':a>b?(t.teams?.A||'الفريق الأول'):(t.teams?.B||'الفريق الثاني');
+  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap trivia-final"><div class="trivia-question-card">${a!==b?winnerCelebrationHtml():''}<span class="host-section-kicker">نهاية الجولة</span><h1>${a===b?'تعادل رائع!':'🏆 '+escapeHtml(winner)+' يفوز!'}</h1><div class="trivia-scoreboard"><div class="trivia-score team-a"><span>${escapeHtml(t.teams?.A||'الفريق الأول')}</span><b>${a}</b></div><div class="trivia-score team-b"><span>${escapeHtml(t.teams?.B||'الفريق الثاني')}</span><b>${b}</b></div></div><button class="btn" onclick="resetToLobby('${code}')">العودة إلى الردهة</button></div></div>`;
 }
 function renderTriviaPlayer(code,id,name,room){
   const t=room.trivia||{},a=Number(t.scores?.A)||0,b=Number(t.scores?.B)||0;
   const celebration=t.phase==='done'&&a!==b?winnerCelebrationHtml():'';
-  app.innerHTML=`<div class="phone"><div class="card trivia-player">${celebration}<div class="trivia-player-icon">${iconImageHtml('assets/icons/knowledge-challenge.svg','trivia-player-image')}</div><h2>${t.phase==='setup'?'استعدوا للجولة':t.phase==='done'?'انتهت الجولة':'تحدي المعرفة'}</h2><p class="muted">${t.phase==='setup'?'المضيف يختار الفئات ووسائل المساعدة.':t.phase==='done'?'يعرض المضيف النتيجة النهائية.':'تابعوا لوحة اللعب على شاشة المضيف وساعدوا فريقكم بالإجابة!'}</p>${t.phase==='board'?`<div class="trivia-player-scores"><span>${escapeHtml(t.teams?.A||'الفريق أ')} <b>${a}</b></span><span>${escapeHtml(t.teams?.B||'الفريق ب')} <b>${b}</b></span></div>`:''}</div></div>`;
+  app.innerHTML=`<div class="phone"><div class="card trivia-player">${celebration}<div class="trivia-player-icon">${iconImageHtml('assets/icons/knowledge-challenge.svg','trivia-player-image')}</div><h2>${t.phase==='setup'||t.phase==='categories'?'استعدوا للجولة':t.phase==='done'?'انتهت الجولة':'تحدي الفئات'}</h2><p class="muted">${t.phase==='setup'||t.phase==='categories'?'المنظّم يجهّز الفرق والفئات ووسائل المساعدة.':t.phase==='done'?'يعرض المنظّم النتيجة النهائية.':'تابعوا لوحة اللعب على شاشة المنظّم وساعدوا فريقكم بالإجابة!'}</p>${t.phase==='board'?`<div class="trivia-player-scores"><span>${escapeHtml(t.teams?.A||'الفريق الأول')} <b>${a}</b></span><span>${escapeHtml(t.teams?.B||'الفريق الثاني')} <b>${b}</b></span></div>`:''}</div></div>`;
 }

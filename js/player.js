@@ -311,7 +311,7 @@ function renderPlayerVoting(code, myId, name, room){
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     return `<div class="game-card" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div>
-      <div class="vote-badge">${g.needsTeams ? 'انضم إلى فريق' : 'التفاصيل'}</div>
+      <div class="vote-badge">${g.id==='trivia'?'على شاشة المنظّم':g.needsTeams?'انضم إلى فريق':'التفاصيل'}</div>
     </div>`;
   }).join('');
 
@@ -328,7 +328,7 @@ function renderPlayerVoting(code, myId, name, room){
 function renderPlayerGameNotice(code, myId, name, room){
   const game = GAMES_LIST.find(g => g.id === room.activeGame);
   const title = game ? game.title : (room.activeTool === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
-  const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
+  const teamHtml = game?.needsTeams && game.id !== 'trivia' ? teamSelectorHtml(game, room, code, myId, false) : '';
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     ${playerProfileHtml(code, myId, name)}
     <div class="detail-icon">${game ? gameIconHtml(game, 'detail-icon-image') : iconImageHtml('assets/icons/answer-buzzer.svg', 'detail-icon-image')}</div>
@@ -492,7 +492,7 @@ function renderGoogleSignIn(){
             <div class="landing-art-center"><span>لَمّة</span><small>ألعاب وأدوات جماعية</small></div>
             <div class="landing-art-chip landing-chip-mafia"><span>01</span><b>ليلة المافيا</b></div>
             <div class="landing-art-chip landing-chip-draw"><span>02</span><b>إشارة ورسمة</b></div>
-            <div class="landing-art-chip landing-chip-trivia"><span>03</span><b>تحدي المعرفة</b></div>
+            <div class="landing-art-chip landing-chip-trivia"><span>03</span><b>تحدي الفئات</b></div>
             <div class="landing-art-chip landing-chip-qatara"><span>04</span><b>سؤال القَطّارة</b></div>
           </div>
         </section>

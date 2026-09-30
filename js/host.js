@@ -188,10 +188,10 @@ function renderHostLobby(code, room){
   if (hostDetailGameId) {
     if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
-    const inviteUrl = joinGameUrl(code, game.id);
-    const invite = game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
+    const inviteUrl = game.id === 'trivia' ? null : joinGameUrl(code, game.id);
+    const invite = inviteUrl && game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
     document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true, invite);
-    if (game.minPlayers > 1) initJoinCard('gameInvite', inviteUrl);
+    if (invite) initJoinCard('gameInvite', inviteUrl);
     return;
   }
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
@@ -209,7 +209,7 @@ function renderHostLobby(code, room){
     return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div>
       <div class="game-title">${g.title}</div>
-      <div class="vote-badge">الحد الأدنى ${g.minPlayers}</div>
+      <div class="vote-badge">${g.id === 'trivia' ? 'يعرضها المنظّم' : `الحد الأدنى ${g.minPlayers}`}</div>
     </div>`;
   }).join('');
   const toolsHtml = `<section class="host-tools-section" aria-labelledby="host-tools-heading">

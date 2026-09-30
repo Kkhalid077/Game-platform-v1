@@ -331,6 +331,8 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const players = roomPlayersForGame(room, game.id);
   const totalPlayers = Object.keys(players).length;
   const playerCards = Object.values(players).map(player => playerAvatarCardHtml(player)).join('');
+  const triviaGame = game.id === 'trivia';
+  const hostControlledTrivia = isHost && triviaGame;
 
   return `
     <div class="game-detail">
@@ -339,13 +341,13 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
-      <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
+      ${triviaGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
       ${inviteHtml}
-      ${teamSelectorHtml(game, room, code, myId, isHost)}
-      ${isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
+      ${hostControlledTrivia ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost
-          ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
+          ? `<button class="btn" ${!hostControlledTrivia && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`
           : ''}
       </div>
     </div>
