@@ -10,11 +10,14 @@ let playerRoomRef = null;
 let playerInviteGameId = null;
 let activeGuestInvite = null;
 let landingCarouselTimers = [];
+let landingCarouselObservers = [];
 let lastPlayerViewKey = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
 function stopLandingCarousels(){
   landingCarouselTimers.forEach(timer => clearInterval(timer));
   landingCarouselTimers = [];
+  landingCarouselObservers.forEach(observer => observer.disconnect());
+  landingCarouselObservers = [];
 }
 async function registerPlayerPresence(playerRef, record){
   await playerRef.onDisconnect().remove();
@@ -375,6 +378,14 @@ function initLandingCarousels(){
           { title:'لوح رسم مشترك', icon:'assets/icons/signal-sketch.svg', available:false, desc:'أداة للرسم والتخمين لدعم الأنشطة والألعاب الخارجية.' }
         ];
     let paused = false;
+    let visible = true;
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        visible = entries.some(entry => entry.isIntersecting);
+      }, {threshold:.05});
+      observer.observe(root);
+      landingCarouselObservers.push(observer);
+    }
     const show = index => {
       const nextIndex = (index + items.length) % items.length;
       const item = items[nextIndex];
@@ -429,7 +440,7 @@ function initLandingCarousels(){
     });
     if (!reduceMotion && items.length > 1) {
       landingCarouselTimers.push(setInterval(() => {
-        if (!paused && !document.hidden && root.isConnected) show(Number(root.dataset.index) + 1);
+        if (visible && !paused && !document.hidden && root.isConnected) show(Number(root.dataset.index) + 1);
       }, 5500));
     }
   });

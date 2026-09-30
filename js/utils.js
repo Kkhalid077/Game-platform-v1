@@ -6,7 +6,7 @@ function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinGameUrl(code, gameId){ return location.origin + location.pathname + '?session=' + encodeURIComponent(code) + '&game=' + encodeURIComponent(gameId); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function iconImageHtml(src, className='game-icon-image'){
-  return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" />`;
+  return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" loading="lazy" decoding="async" />`;
 }
 function gameIconHtml(game, className='game-icon-image'){
   return iconImageHtml(game.icon, className);

@@ -509,6 +509,7 @@ body{
   font-family:'IBM Plex Sans Arabic','Cairo',system-ui,sans-serif;
 }
 #app[data-activity]::before{
+  inset:-8%;
   background-image:
     radial-gradient(1px 1px at 12% 20%,rgba(211,220,237,.36) 50%,transparent 100%),
     radial-gradient(1px 1px at 78% 34%,rgba(211,220,237,.3) 50%,transparent 100%),
@@ -632,6 +633,7 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
     radial-gradient(ellipse at 54% 8%,rgba(41,72,123,.14),transparent 54%),
     linear-gradient(145deg,#020b20,#051127 58%,#020b20);
   background-size:100% 100%,100% 100%,100% 100%,145% 145%,145% 145%,135% 135%,100% 100%;
+  background-position:center;
   animation:activity-nebula-drift 28s ease-in-out infinite alternate;
 }
 #app[data-activity]::after{
@@ -645,8 +647,8 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 #app[data-activity="qatara"]{--activity-nebula-a:rgba(94,59,19,.25);--activity-nebula-b:rgba(73,30,57,.2)}
 #app[data-activity="buzzer"]{--activity-nebula-a:rgba(100,44,15,.27);--activity-nebula-b:rgba(68,26,37,.21)}
 @keyframes activity-nebula-drift{
-  from{background-position:0% 0%,100% 100%,50% 0%,0% 35%,100% 65%,50% 0%,center}
-  to{background-position:12% 8%,88% 92%,46% 8%,100% 65%,0% 35%,58% 16%,center}
+  from{transform:translate3d(-1.2%,-.6%,0) scale(1)}
+  to{transform:translate3d(1.2%,.6%,0) scale(1.035)}
 }
 .stage:has(.host-dashboard)::before{
   animation:dashboard-backdrop-drift 32s ease-in-out infinite alternate;
@@ -923,6 +925,12 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-hero h1{font-size:clamp(48px,6.1vw,72px);letter-spacing:-2px}
 .landing-eyebrow{color:#d9bd68;font-size:12px;letter-spacing:.15px}
 .landing-art-center{border-color:rgba(224,192,110,.26);background:radial-gradient(circle at 36% 27%,rgba(224,192,110,.13),rgba(5,17,36,.96) 67%);box-shadow:0 0 55px rgba(224,177,48,.09),inset 0 0 32px rgba(112,177,221,.06)}
+.landing-about,.landing-games,.landing-tools{content-visibility:auto;contain-intrinsic-size:auto 620px}
+.landing-games,.landing-tools{contain-intrinsic-size:auto 500px}
+.landing-art-center{animation:none}
+.landing-art-center::before{position:absolute;z-index:0;inset:-28%;border-radius:50%;background:radial-gradient(circle,rgba(224,177,48,.2),rgba(112,177,221,.08) 44%,transparent 72%);content:"";pointer-events:none;animation:landing-glow 4.5s ease-in-out infinite alternate}
+.landing-art-center span,.landing-art-center small{position:relative;z-index:1}
+@keyframes landing-glow{from{opacity:.45;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
 .landing-art-chip{border-color:rgba(161,183,203,.12);background:rgba(5,14,29,.9);box-shadow:0 10px 30px rgba(0,0,0,.23)}
 .landing-art-chip span{display:grid;place-items:center;width:25px;height:25px;border:1px solid rgba(224,192,110,.22);border-radius:9px;background:rgba(224,192,110,.07);color:#dfc776;font:700 10px 'IBM Plex Sans Arabic',sans-serif}
 .landing-feature{background:linear-gradient(145deg,rgba(11,26,44,.64),rgba(4,12,25,.58));border-color:rgba(144,177,201,.1)}
