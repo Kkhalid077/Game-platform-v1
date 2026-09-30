@@ -509,7 +509,7 @@ function renderGoogleSignIn(){
 
       <footer class="landing-footer">
         ${platformBrandHtml('landing-footer-brand')}
-        <span>منصة للألعاب الجماعية والأدوات التفاعلية</span>
+        <span>صنع بواسطة kkhalid07</span>
         <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
       </footer>
     </div>`;
