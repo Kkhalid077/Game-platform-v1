@@ -315,8 +315,114 @@ function setVersionFooterVisibility(visible){
 function renderGoogleSignIn(){
   if (typeof detachHostRoom === 'function') detachHostRoom();
   detachPlayerRoom();
+  setActivityBackdrop(null);
   setVersionFooterVisibility(true);
-  app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">منصة الألعاب</h2><p class="muted">سجّل الدخول بحساب Google للمتابعة.</p><button class="btn" id="googleSignInBtn" style="width:100%;">المتابعة مع Google</button><button class="btn btn-ghost" id="adminGuestBtn" style="width:100%; margin-top:10px;">دخول Admin</button><p class="muted" id="authError" style="color:var(--accent-2);"></p></div></div>`;
+  const gameCards = GAMES_LIST.filter(game => game.available).map(game => `
+    <article class="landing-game-card">
+      <span class="landing-game-icon">${gameIconHtml(game)}</span>
+      <span>${escapeHtml(game.title)}</span>
+    </article>
+  `).join('');
+  app.innerHTML = `
+    <div class="landing-page">
+      <header class="landing-nav">
+        <a class="landing-brand" href="#" aria-label="لَمّة — الصفحة الرئيسية">
+          <span class="landing-brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none">
+              <path d="M8 14.5A7.5 7.5 0 0 1 15.5 7h17A7.5 7.5 0 0 1 40 14.5v9a7.5 7.5 0 0 1-7.5 7.5H22l-9 7v-8.1A7.5 7.5 0 0 1 8 23.5v-9Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="m21 15 10 5.5-10 5.5V15Z" fill="currentColor"/>
+              <circle cx="13" cy="13" r="2" fill="#f3c94b"/>
+            </svg>
+          </span>
+          <span class="landing-brand-name">لَمّة</span>
+        </a>
+        <nav class="landing-nav-links" aria-label="التنقل الرئيسي">
+          <a href="#landing-games">الألعاب</a>
+          <a href="#landing-about">عن لَمّة</a>
+        </nav>
+        <div class="landing-nav-actions">
+          <button class="landing-login" type="button" data-auth-action="login">دخول</button>
+          <button class="landing-register" type="button" data-auth-action="register">إنشاء حساب</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="landing-hero">
+          <div class="landing-hero-copy">
+            <span class="landing-eyebrow"><i></i> جمعتكم تستاهل لَمّة</span>
+            <h1>اللّمة تحلى<br><span>باللعب.</span></h1>
+            <p class="landing-lead">اجمعوا أصحابكم، اختاروا لعبتكم، وخلو أجمل لحظاتكم تبدأ من هنا.</p>
+            <div class="landing-hero-actions">
+              <button class="landing-primary-cta" type="button" data-auth-action="register">ابدأ لَمّتكم <span aria-hidden="true">←</span></button>
+              <button class="landing-secondary-cta" type="button" data-auth-action="login">عندي حساب</button>
+            </div>
+            <p class="landing-auth-hint">دخولك أو تسجيلك يتم بسهولة عبر Google. ينشأ حسابك تلقائيًا أول مرة.</p>
+            <p class="landing-auth-error" id="authError" role="status" aria-live="polite"></p>
+          </div>
+
+          <div class="landing-hero-art" role="img" aria-label="أصدقاء يجتمعون حول ألعاب لَمّة">
+            <div class="landing-art-orbit landing-art-orbit-one"></div>
+            <div class="landing-art-orbit landing-art-orbit-two"></div>
+            <div class="landing-art-spark landing-spark-one">✦</div>
+            <div class="landing-art-spark landing-spark-two">✧</div>
+            <div class="landing-art-center"><span>لَمّة</span><small>اللعب يجمعنا</small></div>
+            <div class="landing-art-chip landing-chip-mafia"><span>🌙</span><b>ليلة المافيا</b></div>
+            <div class="landing-art-chip landing-chip-draw"><span>🎨</span><b>إشارة ورسمة</b></div>
+            <div class="landing-art-chip landing-chip-trivia"><span>💡</span><b>تحدي المعرفة</b></div>
+            <div class="landing-art-chip landing-chip-qatara"><span>❓</span><b>سؤال القَطّارة</b></div>
+            <div class="landing-art-people"><i>ل</i><i>م</i><i>ة</i><span>أحلى مع الشلّة</span></div>
+          </div>
+        </section>
+
+        <section class="landing-about" id="landing-about" aria-labelledby="landing-about-title">
+          <div class="landing-section-heading">
+            <span class="landing-eyebrow">مكانكم للّعب سوا</span>
+            <h2 id="landing-about-title">من أول دعوة... تبدأ الحكاية</h2>
+            <p>لَمّة تجمع ألعابكم في مكان واحد، وتخلّي كل شخص يشارك من جواله بكل سهولة.</p>
+          </div>
+          <div class="landing-features">
+            <article class="landing-feature">
+              <span class="landing-feature-icon">↗</span>
+              <h3>اجمعوا الشلّة</h3>
+              <p>أنشئوا جلسة وشاركوا رابط الدعوة، والباقي ينضم مباشرة.</p>
+            </article>
+            <article class="landing-feature">
+              <span class="landing-feature-icon">◈</span>
+              <h3>اختاروا لعبتكم</h3>
+              <p>ألعاب جماعية متنوعة؛ تحدّوا بعض أو تعاونوا كفريق.</p>
+            </article>
+            <article class="landing-feature">
+              <span class="landing-feature-icon">✦</span>
+              <h3>عيشوا اللحظة</h3>
+              <p>المنظّم يدير الجولة، وأنتم ركّزوا على الضحك والمنافسة.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="landing-games" id="landing-games" aria-labelledby="landing-games-title">
+          <div class="landing-section-heading landing-games-heading">
+            <div><span class="landing-eyebrow">وش نلعب اليوم؟</span><h2 id="landing-games-title">ألعاب تقرّبكم أكثر</h2></div>
+            <span class="landing-games-note">وتزيد حماس جمعتكم</span>
+          </div>
+          <div class="landing-game-list">${gameCards}</div>
+        </section>
+
+        <section class="landing-bottom-cta">
+          <span class="landing-bottom-spark" aria-hidden="true">✦</span>
+          <div><span class="landing-eyebrow">مكانكم جاهز</span><h2>ناقصكم بس تجتمعون</h2><p>ابدأوا أول لَمّة وخلو اللعب علينا.</p></div>
+          <button class="landing-primary-cta" type="button" data-auth-action="register">يلا نبدأ <span aria-hidden="true">←</span></button>
+        </section>
+      </main>
+
+      <footer class="landing-footer">
+        <a class="landing-brand landing-footer-brand" href="#" aria-label="لَمّة">
+          <span class="landing-brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M8 14.5A7.5 7.5 0 0 1 15.5 7h17A7.5 7.5 0 0 1 40 14.5v9a7.5 7.5 0 0 1-7.5 7.5H22l-9 7v-8.1A7.5 7.5 0 0 1 8 23.5v-9Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="m21 15 10 5.5-10 5.5V15Z" fill="currentColor"/><circle cx="13" cy="13" r="2" fill="#f3c94b"/></svg></span>
+          <span class="landing-brand-name">لَمّة</span>
+        </a>
+        <span>كل جمعة أحلى مع لَمّة</span>
+        <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
+      </footer>
+    </div>`;
   const signIn = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
@@ -331,10 +437,11 @@ function renderGoogleSignIn(){
         'auth/popup-closed-by-user': 'أُغلقت نافذة تسجيل الدخول قبل إكمال العملية.'
       };
       console.error('Google sign-in failed:', error.code, error);
-      document.getElementById('authError').textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
+      const authError = document.getElementById('authError');
+      if (authError) authError.textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
     }
   };
-  document.getElementById('googleSignInBtn').onclick = signIn;
+  app.querySelectorAll('[data-auth-action]').forEach(button => { button.onclick = signIn; });
   document.getElementById('adminGuestBtn').onclick = renderAdminNameEntry;
 }
 
