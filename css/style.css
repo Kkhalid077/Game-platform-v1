@@ -823,8 +823,8 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-auth-providers{display:grid;gap:10px}
 .landing-provider-button{display:flex;align-items:center;justify-content:center;gap:11px;min-height:50px;padding:0 16px;border:1px solid rgba(154,170,195,.2);border-radius:12px;background:rgba(255,255,255,.04);color:#eef3f8;font:700 14px 'Thmanyah Sans',sans-serif;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
 .landing-provider-button:hover{transform:translateY(-1px);border-color:rgba(243,201,75,.45);background:rgba(243,201,75,.06)}
-.provider-mark{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#f8fafc;color:#202a39;font-family:Arial,sans-serif;font-size:15px;font-weight:800}
-.provider-mark-apple{background:#111827;color:#fff}
+.provider-logo{flex:none;width:22px;height:22px}
+.provider-logo-apple{width:21px;height:21px;fill:currentColor}
 .landing-hero-art{position:relative;display:grid;place-items:center;width:min(100%,490px);aspect-ratio:1;margin:auto}
 .landing-art-orbit{position:absolute;inset:8%;border:1px solid rgba(125,173,202,.14);border-radius:50%;transform:rotate(-18deg) scaleY(.72)}
 .landing-art-orbit-one{inset:1% 8%;border-color:rgba(243,201,75,.18);transform:rotate(29deg) scaleY(.72)}

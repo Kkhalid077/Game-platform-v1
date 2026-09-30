@@ -538,8 +538,8 @@ function renderGoogleSignIn(){
         <h2 id="landingAuthTitle">اختر طريقة الدخول</h2>
         <p>تابع باستخدام حسابك لدى إحدى الخدمتين.</p>
         <div class="landing-auth-providers">
-          <button type="button" class="landing-provider-button" data-auth-provider="google"><span class="provider-mark provider-mark-google" aria-hidden="true">G</span>المتابعة باستخدام Google</button>
-          <button type="button" class="landing-provider-button" data-auth-provider="apple"><span class="provider-mark provider-mark-apple" aria-hidden="true">A</span>المتابعة باستخدام Apple</button>
+          <button type="button" class="landing-provider-button" data-auth-provider="google"><svg class="provider-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.88c-.58 2.96-2.25 5.48-4.72 7.18l7.62 5.91c4.45-4.11 7.2-10.16 7.2-17.56Z"/><path fill="#FBBC05" d="M10.53 28.59a14.4 14.4 0 0 1 0-9.18l-7.98-6.19a23.9 23.9 0 0 0 0 21.56l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.89l-7.62-5.91c-2.12 1.42-4.84 2.3-8.28 2.3-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>المتابعة باستخدام Google</button>
+          <button type="button" class="landing-provider-button" data-auth-provider="apple"><svg class="provider-logo provider-logo-apple" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.48c.02 2.13 1.87 2.84 1.89 2.85-.02.05-.3 1.04-.98 2.06-.59.88-1.2 1.75-2.16 1.77-.94.02-1.25-.57-2.33-.57-1.08 0-1.42.55-2.31.59-.93.03-1.64-.95-2.23-1.83-1.21-1.77-2.13-5.01-.89-7.2a3.45 3.45 0 0 1 2.9-1.76c.91-.02 1.77.62 2.33.62.55 0 1.59-.77 2.68-.66.46.02 1.77.18 2.61 1.4-.07.04-1.56.91-1.54 2.73ZM14.6 7.23a3.2 3.2 0 0 0 .76-2.3 3.27 3.27 0 0 0-2.12 1.08 3.05 3.05 0 0 0-.78 2.23 2.75 2.75 0 0 0 2.14-1.01Z"/></svg>المتابعة باستخدام Apple</button>
         </div>
       </dialog>
     </div>`;
