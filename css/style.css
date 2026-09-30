@@ -814,6 +814,17 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-primary-cta:hover span{transform:translateX(-3px)}
 .landing-auth-hint{margin:14px 0 0;color:#7789a4;font-size:12px}
 .landing-auth-error{min-height:1.5em;margin:7px 0 0;color:#ff8390;font-size:13px}
+.landing-auth-dialog{position:fixed;width:min(420px,calc(100% - 32px));max-width:none;padding:30px;border:1px solid rgba(220,196,121,.26);border-radius:22px;background:linear-gradient(155deg,#0d1b30,#071122);color:#eaf0f7;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.landing-auth-dialog::backdrop{background:rgba(1,6,16,.72);backdrop-filter:blur(5px)}
+.landing-auth-dialog[open]{animation:window-enter .28s cubic-bezier(.2,.8,.25,1) both}
+.landing-auth-dialog h2{margin:9px 0 5px;color:#f3f5f8;font-size:23px}
+.landing-auth-dialog>p{margin:0 0 22px;color:#9aaac3;font-size:14px}
+.landing-auth-close{position:absolute;top:12px;inset-inline-end:14px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.06);color:#dce5f2;font-size:24px;cursor:pointer}
+.landing-auth-providers{display:grid;gap:10px}
+.landing-provider-button{display:flex;align-items:center;justify-content:center;gap:11px;min-height:50px;padding:0 16px;border:1px solid rgba(154,170,195,.2);border-radius:12px;background:rgba(255,255,255,.04);color:#eef3f8;font:700 14px 'Thmanyah Sans',sans-serif;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.landing-provider-button:hover{transform:translateY(-1px);border-color:rgba(243,201,75,.45);background:rgba(243,201,75,.06)}
+.provider-mark{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#f8fafc;color:#202a39;font-family:Arial,sans-serif;font-size:15px;font-weight:800}
+.provider-mark-apple{background:#111827;color:#fff}
 .landing-hero-art{position:relative;display:grid;place-items:center;width:min(100%,490px);aspect-ratio:1;margin:auto}
 .landing-art-orbit{position:absolute;inset:8%;border:1px solid rgba(125,173,202,.14);border-radius:50%;transform:rotate(-18deg) scaleY(.72)}
 .landing-art-orbit-one{inset:1% 8%;border-color:rgba(243,201,75,.18);transform:rotate(29deg) scaleY(.72)}

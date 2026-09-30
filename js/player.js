@@ -456,8 +456,7 @@ function renderGoogleSignIn(){
           <a href="#landing-tools">الأدوات</a>
         </nav>
         <div class="landing-nav-actions">
-          <button class="landing-login" type="button" data-auth-action="login">دخول</button>
-          <button class="landing-register" type="button" data-auth-action="register">إنشاء حساب</button>
+          <button class="landing-login" type="button" data-auth-open>دخول</button>
         </div>
       </header>
 
@@ -468,9 +467,9 @@ function renderGoogleSignIn(){
             <h1>منصة <span>لَمّة</span></h1>
             <p class="landing-lead">منصة لتنظيم الألعاب الجماعية واستخدام الأدوات المساندة، مع إدارة الجلسات ومشاركة الدعوات بسهولة.</p>
             <div class="landing-hero-actions">
-              <button class="landing-primary-cta" type="button" data-auth-action="register">ابدأ الآن <span aria-hidden="true">←</span></button>
+              <button class="landing-primary-cta" type="button" data-auth-open>دخول <span aria-hidden="true">←</span></button>
             </div>
-            <p class="landing-auth-hint">تسجيل الدخول وإنشاء الحساب عبر Google.</p>
+            <p class="landing-auth-hint">اختر طريقة الدخول عبر Google أو Apple.</p>
             <p class="landing-auth-error" id="authError" role="status" aria-live="polite"></p>
           </div>
 
@@ -533,27 +532,60 @@ function renderGoogleSignIn(){
         <span>صنع بواسطة kkhalid07</span>
         <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
       </footer>
+      <dialog class="landing-auth-dialog" id="landingAuthDialog" aria-labelledby="landingAuthTitle">
+        <button class="landing-auth-close" type="button" data-auth-close aria-label="إغلاق">×</button>
+        <span class="landing-eyebrow">لَمّة</span>
+        <h2 id="landingAuthTitle">اختر طريقة الدخول</h2>
+        <p>تابع باستخدام حسابك لدى إحدى الخدمتين.</p>
+        <div class="landing-auth-providers">
+          <button type="button" class="landing-provider-button" data-auth-provider="google"><span class="provider-mark provider-mark-google" aria-hidden="true">G</span>المتابعة باستخدام Google</button>
+          <button type="button" class="landing-provider-button" data-auth-provider="apple"><span class="provider-mark provider-mark-apple" aria-hidden="true">A</span>المتابعة باستخدام Apple</button>
+        </div>
+      </dialog>
     </div>`;
   initLandingCarousels();
-  const signIn = async () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
+  const authDialog = document.getElementById('landingAuthDialog');
+  const signIn = async providerName => {
+    const provider = providerName === 'apple'
+      ? new firebase.auth.OAuthProvider('apple.com')
+      : new firebase.auth.GoogleAuthProvider();
+    if (providerName === 'apple') {
+      provider.addScope('email');
+      provider.addScope('name');
+    }
+    authDialog.close();
     try {
       await firebase.auth().signInWithPopup(provider);
     }
     catch (error) {
-      if (error.code === 'auth/popup-blocked') { try { await firebase.auth().signInWithRedirect(provider); return; } catch (_) {} }
+      let authFailure = error;
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await firebase.auth().signInWithRedirect(provider);
+          return;
+        } catch (redirectError) {
+          authFailure = redirectError;
+        }
+      }
       const messages = {
-        'auth/operation-not-allowed': 'تسجيل الدخول عبر Google غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method ← Google.',
+        'auth/operation-not-allowed': `تسجيل الدخول عبر ${providerName === 'apple' ? 'Apple' : 'Google'} غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method.`,
         'auth/unauthorized-domain': 'نطاق الموقع الحالي غير مسموح في Firebase. أضفه في Authentication ← Settings ← Authorized domains.',
-        'auth/popup-blocked': 'المتصفح حجب نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.',
+        'auth/popup-blocked': 'المتصفح حجب نافذة تسجيل الدخول. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.',
         'auth/popup-closed-by-user': 'أُغلقت نافذة تسجيل الدخول قبل إكمال العملية.'
       };
-      console.error('Google sign-in failed:', error.code, error);
+      console.error(`${providerName} sign-in failed:`, authFailure.code, authFailure);
       const authError = document.getElementById('authError');
-      if (authError) authError.textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
+      if (authError) authError.textContent = messages[authFailure.code] || `تعذر تسجيل الدخول (${authFailure.code || 'خطأ غير معروف'}).`;
     }
   };
-  app.querySelectorAll('[data-auth-action]').forEach(button => { button.onclick = signIn; });
+  app.querySelectorAll('[data-auth-open]').forEach(button => { button.onclick = () => authDialog.showModal(); });
+  app.querySelectorAll('[data-auth-close]').forEach(button => { button.onclick = () => authDialog.close(); });
+  authDialog.addEventListener('click', event => {
+    if (event.target === authDialog) authDialog.close();
+  });
+  app.querySelectorAll('[data-auth-provider]').forEach(button => {
+    button.onclick = () => signIn(button.dataset.authProvider);
+  });
   document.getElementById('adminGuestBtn').onclick = renderAdminNameEntry;
 }
 
