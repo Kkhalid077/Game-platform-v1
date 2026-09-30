@@ -18,12 +18,14 @@
     'js/mafia.js',
     'js/silentdraw.js',
     'js/trivia.js',
+    'js/qatara.js',
     'js/buzzer.js',
     'js/player.js',
     'assets/icons/mafia-night.svg',
     'assets/icons/signal-sketch.svg',
     'assets/icons/click-race.svg',
     'assets/icons/knowledge-challenge.svg',
+    'assets/icons/question-drip.svg',
     'assets/icons/answer-buzzer.svg',
     'js/version.js'
   ];
