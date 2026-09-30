@@ -286,12 +286,27 @@ function renderTriviaQuestionHost(code,t){
   const wrongKeep=question[2].find(option=>option!==question[1]);
   const shownOptions=current.fifty?question[2].filter(option=>option===question[1]||option===wrongKeep):question[2];
   const options=shownOptions.map((option,index)=>`<div class="trivia-option">${String.fromCharCode(65+index)} · ${escapeHtml(option)}</div>`).join('');
-  const aidButtons=aids.filter(id=>id!=='wheel'&&!used[id]).map(id=>{
-    const aid=TRIVIA_AIDS.find(item=>item.id===id);
-    return aid?`<button type="button" onclick="triviaUseAid('${code}','${id}')">${aid.icon} ${aid.name}</button>`:'';
+  const teamAidCards=['A','B'].map(aidTeam=>{
+    const isActive=aidTeam===team;
+    const teamAids=t.aidsByTeam?.[aidTeam]||[];
+    const teamUsed=t.usedAids?.[aidTeam]||{};
+    const aidItems=teamAids.map(id=>{
+      const aid=TRIVIA_AIDS.find(item=>item.id===id);
+      if(!aid)return '';
+      const isUsed=!!teamUsed[id];
+      if(isActive&&id==='wheel'&&!isUsed){
+        return `<button type="button" class="trivia-team-aid trivia-wheel-open" onclick="triviaOpenWheel()"><span>${aid.icon}</span><b>${aid.name}</b></button>`;
+      }
+      if(isActive&&!isUsed){
+        return `<button type="button" class="trivia-team-aid" onclick="triviaUseAid('${code}','${id}')"><span>${aid.icon}</span><b>${aid.name}</b></button>`;
+      }
+      return `<span class="trivia-team-aid ${isUsed?'is-used':'is-inactive'}"><span>${aid.icon}</span><b>${aid.name}</b></span>`;
+    }).join('');
+    return `<section class="trivia-team-aids team-${aidTeam.toLowerCase()} ${isActive?'is-active':''}">
+      <header><span class="trivia-team-aids-indicator" aria-hidden="true"></span><h2>${escapeHtml(t.teams?.[aidTeam]||(aidTeam==='A'?'الفريق الأول':'الفريق الثاني'))}</h2>${isActive?'<small>دور الفريق</small>':''}</header>
+      <div class="trivia-team-aid-list">${aidItems||'<p class="trivia-aids-empty">لا توجد وسائل مساعدة لهذا الفريق.</p>'}</div>
+    </section>`;
   }).join('');
-  const wheelButton=aids.includes('wheel')&&!used.wheel
-    ? `<button type="button" class="trivia-wheel-open" onclick="triviaOpenWheel()">🎡 افتح عجلة الحظ</button>`:'';
   const answerActions=current.revealed
     ? `<button class="btn" onclick="triviaScore('${code}','${team}',${points})">نقطة لـ ${escapeHtml(t.teams?.[team]||`الفريق ${team}`)}</button>
        ${current.stealAvailable&&!current.stealPrompted?`<button class="btn btn-ghost" onclick="triviaOfferSteal('${code}')">الإجابة خاطئة — إتاحة السرقة</button>`:''}
@@ -299,8 +314,9 @@ function renderTriviaQuestionHost(code,t){
        <button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`
     : `<button class="btn" onclick="triviaReveal('${code}')">إظهار الإجابة</button>`;
   document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap"><div class="trivia-question-card">
-    <header class="trivia-question-header"><span class="host-section-kicker">${category.icon} ${category.name}</span><span class="trivia-question-points">${points} نقطة</span></header>
+    <header class="trivia-question-header"><span class="trivia-question-points">${points}</span><span class="trivia-question-category">${category.icon} ${category.name}</span><span class="trivia-question-turn">دور ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</span></header>
     <div class="trivia-question-layout">
+      <aside class="trivia-question-sidebar" aria-label="وسائل مساعدة الفريقين">${teamAidCards}</aside>
       <main class="trivia-question-main">
         ${current.challengeTeam?`<p class="trivia-challenge-notice">تحدي فردي: يلتزم أحد لاعبي ${escapeHtml(t.teams?.[current.challengeTeam]||'الفريق الآخر')} بالصمت وعدم الإجابة في هذا السؤال.</p>`:''}
         <h1>${escapeHtml(question[0])}</h1><div class="trivia-options">${options}</div>
@@ -310,10 +326,6 @@ function renderTriviaQuestionHost(code,t){
         ${current.wheelResult?`<p class="trivia-wheel-result" role="status">${escapeHtml(current.wheelResult)}</p>`:''}
         <div class="trivia-actions">${answerActions}<button class="btn btn-ghost" onclick="triviaBack('${code}')">العودة للوحة</button></div>
       </main>
-      <aside class="trivia-question-sidebar" aria-label="وسائل المساعدة">
-        <h2>وسائل ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</h2>
-        ${aidButtons}${wheelButton}${aidButtons||wheelButton?'':'<p class="trivia-aids-empty">استُخدمت الوسائل المتاحة لهذا الفريق.</p>'}
-      </aside>
     </div>
     ${aids.includes('wheel')&&!used.wheel?triviaWheelHtml(code):''}
   </div></div>`;
