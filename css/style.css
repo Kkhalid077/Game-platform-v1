@@ -782,7 +782,7 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-nav-links a{color:#aebbd0;font-size:14px;text-decoration:none;transition:color .2s}
 .landing-nav-links a:hover{color:#fff}
 .landing-nav-actions{display:flex;align-items:center;gap:10px}
-.landing-login,.landing-register,.landing-primary-cta,.landing-secondary-cta{
+.landing-login,.landing-register,.landing-primary-cta{
   min-height:44px;
   padding:0 20px;
   border:1px solid transparent;
@@ -793,7 +793,7 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 }
 .landing-login{border-color:rgba(154,170,195,.2);background:rgba(255,255,255,.025);color:#e6edf6}
 .landing-register,.landing-primary-cta{border-color:#e8bd38;background:linear-gradient(135deg,#f3d36e,#e6b932);box-shadow:0 8px 24px rgba(198,151,21,.15);color:#192033}
-.landing-login:hover,.landing-register:hover,.landing-primary-cta:hover,.landing-secondary-cta:hover{transform:translateY(-2px)}
+.landing-login:hover,.landing-register:hover,.landing-primary-cta:hover{transform:translateY(-2px)}
 .landing-login:hover{border-color:rgba(243,201,75,.5);background:rgba(243,201,75,.06)}
 .landing-register:hover,.landing-primary-cta:hover{box-shadow:0 12px 28px rgba(198,151,21,.24)}
 .landing-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.92fr);align-items:center;gap:clamp(24px,6vw,84px);min-height:570px;padding-block:50px 76px}
@@ -807,7 +807,6 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-primary-cta{min-height:52px;padding-inline:24px;font-size:15px}
 .landing-primary-cta span{display:inline-block;margin-inline-start:10px;font-family:system-ui,sans-serif;font-size:18px;transition:transform .18s}
 .landing-primary-cta:hover span{transform:translateX(-3px)}
-.landing-secondary-cta{min-height:52px;border-color:rgba(154,170,195,.22);background:rgba(255,255,255,.035);color:#dce5f1}
 .landing-auth-hint{margin:14px 0 0;color:#7789a4;font-size:12px}
 .landing-auth-error{min-height:1.5em;margin:7px 0 0;color:#ff8390;font-size:13px}
 .landing-hero-art{position:relative;display:grid;place-items:center;width:min(100%,490px);aspect-ratio:1;margin:auto}
@@ -826,11 +825,6 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-art-spark{position:absolute;color:#f3d36e;text-shadow:0 0 18px rgba(243,201,75,.65);animation:landing-sparkle 2.6s ease-in-out infinite alternate}
 .landing-spark-one{top:19%;left:29%;font-size:25px}
 .landing-spark-two{right:24%;bottom:16%;color:#83c4dc;font-size:32px;animation-delay:-1.2s}
-.landing-art-people{position:absolute;bottom:0;display:flex;align-items:center;direction:ltr;padding:8px 13px 8px 8px;border:1px solid rgba(161,183,203,.13);border-radius:999px;background:rgba(5,16,33,.64);color:#aebbd0;font-size:11px}
-.landing-art-people i{display:grid;place-items:center;width:28px;height:28px;margin-inline-start:-5px;border:2px solid #071326;border-radius:50%;background:#194158;color:#d9edf4;font-size:12px;font-style:normal;font-weight:800}
-.landing-art-people i:nth-child(2){background:#66502a;color:#f5df9b}
-.landing-art-people i:nth-child(3){background:#493b68;color:#e0d5ff}
-.landing-art-people span{margin-inline-start:8px;direction:rtl}
 @keyframes landing-float{from{transform:translate3d(0,-5px,0)}to{transform:translate3d(0,5px,0)}}
 @keyframes landing-glow{from{box-shadow:0 0 52px rgba(224,177,48,.1),inset 0 0 24px rgba(112,177,221,.055)}to{box-shadow:0 0 82px rgba(224,177,48,.2),inset 0 0 38px rgba(112,177,221,.12)}}
 @keyframes landing-sparkle{from{opacity:.5;transform:scale(.85) rotate(-10deg)}to{opacity:1;transform:scale(1.1) rotate(12deg)}}
