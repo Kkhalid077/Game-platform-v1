@@ -54,6 +54,10 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if (hostDetailGameId && isTeamNamesOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    return;
+  }
   if (isSilentDrawStrokesOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
     return;
