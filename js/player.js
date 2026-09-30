@@ -426,9 +426,9 @@ function renderGoogleSignIn(){
       <header class="landing-nav">
         ${platformBrandHtml()}
         <nav class="landing-nav-links" aria-label="التنقل الرئيسي">
+          <a href="#landing-about">عن لَمّة</a>
           <a href="#landing-games">الألعاب</a>
           <a href="#landing-tools">الأدوات</a>
-          <a href="#landing-about">عن لَمّة</a>
         </nav>
         <div class="landing-nav-actions">
           <button class="landing-login" type="button" data-auth-action="login">دخول</button>
