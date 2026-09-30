@@ -963,15 +963,18 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-footer{border-top-color:rgba(154,170,195,.08)}
 .landing-footer{justify-content:center}
 .host-shell{display:flex;flex:1;flex-direction:column;width:100%;max-width:1440px;min-height:0;margin:0 auto}
-.host-topbar{display:flex;flex:none;align-items:center;justify-content:space-between;gap:18px;min-height:64px;margin-bottom:clamp(16px,2.6vh,28px);padding:0 2px 13px;border-bottom:1px solid rgba(144,177,201,.12)}
+.host-topbar{display:grid;grid-template-columns:1fr auto 1fr;flex:none;align-items:center;gap:18px;min-height:64px;margin-bottom:clamp(16px,2.6vh,28px);padding:0 2px 13px;border-bottom:1px solid rgba(144,177,201,.12)}
 .host-brand .landing-brand-name{font-size:27px}
+.host-topbar-title{margin:0;color:var(--text);font-size:18px;font-weight:700;white-space:nowrap}
+.host-topbar>.host-brand{justify-self:start}
+.host-topbar>.account-menu{justify-self:end}
 .host-dashboard{min-height:0;flex:1}
-.host-page-header{align-items:center}
 .account-avatar-button{width:44px;height:44px;border-color:rgba(220,196,121,.5);background:linear-gradient(145deg,rgba(220,196,121,.12),rgba(112,177,221,.1))}
 body.has-dashboard-footer .site-footer.is-entry-visible{background:rgba(2,11,32,.12);border-top-color:rgba(144,177,201,.06);color:rgba(179,194,213,.48);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 @media(max-width:760px){
-  .host-topbar{min-height:54px;margin-bottom:14px;padding-bottom:9px}
+  .host-topbar{gap:8px;min-height:54px;margin-bottom:14px;padding-bottom:9px}
   .host-brand .landing-brand-name{font-size:24px}
+  .host-topbar-title{font-size:16px}
   .landing-tools{padding-bottom:55px}
 }
 @media(max-width:680px){

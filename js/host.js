@@ -188,16 +188,11 @@ function renderHostLobby(code, room){
     <div class="host-shell">
       <header class="host-topbar">
         ${platformBrandHtml('host-brand')}
+        <h1 class="host-topbar-title">لوحة التحكم</h1>
         ${accountInfoHtml()}
       </header>
       <div class="host-dashboard">
         <main class="host-games-main">
-          <header class="host-games-header host-page-header">
-            <div>
-              <span class="host-section-kicker">لوحة التحكم</span>
-              <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
-            </div>
-          </header>
           <nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
             <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
             <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
