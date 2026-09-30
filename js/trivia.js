@@ -89,7 +89,7 @@ function renderTriviaSetupHost(code,t){
   const teamCards=['A','B'].map(team=>{
     const selected=t.aidsByTeam?.[team]||[];
     const aidChoices=TRIVIA_AIDS.map(aid=>`<div class="trivia-aid-choice ${selected.includes(aid.id)?'is-selected':''}">
-      <label class="trivia-aid"><input type="checkbox" data-trivia-aid="${team}-${aid.id}" ${selected.includes(aid.id)?'checked':''} ${selected.length>=3&&!selected.includes(aid.id)?'disabled':''} onchange="triviaToggleAid('${code}','${team}','${aid.id}',this.checked)"><span class="trivia-aid-icon">${aid.icon}</span><b>${aid.name}</b><span class="trivia-aid-check" aria-hidden="true">${selected.includes(aid.id)?'✓':''}</span></label>
+      <label class="trivia-aid"><input type="checkbox" data-trivia-aid="${team}-${aid.id}" ${selected.includes(aid.id)?'checked':''} ${selected.length>=3&&!selected.includes(aid.id)?'disabled':''} onchange="triviaToggleAid('${code}','${team}','${aid.id}',this.checked)"><span class="trivia-aid-icon">${aid.icon}</span><b>${aid.name}</b></label>
       <details class="trivia-aid-help"><summary aria-label="شرح ${aid.name}">؟</summary><p>${aid.help}</p></details>
     </div>`).join('');
     const teamName=t.teams?.[team]|| (team==='A'?'الفريق الأول':'الفريق الثاني');
@@ -116,7 +116,10 @@ function renderTriviaCategoriesHost(code,t){
   document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap">
     <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>تحديد الفئات</h1><p>اختاروا 6 فئات للوحة اللعب (${selected.length}/6).</p></div><button class="btn btn-ghost" onclick="triviaBackToTeams('${code}')">العودة للفريقين</button></header>
     <div class="trivia-category-grid">${cards}</div>
-    <button class="btn trivia-start" ${selected.length!==6?'disabled':''} onclick="triviaBegin('${code}')">ابدأ اللعبة</button>
+    <div class="trivia-setup-actions trivia-category-actions">
+      <button class="btn btn-ghost" onclick="triviaRandomizeCategories('${code}')">اختيار عشوائي للفئات</button>
+      <button class="btn trivia-start" ${selected.length!==6?'disabled':''} onclick="triviaBegin('${code}')">ابدأ اللعبة</button>
+    </div>
   </div>`;
 }
 window.triviaToggleTeamEdit=team=>{
@@ -192,6 +195,15 @@ window.triviaToggleCategory=async(code,id)=>{
     if(!result.committed)alert('يمكن اختيار 6 فئات فقط.');
   }catch(error){console.error('Could not update trivia categories:',error);alert('تعذر حفظ الفئات. تحقق من الاتصال وحاول مرة أخرى.');}
 };
+window.triviaRandomizeCategories=async code=>{
+  const ids=TRIVIA_BANK.map(category=>category.id);
+  for(let index=ids.length-1;index>0;index--){
+    const swapIndex=Math.floor(Math.random()*(index+1));
+    [ids[index],ids[swapIndex]]=[ids[swapIndex],ids[index]];
+  }
+  try{await db.ref(`rooms/${code}/trivia/categories`).set(ids.slice(0,6));}
+  catch(error){console.error('Could not randomly choose trivia categories:',error);alert('تعذر اختيار الفئات عشوائيًا. تحقق من الاتصال وحاول مرة أخرى.');}
+};
 window.triviaBegin=async code=>{
   try{
     const snapshot=await db.ref(`rooms/${code}/trivia`).once('value');
@@ -206,7 +218,7 @@ window.triviaBegin=async code=>{
 };
 function renderTriviaBoard(code,t){
   const categories=(t.categories||[]).map(id=>TRIVIA_BANK.find(c=>c.id===id)).filter(Boolean);
-  const cells=categories.map(c=>`<section class="trivia-column"><h3>${c.icon} ${c.name}</h3>${c.qs.map((q,i)=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${(i+1)*100}</button>`}).join('')}</section>`).join('');
+  const cells=categories.map(c=>`<section class="trivia-column"><h3>${c.icon} ${c.name}</h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${(i+1)*100}</button>`}).join('')}</section>`).join('');
   const scores=t.scores||{A:0,B:0};
   const rankedTeams=['A','B'].sort((left,right)=>(scores[right]||0)-(scores[left]||0));
   const scoreCards=rankedTeams.map((team,index)=>`<div class="trivia-score team-${team.toLowerCase()} ${index===0&&scores.A!==scores.B?'is-leading':''}">
@@ -214,7 +226,7 @@ function renderTriviaBoard(code,t){
     <span>${escapeHtml(t.teams?.[team]||(team==='A'?'الفريق الأول':'الفريق الثاني'))}</span>
     <b>${scores[team]||0}</b><small>نقطة</small>
   </div>`).join('');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><header class="trivia-head"><div><span class="host-section-kicker">لوحة اللعب</span><h1>تحدي الفئات</h1></div></header>${t.notice?`<p class="trivia-notice" role="status">${escapeHtml(t.notice)}</p>`:''}<section class="trivia-standings" aria-label="ترتيب الفرق">${scoreCards}</section><div class="trivia-turn">دور الاختيار<br><b>${escapeHtml(t.teams?.[t.turn]||'الفريق الأول')}</b><button onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">تبديل الدور</button></div><div class="trivia-board">${cells}</div><p class="trivia-footnote">النقاط: 100 · 200 · 300 · 400 · 500</p></div>`;
+  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><header class="trivia-head"><div><span class="host-section-kicker">لوحة اللعب</span><h1>تحدي الفئات</h1></div></header>${t.notice?`<p class="trivia-notice" role="status">${escapeHtml(t.notice)}</p>`:''}<div class="trivia-turn">دور الاختيار<br><b>${escapeHtml(t.teams?.[t.turn]||'الفريق الأول')}</b><button onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">تبديل الدور</button></div><div class="trivia-board">${cells}</div><p class="trivia-footnote">النقاط: 500 · 400 · 300 · 200 · 100</p><section class="trivia-standings" aria-label="ترتيب الفرق">${scoreCards}</section></div>`;
 }
 window.triviaSetTurn=(code,team)=>db.ref(`rooms/${code}/trivia/turn`).set(team);
 window.triviaOpenQuestion=async(code,key)=>{
