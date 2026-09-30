@@ -71,6 +71,11 @@ function renderPlayer(code, invitedGameId){
         lastRenderedRoom = room;
         return;
       }
+      if (isPlayerTeamOnlyChange(lastRenderedRoom, room)) {
+        lastRenderedRoom = room;
+        updatePlayerTeamSelector(code, id, room, invitedGameId);
+        return;
+      }
       lastRenderedRoom = room;
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
@@ -204,6 +209,17 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
     return;
   }
   renderPlayerVoting(code, myId, name, room);
+}
+
+function updatePlayerTeamSelector(code, myId, room, invitedGameId){
+  const activityId = invitedGameId || room.activeGame || playerDetailGameId || room.selectedGame;
+  const game = GAMES_LIST.find(item => item.id === activityId);
+  const currentOptions = document.querySelector('.team-picker:not(.team-picker-readonly) .team-options, .team-picker .team-options:not(.team-options-readonly)');
+  if (!game?.needsTeams || !currentOptions) return;
+  const template = document.createElement('template');
+  template.innerHTML = teamSelectorHtml(game, roomForGame(room, activityId), code, myId, false).trim();
+  const nextOptions = template.content.querySelector('.team-options');
+  if (nextOptions) currentOptions.replaceWith(nextOptions);
 }
 
 function renderInvitedGame(code, myId, name, room, gameId){

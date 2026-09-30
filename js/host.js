@@ -61,6 +61,11 @@ function dispatchHostRender(code, room){
     lastHostRoom = room;
     return;
   }
+  if (hostDetailGameId && isPlayerTeamOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    updateHostGameDetailPlayers(code, room);
+    return;
+  }
   if (isSilentDrawStrokesOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
     return;
@@ -81,6 +86,20 @@ function dispatchHostRender(code, room){
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
   else renderHostGenericPlaceholder(code, room);
+}
+
+function updateHostGameDetailPlayers(code, room){
+  const game = GAMES_LIST.find(item => item.id === hostDetailGameId);
+  if (!game?.needsTeams) return;
+  const currentTeamOptions = document.querySelector('.team-options-readonly');
+  const currentPlayersBox = document.querySelector('.lobby-players-box');
+  if (!currentTeamOptions && !currentPlayersBox) return;
+  const template = document.createElement('template');
+  template.innerHTML = gameDetailHtml(game, room, code, null, true).trim();
+  const nextTeamOptions = template.content.querySelector('.team-options-readonly');
+  const nextPlayersBox = template.content.querySelector('.lobby-players-box');
+  if (currentTeamOptions && nextTeamOptions) currentTeamOptions.replaceWith(nextTeamOptions);
+  if (currentPlayersBox && nextPlayersBox) currentPlayersBox.replaceWith(nextPlayersBox);
 }
 
 window.showHostGameDetail = function(gameId){

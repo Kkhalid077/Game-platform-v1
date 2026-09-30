@@ -96,6 +96,25 @@ function isTeamNamesOnlyChange(previousRoom, nextRoom){
   if (JSON.stringify(previousNames || null) === JSON.stringify(nextNames || null)) return false;
   return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
 }
+function isPlayerTeamOnlyChange(previousRoom, nextRoom){
+  if (!previousRoom || !nextRoom) return false;
+  const {players:previousPlayers, ...previousRoomData} = previousRoom;
+  const {players:nextPlayers, ...nextRoomData} = nextRoom;
+  if (JSON.stringify(previousRoomData) !== JSON.stringify(nextRoomData)) return false;
+  const previousEntries = Object.entries(previousPlayers || {});
+  const nextEntries = Object.entries(nextPlayers || {});
+  if (previousEntries.length !== nextEntries.length) return false;
+  let teamChanged = false;
+  for (const [id, previousPlayer] of previousEntries) {
+    const nextPlayer = nextPlayers?.[id];
+    if (!nextPlayer) return false;
+    const {team:previousTeam, ...previousPlayerData} = previousPlayer;
+    const {team:nextTeam, ...nextPlayerData} = nextPlayer;
+    if (JSON.stringify(previousPlayerData) !== JSON.stringify(nextPlayerData)) return false;
+    if (previousTeam !== nextTeam) teamChanged = true;
+  }
+  return teamChanged;
+}
 const mirrorRefs = {};
 function stopMirrorCanvases(){
   Object.values(mirrorRefs).forEach(({ref,handler}) => ref.off('value',handler));
