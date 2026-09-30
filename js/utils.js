@@ -239,6 +239,25 @@ window.saveTeamNames = async function(code, names=null){
     if (status) status.textContent = 'تعذر حفظ الأسماء. تحقق من الاتصال وحاول مرة أخرى.';
   }
 };
+window.toggleTeamNameEdit = function(team){
+  if (team !== 'A' && team !== 'B') return;
+  const input = document.getElementById(`teamName${team}`);
+  const button = document.querySelector(`[data-team-name-toggle="${team}"]`);
+  if (!input || !button) return;
+  const isEditing = !input.closest('.team-name-field').hidden;
+  if (isEditing) {
+    input.blur();
+    input.closest('.team-name-field').hidden = true;
+    button.textContent = 'تعديل';
+    button.setAttribute('aria-label', `تعديل اسم الفريق ${team}`);
+    return;
+  }
+  input.closest('.team-name-field').hidden = false;
+  button.textContent = 'تم';
+  button.setAttribute('aria-label', `إنهاء تعديل اسم الفريق ${team}`);
+  input.focus();
+  input.select();
+};
 
 /* =====================================================================
    SECTION 4 — GAME DETAIL / READY PANEL
@@ -265,9 +284,11 @@ function teamSelectorHtml(game, room, code, myId, isHost){
       if (!member) return `<span class="team-seat team-seat-empty" aria-hidden="true"><span>+</span></span>`;
       return `<span class="team-seat">${teamMemberHtml(member[1])}</span>`;
     }).join('');
-    const contents = `<span class="team-card-title">${escapeHtml(teamNames[team])}</span>
+    const contents = `<div class="team-name-display"><span class="team-card-title">${escapeHtml(teamNames[team])}</span>
+        ${isHost ? `<button type="button" class="team-name-edit" data-team-name-toggle="${team}" aria-label="تعديل اسم الفريق ${team}" onclick="toggleTeamNameEdit('${team}')">تعديل</button>` : ''}
+      </div>
       ${isHost
-        ? `<label class="team-name-field"><span>اسم الفريق</span><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}" oninput="queueTeamNamesSave('${code}')" onblur="queueTeamNamesSave('${code}',true)"></label>`
+        ? `<label class="team-name-field" hidden><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}" oninput="queueTeamNamesSave('${code}')" onblur="queueTeamNamesSave('${code}',true)"></label>`
         : `<span class="team-card-count">${members.length} / 2 لاعبين</span>`}
       <span class="team-seats">${availableSeats}</span>`;
     if (isHost) {
