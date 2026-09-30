@@ -43,6 +43,7 @@ function showSessionEnded(){
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
+  setActivityBackdrop(invitedGameId);
   playerInviteGameId = invitedGameId || null;
   if (invitedGameId) setGuestExitButton(false);
   const roomRef = db.ref('rooms/' + code);
@@ -168,6 +169,7 @@ window.exitInvitedPlayer = async function(){
 
 function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   const activityId = invitedGameId || (room.status === 'in_tool' ? room.activeTool : (room.activeGame || room.selectedGame));
+  setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
   lastPlayerRoom = room;
   setGuestExitButton(!!invitedGameId && !!activeGuestInvite);
@@ -259,6 +261,7 @@ window.savePlayerDisplayName = async function(code, playerId){
 };
 
 function renderPlayerVoting(code, myId, name, room){
+  setActivityBackdrop(playerDetailGameId);
   if (playerDetailGameId){
     const game = GAMES_LIST.find(g => g.id === playerDetailGameId);
     app.innerHTML = `<div class="player-join-screen">${playerProfileHtml(code, myId, name)}${gameDetailHtml(game, room, code, myId, false)}</div>`;

@@ -222,6 +222,16 @@ function roomPlayersForGame(room, gameId){
 function roomForGame(room, gameId){
   return gameId ? {...room, players:roomPlayersForGame(room, gameId)} : room;
 }
+
+function setActivityBackdrop(activityId){
+  const appRoot = document.getElementById('app');
+  if (!appRoot) return;
+  if (['mafia','silentdraw','trivia','qatara','buzzer'].includes(activityId)) {
+    appRoot.dataset.activity = activityId;
+  } else {
+    delete appRoot.dataset.activity;
+  }
+}
 window.toggleReady = function(code, myId, gameId){
   const ref = db.ref('rooms/'+code+'/votes/'+myId);
   ref.once('value', snap => { snap.val() === gameId ? ref.remove() : ref.set(gameId); });

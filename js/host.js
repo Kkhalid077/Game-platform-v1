@@ -47,7 +47,12 @@ function dispatchHostRender(code, room){
     return;
   }
   const previousRoom = lastHostRoom;
-  const activityId = room.status === 'in_tool' ? room.activeTool : (room.activeGame || room.selectedGame);
+  const activityId = room.status === 'in_tool'
+    ? room.activeTool
+    : room.status === 'voting'
+      ? hostDetailGameId
+      : room.activeGame;
+  setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
   lastHostRoom = room;
   stopHostTimerWatch();
