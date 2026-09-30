@@ -70,6 +70,14 @@ input[type=text]:focus{border-color:var(--accent)}
 .muted{margin-top:10px;color:var(--text-dim);font-size:14px}
 .narrator{max-width:560px;margin:12px auto;font-size:17px;line-height:1.8}
 .players-box{width:100%;max-width:640px;margin-top:22px;padding:16px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-2)}
+.lobby-players-box{max-width:none}
+.lobby-players-box h3{margin:0 0 12px;color:var(--text-dim);font-family:'Cairo',sans-serif;font-size:14px}
+.lobby-player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
+.lobby-player-card{display:flex;min-width:0;flex-direction:column;align-items:center;gap:7px;text-align:center}
+.lobby-player-avatar{position:relative;display:grid;place-items:center;width:76px;aspect-ratio:1;overflow:hidden;border:1px solid rgba(76,212,255,.35);border-radius:16px;background:linear-gradient(145deg,rgba(76,212,255,.18),rgba(139,123,255,.2)),var(--surface);color:var(--cyan);font-family:'Cairo',sans-serif;font-size:32px;font-weight:900}
+.lobby-player-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lobby-player-avatar span{position:relative}
+.lobby-player-card strong{max-width:100%;overflow:hidden;color:var(--text);font-size:13px;text-overflow:ellipsis;white-space:nowrap}
 .chip{display:inline-block;margin:4px;padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.05);font-size:14px;font-weight:700}
 .chip.team-A{border-color:var(--team-a);color:var(--team-a)}
 .chip.team-B{border-color:var(--team-b);color:var(--team-b)}

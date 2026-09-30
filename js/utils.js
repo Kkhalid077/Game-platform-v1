@@ -184,6 +184,14 @@ function teamSelectorHtml(game, room, code, myId, isHost){
 function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const players = room.players || {};
   const totalPlayers = Object.keys(players).length;
+  const playerCards = Object.entries(players).map(([id, player]) => {
+    const name = player.name || 'لاعب';
+    const initial = escapeHtml(name.trim().charAt(0) || 'ل');
+    const avatar = player.photoURL
+      ? `<img src="${escapeHtml(player.photoURL)}" alt="" loading="lazy" onerror="this.hidden=true"><span>${initial}</span>`
+      : `<span>${initial}</span>`;
+    return `<div class="lobby-player-card" title="${escapeHtml(name)}"><span class="lobby-player-avatar">${avatar}</span><strong>${escapeHtml(name)}</strong></div>`;
+  }).join('');
 
   return `
     <div class="game-detail">
@@ -195,7 +203,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
       ${inviteHtml}
       ${teamSelectorHtml(game, room, code, myId, isHost)}
-      ${isHost ? `<div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">اللاعبون (${totalPlayers})</h3><div>${Object.values(players).map(p => `<span class="chip">${escapeHtml(p.name)}</span>`).join('') || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost
           ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
