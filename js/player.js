@@ -502,13 +502,11 @@ function renderGoogleSignIn(){
             <p>أدوات تفاعلية تدعم الألعاب التي تُمارس خارج المنصة، ويجري تطوير المزيد منها.</p>
           </div>
           ${landingShowcaseMarkup('tools','استعراض الأدوات',tools,'tool')}
-          <p class="landing-tools-footnote">تُضاف أدوات أخرى مستقبلًا.</p>
         </section>
 
       </main>
 
       <footer class="landing-footer">
-        ${platformBrandHtml('landing-footer-brand')}
         <span>صنع بواسطة kkhalid07</span>
         <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
       </footer>
