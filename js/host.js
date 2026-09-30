@@ -6,6 +6,7 @@ let lastHostRoom = null;
 let hostDetailGameId = null;
 let hostRoomRef = null;
 let hostDashboardTab = 'games';
+let lastHostViewKey = null;
 function detachHostRoom(){ if (hostRoomRef){ hostRoomRef.off('value'); hostRoomRef = null; } }
 function allocateRoomCode(attempt = 0){
   const code = makeRoomCode();
@@ -29,6 +30,7 @@ function renderHost(){
 
 function initHostRoom(code, isNew){
   ACTIVE_HOST_CODE = code;
+  lastHostViewKey = null;
   localStorage.setItem('hostSessionCode', code);
   const roomRef = db.ref('rooms/' + code);
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
@@ -57,8 +59,19 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if (isTriviaQuestionTurnOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    updateTriviaQuestionTurnDisplays(code, room);
+    return;
+  }
   if (hostDetailGameId && isTeamNamesOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
+    updateTeamNameDisplays(room.teamNames || {});
+    return;
+  }
+  if (hostDetailGameId && isPlayerTeamOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    updateHostGameDetailPlayers(code, room);
     return;
   }
   if (isSilentDrawStrokesOnlyChange(previousRoom, room)) {
@@ -73,25 +86,80 @@ function dispatchHostRender(code, room){
   // لا نعيد رسم الردهة أثناء فتح نافذة الحساب حتى لا تُغلق أو يضيع ما كُتب فيها
   if (room.status === 'voting' && document.getElementById('accountModal')?.classList.contains('is-open')) return;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
-  if (room.status === 'voting') renderHostLobby(code, room);
-  else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
-  else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
-  else renderHostGenericPlaceholder(code, room);
+  const viewKey = room.status === 'voting'
+    ? `voting:${hostDetailGameId || 'dashboard'}:${hostDetailGameId ? '' : hostDashboardTab}`
+    : `${room.status}:${room.activeTool || room.activeGame || ''}`;
+  const renderView = () => {
+    if (room.status === 'voting') renderHostLobby(code, room);
+    else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
+    else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
+    else renderHostGenericPlaceholder(code, room);
+  };
+  const shouldTransition = lastHostViewKey !== null && lastHostViewKey !== viewKey;
+  lastHostViewKey = viewKey;
+  if (shouldTransition) transitionAppView(renderView);
+  else renderView();
+}
+
+function isTriviaQuestionTurnOnlyChange(previousRoom, room){
+  const previousTrivia = previousRoom?.trivia;
+  const trivia = room.trivia;
+  if (previousRoom?.status !== 'in_game' || previousRoom.activeGame !== 'trivia' ||
+      room.status !== 'in_game' || room.activeGame !== 'trivia' ||
+      previousTrivia?.phase !== 'question' || trivia?.phase !== 'question' ||
+      !previousTrivia.current || !trivia.current ||
+      previousTrivia.current.team === trivia.current.team) return false;
+  const withoutTurn = value => {
+    const comparable = {...value, current: {...value.current}};
+    delete comparable.current.team;
+    return JSON.stringify(comparable);
+  };
+  return withoutTurn(previousTrivia) === withoutTurn(trivia);
+}
+
+function updateTriviaQuestionTurnDisplays(code, room){
+  const current = room.trivia.current;
+  const team = current.team || 'A';
+  const label = document.querySelector('.trivia-question-turn > span');
+  const switchButton = document.querySelector('.trivia-question-turn-switch');
+  const sidebar = document.querySelector('.trivia-question-sidebar');
+  if (label) label.textContent = `دور ${room.trivia.teams?.[team] || 'الفريق صاحب الدور'}`;
+  if (switchButton) switchButton.setAttribute('onclick', `triviaSetQuestionTurn('${code}','${team==='A'?'B':'A'}')`);
+  if (sidebar) sidebar.innerHTML = renderTriviaTeamAidCards(code, room.trivia, current);
+}
+
+function updateHostGameDetailPlayers(code, room){
+  const game = GAMES_LIST.find(item => item.id === hostDetailGameId);
+  if (!game?.needsTeams) return;
+  const currentTeamOptions = document.querySelector('.team-options-readonly');
+  const currentPlayersBox = document.querySelector('.lobby-players-box');
+  if (!currentTeamOptions && !currentPlayersBox) return;
+  const template = document.createElement('template');
+  template.innerHTML = gameDetailHtml(game, room, code, null, true).trim();
+  const nextTeamOptions = template.content.querySelector('.team-options-readonly');
+  const nextPlayersBox = template.content.querySelector('.lobby-players-box');
+  if (currentTeamOptions && nextTeamOptions) currentTeamOptions.replaceWith(nextTeamOptions);
+  if (currentPlayersBox && nextPlayersBox) currentPlayersBox.replaceWith(nextPlayersBox);
 }
 
 window.showHostGameDetail = function(gameId){
   hostDetailGameId = gameId;
   db.ref('rooms/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
-window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+window.hideHostGameDetail = function(){
+  hostDetailGameId = null;
+  lastHostViewKey = `voting:dashboard:${hostDashboardTab}`;
+  if (lastHostRoom) transitionAppView(() => renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom));
+};
 window.setHostDashboardTab = function(tab){
   if (tab !== 'games' && tab !== 'tools' && tab !== 'pricing') return;
   hostDashboardTab = tab;
-  if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom);
+  lastHostViewKey = `voting:dashboard:${hostDashboardTab}`;
+  if (lastHostRoom) transitionAppView(() => renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom));
 };
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
 window.signOut = function(){
@@ -152,10 +220,10 @@ function renderHostLobby(code, room){
   if (hostDetailGameId) {
     if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
-    const inviteUrl = joinGameUrl(code, game.id);
-    const invite = game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
+    const inviteUrl = game.id === 'trivia' ? null : joinGameUrl(code, game.id);
+    const invite = inviteUrl && game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
     document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true, invite);
-    if (game.minPlayers > 1) initJoinCard('gameInvite', inviteUrl);
+    if (invite) initJoinCard('gameInvite', inviteUrl);
     return;
   }
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
@@ -173,7 +241,7 @@ function renderHostLobby(code, room){
     return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div>
       <div class="game-title">${g.title}</div>
-      <div class="vote-badge">الحد الأدنى ${g.minPlayers}</div>
+      <div class="vote-badge">${g.id === 'trivia' ? 'يعرضها المنظّم' : `الحد الأدنى ${g.minPlayers}`}</div>
     </div>`;
   }).join('');
   const toolsHtml = `<section class="host-tools-section" aria-labelledby="host-tools-heading">
@@ -200,17 +268,14 @@ function renderHostLobby(code, room){
       <header class="host-topbar">
         ${platformBrandHtml('host-brand')}
         <nav class="host-topbar-nav" aria-label="التنقل">
-          <button type="button" class="host-topbar-link ${hostDashboardTab !== 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab !== 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">لوحة التحكم</button>
+          <button type="button" class="host-topbar-link ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
+          <button type="button" class="host-topbar-link ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
           <button type="button" class="host-topbar-link ${hostDashboardTab === 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('pricing')">التسعيرة</button>
         </nav>
         ${accountInfoHtml()}
       </header>
       <div class="host-dashboard">
         <main class="host-games-main">
-          ${hostDashboardTab !== 'pricing' ? `<nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
-            <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
-            <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
-          </nav>` : ''}
           ${dashboardContent}
         </main>
       </div>
@@ -223,7 +288,7 @@ function renderHostGenericPlaceholder(code, room){
   document.getElementById('stage').innerHTML = `
     <h2 style="font-family:'Cairo'; color:var(--accent);"> ${g ? g.title : ''}</h2>
     <p class="muted">هذه اللعبة قيد التطوير حاليًا.</p>
-    <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للرئيسية</button>
+    ${activityExitControlsHtml(code, room.activeGame)}
   `;
 }
 
@@ -245,6 +310,32 @@ window.startBuzzerTool = function(code){
 
 window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
+};
+
+function activityExitControlsHtml(code,gameId){
+  return `<div class="activity-exit-controls">
+    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
+    <button type="button" class="btn activity-return-detail" onclick="returnToGameDetail('${code}','${gameId}')">إنهاء اللعبة</button>
+  </div>`;
+}
+
+window.returnToGameDetail = async function(code,gameId){
+  if(!GAMES_LIST.some(game=>game.id===gameId)){
+    console.error('Cannot return to an unknown game detail page:',gameId);
+    return;
+  }
+  hostDetailGameId = gameId;
+  try{
+    await db.ref('rooms/'+code).update({
+      status:'voting',activeGame:null,activeTool:null,buzzerTransport:null,
+      buzzerSession:null,buzzerRtc:null,buzzerFallback:null,selectedGame:gameId,
+      votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,buzzer:null
+    });
+  }catch(error){
+    hostDetailGameId = null;
+    console.error('Could not return to game details:',error);
+    alert('تعذر إنهاء اللعبة والعودة إلى تفاصيلها. تحقق من الاتصال وحاول مرة أخرى.');
+  }
 };
 
 window.hostLeaveRoom = function(code){

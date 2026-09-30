@@ -10,10 +10,14 @@ let playerRoomRef = null;
 let playerInviteGameId = null;
 let activeGuestInvite = null;
 let landingCarouselTimers = [];
+let landingCarouselObservers = [];
+let lastPlayerViewKey = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
 function stopLandingCarousels(){
   landingCarouselTimers.forEach(timer => clearInterval(timer));
   landingCarouselTimers = [];
+  landingCarouselObservers.forEach(observer => observer.disconnect());
+  landingCarouselObservers = [];
 }
 async function registerPlayerPresence(playerRef, record){
   await playerRef.onDisconnect().remove();
@@ -60,6 +64,7 @@ function renderPlayer(code, invitedGameId){
     CURRENT_PLAYER_NAME = name;
     ACTIVE_ROOM_CODE = code;
     ACTIVE_PLAYER_ID = id;
+    lastPlayerViewKey = null;
     detachPlayerRoom();
     playerRoomRef = roomRef;
     let presenceWritePending = false;
@@ -69,6 +74,11 @@ function renderPlayer(code, invitedGameId){
       if (!room || !room.status) { showSessionEnded(); return; }
       if (isSilentDrawStrokesOnlyChange(lastRenderedRoom, room)) {
         lastRenderedRoom = room;
+        return;
+      }
+      if (isPlayerTeamOnlyChange(lastRenderedRoom, room)) {
+        lastRenderedRoom = room;
+        updatePlayerTeamSelector(code, id, room, invitedGameId);
         return;
       }
       lastRenderedRoom = room;
@@ -187,23 +197,33 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw') && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraPlayerWatch) stopQataraPlayerWatch();
-  if (invitedGameId) {
-    renderInvitedGame(code, myId, name, room, invitedGameId);
-    return;
-  }
-  if (room.status === 'in_tool' && room.activeTool === 'buzzer') {
-    renderBuzzerPlayer(code, myId, name, room);
-    return;
-  }
-  if (room.status === 'in_game' && room.activeGame === 'qatara') {
-    renderQataraPlayer(code, myId, name, room);
-    return;
-  }
-  if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') {
-    renderPlayerGameNotice(code, myId, name, room);
-    return;
-  }
-  renderPlayerVoting(code, myId, name, room);
+  const viewKey = invitedGameId
+    ? `invited:${invitedGameId}:${room.status}:${room.activeGame || room.activeTool || ''}`
+    : room.status === 'voting'
+      ? `voting:${playerDetailGameId || 'list'}`
+      : `${room.status}:${room.activeTool || room.activeGame || ''}`;
+  const renderView = () => {
+    if (invitedGameId) renderInvitedGame(code, myId, name, room, invitedGameId);
+    else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') renderPlayerGameNotice(code, myId, name, room);
+    else renderPlayerVoting(code, myId, name, room);
+  };
+  const shouldTransition = lastPlayerViewKey !== null && lastPlayerViewKey !== viewKey;
+  lastPlayerViewKey = viewKey;
+  if (shouldTransition) transitionAppView(renderView);
+  else renderView();
+}
+
+function updatePlayerTeamSelector(code, myId, room, invitedGameId){
+  const activityId = invitedGameId || room.activeGame || playerDetailGameId || room.selectedGame;
+  const game = GAMES_LIST.find(item => item.id === activityId);
+  const currentOptions = document.querySelector('.team-picker:not(.team-picker-readonly) .team-options, .team-picker .team-options:not(.team-options-readonly)');
+  if (!game?.needsTeams || !currentOptions) return;
+  const template = document.createElement('template');
+  template.innerHTML = teamSelectorHtml(game, roomForGame(room, activityId), code, myId, false).trim();
+  const nextOptions = template.content.querySelector('.team-options');
+  if (nextOptions) currentOptions.replaceWith(nextOptions);
 }
 
 function renderInvitedGame(code, myId, name, room, gameId){
@@ -223,8 +243,16 @@ function renderInvitedGame(code, myId, name, room, gameId){
   app.innerHTML = `<div class="player-join-screen">${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
 
-window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
-window.hideGameDetail = function(){ playerDetailGameId = null; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
+window.showGameDetail = function(gameId){
+  playerDetailGameId = gameId;
+  lastPlayerViewKey = `voting:${gameId}`;
+  if (lastPlayerRoom) transitionAppView(() => renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom));
+};
+window.hideGameDetail = function(){
+  playerDetailGameId = null;
+  lastPlayerViewKey = 'voting:list';
+  if (lastPlayerRoom) transitionAppView(() => renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom));
+};
 
 function playerProfileHtml(code, myId, name){
   return `<section class="player-profile-panel" aria-labelledby="player-profile-heading">
@@ -283,7 +311,7 @@ function renderPlayerVoting(code, myId, name, room){
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     return `<div class="game-card" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div>
-      <div class="vote-badge">${g.needsTeams ? 'انضم إلى فريق' : 'التفاصيل'}</div>
+      <div class="vote-badge">${g.id==='trivia'?'على شاشة المنظّم':g.needsTeams?'انضم إلى فريق':'التفاصيل'}</div>
     </div>`;
   }).join('');
 
@@ -300,7 +328,7 @@ function renderPlayerVoting(code, myId, name, room){
 function renderPlayerGameNotice(code, myId, name, room){
   const game = GAMES_LIST.find(g => g.id === room.activeGame);
   const title = game ? game.title : (room.activeTool === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
-  const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
+  const teamHtml = game?.needsTeams && game.id !== 'trivia' ? teamSelectorHtml(game, room, code, myId, false) : '';
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     ${playerProfileHtml(code, myId, name)}
     <div class="detail-icon">${game ? gameIconHtml(game, 'detail-icon-image') : iconImageHtml('assets/icons/answer-buzzer.svg', 'detail-icon-image')}</div>
@@ -350,6 +378,14 @@ function initLandingCarousels(){
           { title:'لوح رسم مشترك', icon:'assets/icons/signal-sketch.svg', available:false, desc:'أداة للرسم والتخمين لدعم الأنشطة والألعاب الخارجية.' }
         ];
     let paused = false;
+    let visible = true;
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        visible = entries.some(entry => entry.isIntersecting);
+      }, {threshold:.05});
+      observer.observe(root);
+      landingCarouselObservers.push(observer);
+    }
     const show = index => {
       const nextIndex = (index + items.length) % items.length;
       const item = items[nextIndex];
@@ -404,7 +440,7 @@ function initLandingCarousels(){
     });
     if (!reduceMotion && items.length > 1) {
       landingCarouselTimers.push(setInterval(() => {
-        if (!paused && !document.hidden && root.isConnected) show(Number(root.dataset.index) + 1);
+        if (visible && !paused && !document.hidden && root.isConnected) show(Number(root.dataset.index) + 1);
       }, 5500));
     }
   });
@@ -431,8 +467,7 @@ function renderGoogleSignIn(){
           <a href="#landing-tools">الأدوات</a>
         </nav>
         <div class="landing-nav-actions">
-          <button class="landing-login" type="button" data-auth-action="login">دخول</button>
-          <button class="landing-register" type="button" data-auth-action="register">إنشاء حساب</button>
+          <button class="landing-login" type="button" data-auth-open>دخول</button>
         </div>
       </header>
 
@@ -443,9 +478,9 @@ function renderGoogleSignIn(){
             <h1>منصة <span>لَمّة</span></h1>
             <p class="landing-lead">منصة لتنظيم الألعاب الجماعية واستخدام الأدوات المساندة، مع إدارة الجلسات ومشاركة الدعوات بسهولة.</p>
             <div class="landing-hero-actions">
-              <button class="landing-primary-cta" type="button" data-auth-action="register">ابدأ الآن <span aria-hidden="true">←</span></button>
+              <button class="landing-primary-cta" type="button" data-auth-open>دخول <span aria-hidden="true">←</span></button>
             </div>
-            <p class="landing-auth-hint">تسجيل الدخول وإنشاء الحساب عبر Google.</p>
+            <p class="landing-auth-hint">اختر طريقة الدخول عبر Google أو Apple.</p>
             <p class="landing-auth-error" id="authError" role="status" aria-live="polite"></p>
           </div>
 
@@ -457,7 +492,7 @@ function renderGoogleSignIn(){
             <div class="landing-art-center"><span>لَمّة</span><small>ألعاب وأدوات جماعية</small></div>
             <div class="landing-art-chip landing-chip-mafia"><span>01</span><b>ليلة المافيا</b></div>
             <div class="landing-art-chip landing-chip-draw"><span>02</span><b>إشارة ورسمة</b></div>
-            <div class="landing-art-chip landing-chip-trivia"><span>03</span><b>تحدي المعرفة</b></div>
+            <div class="landing-art-chip landing-chip-trivia"><span>03</span><b>تحدي الفئات</b></div>
             <div class="landing-art-chip landing-chip-qatara"><span>04</span><b>سؤال القَطّارة</b></div>
           </div>
         </section>
@@ -508,27 +543,60 @@ function renderGoogleSignIn(){
         <span>صنع بواسطة kkhalid07</span>
         <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
       </footer>
+      <dialog class="landing-auth-dialog" id="landingAuthDialog" aria-labelledby="landingAuthTitle">
+        <button class="landing-auth-close" type="button" data-auth-close aria-label="إغلاق">×</button>
+        <span class="landing-eyebrow">لَمّة</span>
+        <h2 id="landingAuthTitle">اختر طريقة الدخول</h2>
+        <p>تابع باستخدام حسابك لدى إحدى الخدمتين.</p>
+        <div class="landing-auth-providers">
+          <button type="button" class="landing-provider-button" data-auth-provider="google"><svg class="provider-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.88c-.58 2.96-2.25 5.48-4.72 7.18l7.62 5.91c4.45-4.11 7.2-10.16 7.2-17.56Z"/><path fill="#FBBC05" d="M10.53 28.59a14.4 14.4 0 0 1 0-9.18l-7.98-6.19a23.9 23.9 0 0 0 0 21.56l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.89l-7.62-5.91c-2.12 1.42-4.84 2.3-8.28 2.3-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>المتابعة باستخدام Google</button>
+          <button type="button" class="landing-provider-button" data-auth-provider="apple"><svg class="provider-logo provider-logo-apple" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.48c.02 2.13 1.87 2.84 1.89 2.85-.02.05-.3 1.04-.98 2.06-.59.88-1.2 1.75-2.16 1.77-.94.02-1.25-.57-2.33-.57-1.08 0-1.42.55-2.31.59-.93.03-1.64-.95-2.23-1.83-1.21-1.77-2.13-5.01-.89-7.2a3.45 3.45 0 0 1 2.9-1.76c.91-.02 1.77.62 2.33.62.55 0 1.59-.77 2.68-.66.46.02 1.77.18 2.61 1.4-.07.04-1.56.91-1.54 2.73ZM14.6 7.23a3.2 3.2 0 0 0 .76-2.3 3.27 3.27 0 0 0-2.12 1.08 3.05 3.05 0 0 0-.78 2.23 2.75 2.75 0 0 0 2.14-1.01Z"/></svg>المتابعة باستخدام Apple</button>
+        </div>
+      </dialog>
     </div>`;
   initLandingCarousels();
-  const signIn = async () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
+  const authDialog = document.getElementById('landingAuthDialog');
+  const signIn = async providerName => {
+    const provider = providerName === 'apple'
+      ? new firebase.auth.OAuthProvider('apple.com')
+      : new firebase.auth.GoogleAuthProvider();
+    if (providerName === 'apple') {
+      provider.addScope('email');
+      provider.addScope('name');
+    }
+    authDialog.close();
     try {
       await firebase.auth().signInWithPopup(provider);
     }
     catch (error) {
-      if (error.code === 'auth/popup-blocked') { try { await firebase.auth().signInWithRedirect(provider); return; } catch (_) {} }
+      let authFailure = error;
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await firebase.auth().signInWithRedirect(provider);
+          return;
+        } catch (redirectError) {
+          authFailure = redirectError;
+        }
+      }
       const messages = {
-        'auth/operation-not-allowed': 'تسجيل الدخول عبر Google غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method ← Google.',
+        'auth/operation-not-allowed': `تسجيل الدخول عبر ${providerName === 'apple' ? 'Apple' : 'Google'} غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method.`,
         'auth/unauthorized-domain': 'نطاق الموقع الحالي غير مسموح في Firebase. أضفه في Authentication ← Settings ← Authorized domains.',
-        'auth/popup-blocked': 'المتصفح حجب نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.',
+        'auth/popup-blocked': 'المتصفح حجب نافذة تسجيل الدخول. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.',
         'auth/popup-closed-by-user': 'أُغلقت نافذة تسجيل الدخول قبل إكمال العملية.'
       };
-      console.error('Google sign-in failed:', error.code, error);
+      console.error(`${providerName} sign-in failed:`, authFailure.code, authFailure);
       const authError = document.getElementById('authError');
-      if (authError) authError.textContent = messages[error.code] || `تعذر تسجيل الدخول (${error.code || 'خطأ غير معروف'}).`;
+      if (authError) authError.textContent = messages[authFailure.code] || `تعذر تسجيل الدخول (${authFailure.code || 'خطأ غير معروف'}).`;
     }
   };
-  app.querySelectorAll('[data-auth-action]').forEach(button => { button.onclick = signIn; });
+  app.querySelectorAll('[data-auth-open]').forEach(button => { button.onclick = () => authDialog.showModal(); });
+  app.querySelectorAll('[data-auth-close]').forEach(button => { button.onclick = () => authDialog.close(); });
+  authDialog.addEventListener('click', event => {
+    if (event.target === authDialog) authDialog.close();
+  });
+  app.querySelectorAll('[data-auth-provider]').forEach(button => {
+    button.onclick = () => signIn(button.dataset.authProvider);
+  });
   document.getElementById('adminGuestBtn').onclick = renderAdminNameEntry;
 }
 
@@ -543,7 +611,7 @@ function renderAdminNameEntry(){
   };
   document.getElementById('adminEnterBtn').onclick = enter;
   document.getElementById('adminNameInput').addEventListener('keydown', event => { if (event.key === 'Enter') enter(); });
-  document.getElementById('adminBackBtn').onclick = renderGoogleSignIn;
+  document.getElementById('adminBackBtn').onclick = () => transitionAppView(renderGoogleSignIn);
 }
 
 firebase.auth().onAuthStateChanged(user => {

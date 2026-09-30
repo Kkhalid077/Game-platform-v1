@@ -388,7 +388,6 @@ function renderSilentDrawHost(code, room){
     narrator = '';
     control = `<div class="silentdraw-end-actions">
       <button class="btn" onclick="startSilentDrawGame('${code}')">إعادة اللعبة</button>
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')">الخروج</button>
     </div>`;
   }
 
@@ -402,7 +401,7 @@ function renderSilentDrawHost(code, room){
   }
 
   document.getElementById('stage').innerHTML = `
-    ${sd.phase!=='ended' ? `<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>` : ''}
+    ${activityExitControlsHtml(code,'silentdraw')}
     <h2 style="font-family:'Cairo'; color:var(--accent);">إشارة ورسمة</h2>
     ${sd.phase==='ended' ? `<section class="silentdraw-winner"><h3>فاز ${teamName(sd.winner)}!</h3>${winnerCelebrationHtml()}</section>` : ''}
     <p class="narrator">${narrator}</p>

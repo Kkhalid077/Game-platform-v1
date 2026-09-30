@@ -6,10 +6,31 @@ function makeRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
 function joinGameUrl(code, gameId){ return location.origin + location.pathname + '?session=' + encodeURIComponent(code) + '&game=' + encodeURIComponent(gameId); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function iconImageHtml(src, className='game-icon-image'){
-  return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" />`;
+  return `<img class="${className}" src="${escapeHtml(src)}" alt="" aria-hidden="true" loading="lazy" decoding="async" />`;
 }
 function gameIconHtml(game, className='game-icon-image'){
   return iconImageHtml(game.icon, className);
+}
+function transitionAppView(update){
+  const appRoot = document.getElementById('app');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!appRoot || reduceMotion) {
+    update();
+    return;
+  }
+  if (typeof document.startViewTransition === 'function') {
+    appRoot.style.viewTransitionName = 'platform-page';
+    document.startViewTransition(update);
+    return;
+  }
+  update();
+  const nextView = appRoot.querySelector('.host-shell, .phone, .landing-page') || appRoot.firstElementChild;
+  if (nextView?.animate) {
+    nextView.animate(
+      [{opacity:0, transform:'translate3d(0,12px,0) scale(.99)'},{opacity:1, transform:'translate3d(0,0,0) scale(1)'}],
+      {duration:260, easing:'cubic-bezier(.2,.75,.25,1)'}
+    );
+  }
 }
 function platformBrandHtml(className=''){
   return `<a class="landing-brand ${className}" href="#" aria-label="لَمّة — الصفحة الرئيسية">
@@ -96,6 +117,25 @@ function isTeamNamesOnlyChange(previousRoom, nextRoom){
   if (JSON.stringify(previousNames || null) === JSON.stringify(nextNames || null)) return false;
   return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
 }
+function isPlayerTeamOnlyChange(previousRoom, nextRoom){
+  if (!previousRoom || !nextRoom) return false;
+  const {players:previousPlayers, ...previousRoomData} = previousRoom;
+  const {players:nextPlayers, ...nextRoomData} = nextRoom;
+  if (JSON.stringify(previousRoomData) !== JSON.stringify(nextRoomData)) return false;
+  const previousEntries = Object.entries(previousPlayers || {});
+  const nextEntries = Object.entries(nextPlayers || {});
+  if (previousEntries.length !== nextEntries.length) return false;
+  let teamChanged = false;
+  for (const [id, previousPlayer] of previousEntries) {
+    const nextPlayer = nextPlayers?.[id];
+    if (!nextPlayer) return false;
+    const {team:previousTeam, ...previousPlayerData} = previousPlayer;
+    const {team:nextTeam, ...nextPlayerData} = nextPlayer;
+    if (JSON.stringify(previousPlayerData) !== JSON.stringify(nextPlayerData)) return false;
+    if (previousTeam !== nextTeam) teamChanged = true;
+  }
+  return teamChanged;
+}
 const mirrorRefs = {};
 function stopMirrorCanvases(){
   Object.values(mirrorRefs).forEach(({ref,handler}) => ref.off('value',handler));
@@ -161,11 +201,23 @@ window.setPlayerTeam = function(code, myId, team){
 };
 
 let teamNamesSaveTimer = null;
+function updateTeamNameDisplays(names){
+  for (const team of ['A','B']) {
+    const name = names?.[team];
+    if (typeof name !== 'string') continue;
+    document.querySelectorAll(`[data-team-name="${team}"]`).forEach(display => {
+      display.textContent = name || (team === 'A' ? 'الفريق الأخضر' : 'الفريق البرتقالي');
+    });
+    const input = document.getElementById(`teamName${team}`);
+    if (input && document.activeElement !== input && input.value !== name) input.value = name;
+  }
+}
 window.queueTeamNamesSave = function(code, immediate=false){
   if (teamNamesSaveTimer) clearTimeout(teamNamesSaveTimer);
   const status = document.getElementById('teamNamesStatus');
   const nameA = document.getElementById('teamNameA')?.value.trim() || '';
   const nameB = document.getElementById('teamNameB')?.value.trim() || '';
+  updateTeamNameDisplays({A:nameA,B:nameB});
   if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
     if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
     return;
@@ -199,6 +251,25 @@ window.saveTeamNames = async function(code, names=null){
     if (status) status.textContent = 'تعذر حفظ الأسماء. تحقق من الاتصال وحاول مرة أخرى.';
   }
 };
+window.toggleTeamNameEdit = function(team){
+  if (team !== 'A' && team !== 'B') return;
+  const input = document.getElementById(`teamName${team}`);
+  const button = document.querySelector(`[data-team-name-toggle="${team}"]`);
+  if (!input || !button) return;
+  const isEditing = !input.closest('.team-name-field').hidden;
+  if (isEditing) {
+    input.blur();
+    input.closest('.team-name-field').hidden = true;
+    button.textContent = 'تعديل';
+    button.setAttribute('aria-label', `تعديل اسم الفريق ${team}`);
+    return;
+  }
+  input.closest('.team-name-field').hidden = false;
+  button.textContent = 'تم';
+  button.setAttribute('aria-label', `إنهاء تعديل اسم الفريق ${team}`);
+  input.focus();
+  input.select();
+};
 
 /* =====================================================================
    SECTION 4 — GAME DETAIL / READY PANEL
@@ -225,9 +296,11 @@ function teamSelectorHtml(game, room, code, myId, isHost){
       if (!member) return `<span class="team-seat team-seat-empty" aria-hidden="true"><span>+</span></span>`;
       return `<span class="team-seat">${teamMemberHtml(member[1])}</span>`;
     }).join('');
-    const contents = `<span class="team-card-title">${escapeHtml(teamNames[team])}</span>
+    const contents = `<div class="team-name-display"><span class="team-card-title" data-team-name="${team}">${escapeHtml(teamNames[team])}</span>
+        ${isHost ? `<button type="button" class="team-name-edit" data-team-name-toggle="${team}" aria-label="تعديل اسم الفريق ${team}" onclick="toggleTeamNameEdit('${team}')">تعديل</button>` : ''}
+      </div>
       ${isHost
-        ? `<label class="team-name-field"><span>اسم الفريق</span><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}" oninput="queueTeamNamesSave('${code}')" onblur="queueTeamNamesSave('${code}',true)"></label>`
+        ? `<label class="team-name-field" hidden><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}" oninput="queueTeamNamesSave('${code}')" onblur="queueTeamNamesSave('${code}',true)"></label>`
         : `<span class="team-card-count">${members.length} / 2 لاعبين</span>`}
       <span class="team-seats">${availableSeats}</span>`;
     if (isHost) {
@@ -258,6 +331,8 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const players = roomPlayersForGame(room, game.id);
   const totalPlayers = Object.keys(players).length;
   const playerCards = Object.values(players).map(player => playerAvatarCardHtml(player)).join('');
+  const triviaGame = game.id === 'trivia';
+  const hostControlledTrivia = isHost && triviaGame;
 
   return `
     <div class="game-detail">
@@ -266,13 +341,13 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
-      <p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>
+      ${triviaGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
       ${inviteHtml}
-      ${teamSelectorHtml(game, room, code, myId, isHost)}
-      ${isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
+      ${hostControlledTrivia ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost
-          ? `<button class="btn" ${totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">ابدأ اللعبة</button>`
+          ? `<button class="btn" ${!hostControlledTrivia && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`
           : ''}
       </div>
     </div>
