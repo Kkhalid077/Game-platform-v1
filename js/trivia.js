@@ -5,58 +5,69 @@ const TRIVIA_BANK = [
     ['ما أكبر قارة في العالم؟','آسيا',['آسيا','أفريقيا','أوروبا','أمريكا الجنوبية'],'تضم الصين والهند.'],
     ['ما النهر الذي يمر في مصر؟','النيل',['النيل','الأمازون','الفرات','الدانوب'],'من أطول أنهار العالم.'],
     ['ما عاصمة اليابان؟','طوكيو',['طوكيو','أوساكا','كيوتو','سيول'],'مدينة يابانية ضخمة تبدأ بحرف ط.'],
-    ['ما أكبر محيط على الأرض؟','المحيط الهادئ',['المحيط الهادئ','الأطلسي','الهندي','المتجمد الشمالي'],'يقع بين آسيا وأمريكا.']]},
+    ['ما أكبر محيط على الأرض؟','المحيط الهادئ',['المحيط الهادئ','الأطلسي','الهندي','المتجمد الشمالي'],'يقع بين آسيا وأمريكا.'],
+    ['ما عاصمة إيطاليا؟','روما',['روما','ميلانو','البندقية','فلورنسا'],'مدينة تاريخية يمر فيها نهر التيبر.']]},
   {id:'science',name:'علوم',icon:'🔬',qs:[
     ['ما الكوكب المعروف بالكوكب الأحمر؟','المريخ',['المريخ','الزهرة','المشتري','عطارد'],'لونه ناتج عن أكاسيد الحديد.'],
     ['ما الغاز الذي تمتصه النباتات؟','ثاني أكسيد الكربون',['ثاني أكسيد الكربون','الأكسجين','النيتروجين','الهيدروجين'],'تستخدمه في البناء الضوئي.'],
     ['كم عدد عظام جسم الإنسان البالغ تقريبًا؟','206',['206','150','300','412'],'أكثر من مئتي عظمة بقليل.'],
     ['ما أقرب نجم إلى الأرض؟','الشمس',['الشمس','الشعرى اليمانية','سيريوس','النجم القطبي'],'نراه نهارًا.'],
-    ['ما وحدة قياس شدة التيار الكهربائي؟','الأمبير',['الأمبير','الفولت','الواط','الأوم'],'سميت نسبة إلى عالم فرنسي.']]},
+    ['ما وحدة قياس شدة التيار الكهربائي؟','الأمبير',['الأمبير','الفولت','الواط','الأوم'],'سميت نسبة إلى عالم فرنسي.'],
+    ['ما الجزء الذي يحمل البذور في النبات؟','الثمرة',['الثمرة','الجذر','الساق','الورقة'],'يتكون غالبًا بعد تحوّل الزهرة.']]},
   {id:'history',name:'تاريخ وحضارة',icon:'🏛️',qs:[
     ['في أي دولة تقع أهرامات الجيزة؟','مصر',['مصر','السودان','العراق','الأردن'],'على ضفاف النيل.'],
     ['ما المدينة التي كانت عاصمة الدولة العباسية؟','بغداد',['بغداد','دمشق','القاهرة','قرطبة'],'أسسها أبو جعفر المنصور.'],
     ['من الرحالة المغربي الشهير الذي جاب بلادًا كثيرة؟','ابن بطوطة',['ابن بطوطة','ابن خلدون','الإدريسي','المسعودي'],'ولد في طنجة.'],
     ['ما الحضارة التي اشتهرت بالكتابة المسمارية؟','السومرية',['السومرية','الرومانية','الإغريقية','الفينيقية'],'نشأت في بلاد الرافدين.'],
-    ['في أي عام انتهت الحرب العالمية الثانية؟','1945',['1945','1939','1918','1950'],'بعد ست سنوات من بدايتها.']]},
+    ['في أي عام انتهت الحرب العالمية الثانية؟','1945',['1945','1939','1918','1950'],'بعد ست سنوات من بدايتها.'],
+    ['ما اسم المدينة الأثرية المنحوتة في الصخر جنوب الأردن؟','البتراء',['البتراء','جرش','تدمر','أريحا'],'تُعرف بالمدينة الوردية.']]},
   {id:'sports',name:'رياضة',icon:'⚽',qs:[
     ['كم لاعبًا في فريق كرة القدم داخل الملعب؟','11',['11','9','10','12'],'حارس المرمى ضمن العدد.'],
     ['كم حلقة في شعار الألعاب الأولمبية؟','5',['5','4','6','7'],'ترمز إلى القارات.'],
     ['ما الرياضة التي يستخدم فيها المضرب والريشة؟','الريشة الطائرة',['الريشة الطائرة','التنس','الإسكواش','تنس الطاولة'],'تُلعب غالبًا في صالة.'],
     ['كم دقيقة مدة مباراة كرة القدم الأصلية؟','90',['90','80','100','60'],'شوطان متساويان.'],
-    ['ما الدولة صاحبة أكبر عدد من ألقاب كأس العالم للرجال حتى 2022؟','البرازيل',['البرازيل','ألمانيا','إيطاليا','الأرجنتين'],'فازت باللقب خمس مرات.']]},
+    ['ما الدولة صاحبة أكبر عدد من ألقاب كأس العالم للرجال حتى 2022؟','البرازيل',['البرازيل','ألمانيا','إيطاليا','الأرجنتين'],'فازت باللقب خمس مرات.'],
+    ['كم عدد لاعبي فريق كرة السلة داخل الملعب؟','5',['5','6','7','8'],'يتكون الفريق من خمسة لاعبين في الملعب.']]},
   {id:'literature',name:'لغة وأدب',icon:'📚',qs:[
     ['ما جمع كلمة كتاب؟','كتب',['كتب','كتابات','كتابان','كتبة'],'جمع تكسير من ثلاثة أحرف.'],
     ['من مؤلف مسرحية روميو وجولييت؟','وليام شكسبير',['وليام شكسبير','تشارلز ديكنز','جورج أورويل','دانتي'],'كاتب مسرحي إنجليزي.'],
     ['ما ضد كلمة شجاع؟','جبان',['جبان','قوي','كريم','صبور'],'صفة من يخاف المواجهة.'],
     ['كم عدد حروف اللغة العربية؟','28',['28','26','29','30'],'من الألف إلى الياء.'],
-    ['من صاحب معلقة قفا نبك؟','امرؤ القيس',['امرؤ القيس','عنترة بن شداد','زهير بن أبي سلمى','طرفة بن العبد'],'شاعر جاهلي اشتهر بالغزل.']]},
+    ['من صاحب معلقة قفا نبك؟','امرؤ القيس',['امرؤ القيس','عنترة بن شداد','زهير بن أبي سلمى','طرفة بن العبد'],'شاعر جاهلي اشتهر بالغزل.'],
+    ['ما نوع كلمة «يكتب»؟','فعل مضارع',['فعل مضارع','اسم','فعل ماضٍ','حرف'],'يدل على حدث يقع الآن أو يتجدد.']]},
   {id:'food',name:'طعام ومطبخ',icon:'🍽️',qs:[
     ['ما المكون الأساسي للحمص؟','الحمص',['الحمص','العدس','الفول','الفاصولياء'],'بقول معروف اسمه هو اسم الطبق.'],
     ['من أي فاكهة يُصنع الزبيب؟','العنب',['العنب','التين','التمر','التفاح'],'تُجفف حباته.'],
     ['ما البهار الذي يعطي الكركم لونه الأصفر؟','الكركم',['الكركم','القرفة','الكمون','الفلفل الأسود'],'يُستخدم أيضًا في الكاري.'],
     ['أي دولة تشتهر بالسوشي؟','اليابان',['اليابان','تايلاند','الصين','كوريا'], 'طبق أرز ياباني مشهور.'],
-    ['ما العنصر الذي يجعل العجين ينتفخ؟','الخميرة',['الخميرة','الملح','السكر','الزيت'],'كائنات دقيقة تنتج غازًا.']]},
+    ['ما العنصر الذي يجعل العجين ينتفخ؟','الخميرة',['الخميرة','الملح','السكر','الزيت'],'كائنات دقيقة تنتج غازًا.'],
+    ['ما المكوّن الأساسي في طبق التبولة؟','البقدونس',['البقدونس','الأرز','البطاطس','الذرة'],'يُفرم ناعمًا ويخلط بالخضار والبرغل.']]},
   {id:'tech',name:'تقنية واختراعات',icon:'💡',qs:[
     ['ما الجهاز المستخدم لإدخال النص إلى الحاسوب؟','لوحة المفاتيح',['لوحة المفاتيح','الشاشة','السماعة','الطابعة'],'تحتوي على أزرار الحروف.'],
     ['ماذا تعني الأحرف WWW؟','الشبكة العنكبوتية العالمية',['الشبكة العنكبوتية العالمية','نظام تشغيل عالمي','اتصال لاسلكي','ذاكرة حاسوب'],'تظهر غالبًا في عناوين المواقع.'],
     ['من مخترع الهاتف الذي نُسب إليه أول براءة اختراع؟','ألكسندر غراهام بيل',['ألكسندر غراهام بيل','توماس إديسون','نيكولا تسلا','جيمس واط'],'عالم اسكتلندي أمريكي.'],
     ['ما لغة التنسيق الشائعة لتصميم صفحات الويب؟','CSS',['CSS','HTML','SQL','Python'],'تتحكم بالألوان والتخطيط.'],
-    ['ما اسم أول قمر صناعي أُطلق إلى الفضاء؟','سبوتنيك 1',['سبوتنيك 1','أبولو 11','فوستوك 1','إكسبلورر 1'],'أطلقه الاتحاد السوفيتي عام 1957.']]},
+    ['ما اسم أول قمر صناعي أُطلق إلى الفضاء؟','سبوتنيك 1',['سبوتنيك 1','أبولو 11','فوستوك 1','إكسبلورر 1'],'أطلقه الاتحاد السوفيتي عام 1957.'],
+    ['ما التقنية التي تحول ضوء الشمس إلى كهرباء؟','الخلايا الشمسية',['الخلايا الشمسية','المحرك البخاري','التوربين المائي','المولد اليدوي'],'تُعرف أيضًا بالخلايا الكهروضوئية.']]},
   {id:'nature',name:'طبيعة وحيوانات',icon:'🐾',qs:[
     ['ما أسرع حيوان بري؟','الفهد',['الفهد','الأسد','الحصان','الغزال'],'يُعرف أيضًا بالشيتا.'],
     ['ما الحيوان الملقب بسفينة الصحراء؟','الجمل',['الجمل','الحصان','اللاما','الفيل'],'يتحمل العطش والحرارة.'],
     ['كم ساقًا للعنكبوت؟','8',['8','6','10','12'],'أكثر من الحشرات بزوج أرجل.'],
     ['ما أكبر حيوان يعيش على الأرض؟','الحوت الأزرق',['الحوت الأزرق','الفيل الأفريقي','الزرافة','القرش الأبيض'],'يعيش في المحيط ويعد أضخم الكائنات.'],
-    ['ما اسم صغير الضفدع قبل اكتمال نموه؟','شرغوف',['شرغوف','يرقة','فرخ','جرو'],'يعيش في الماء وله ذيل.']]}
+    ['ما اسم صغير الضفدع قبل اكتمال نموه؟','شرغوف',['شرغوف','يرقة','فرخ','جرو'],'يعيش في الماء وله ذيل.'],
+    ['ما الحيوان الذي يُعرف بملك الغابة؟','الأسد',['الأسد','النمر','الفهد','الذئب'],'يعيش في جماعات تسمى الزمر.']]}
 ];
 const TRIVIA_AIDS=[
-  {id:'fifty',name:'حذف خيارين',icon:'✂️',help:'يحذف المنظّم خيارين خاطئين من خيارات الإجابة.'},
+  {id:'throw',name:'رمي السؤال',icon:'↗️',help:'يمرّر السؤال إلى الفريق الخصم؛ وإذا لم يجب تُخصم منه نقاط السؤال.'},
   {id:'hint',name:'تلميح',icon:'💡',help:'يعرض تلميحًا يساعد الفريق على الوصول إلى الإجابة.'},
   {id:'double',name:'مضاعفة النقاط',icon:'×2',help:'يضاعف نقاط السؤال الحالي عند الإجابة الصحيحة.'},
   {id:'steal',name:'سرقة النقاط',icon:'↗️',help:'إذا أخفق الفريق في الإجابة، تُتاح للفريق الآخر فرصة كسب نقاط السؤال.'},
   {id:'skip',name:'تجاوز السؤال',icon:'⏭️',help:'ينهي السؤال الحالي دون نقاط وينتقل الدور إلى الفريق الآخر.'},
   {id:'wheel',name:'عجلة الحظ',icon:'🎡',help:'تدير عجلة عشوائية بنتائج ومفاجآت مختلفة.'}
 ];
+const TRIVIA_QUESTION_POINTS=[200,200,200,400,400,600];
+function triviaPointsForIndex(index){return TRIVIA_QUESTION_POINTS[index]||TRIVIA_QUESTION_POINTS[0];}
+function triviaQuestionLimit(trivia){return (trivia.categories||[]).length*TRIVIA_QUESTION_POINTS.length;}
 
 function startTriviaSetup(code,retainedTeams=null){
   return db.ref('rooms/'+code).update({status:'trivia_setup',activeGame:'trivia',trivia:{
@@ -239,7 +250,7 @@ window.triviaBegin=async code=>{
 };
 function renderTriviaBoard(code,t){
   const categories=(t.categories||[]).map(id=>TRIVIA_BANK.find(c=>c.id===id)).filter(Boolean);
-  const cells=categories.map(c=>`<section class="trivia-column"><h3><span>${c.icon}</span><b>${c.name}</b></h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${(i+1)*100}</button>`}).join('')}</section>`).join('');
+  const cells=categories.map(c=>`<section class="trivia-column"><h3><span>${c.icon}</span><b>${c.name}</b></h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${triviaPointsForIndex(i)}</button>`}).join('')}</section>`).join('');
   const scores=t.scores||{A:0,B:0};
   const rankedTeams=['A','B'].sort((left,right)=>(scores[right]||0)-(scores[left]||0));
   const scoreCards=rankedTeams.map((team,index)=>`<div class="trivia-score team-${team.toLowerCase()} ${index===0&&scores.A!==scores.B?'is-leading':''}">
@@ -270,7 +281,7 @@ window.triviaOpenQuestion=async(code,key)=>{
     const catId=key.slice(0,separator),boardIndex=Number(key.slice(separator+1));
     const index=Number(t.questionOverrides?.[key]??boardIndex);
     await db.ref(`rooms/${code}/trivia`).update({phase:'question',notice:null,current:{
-      key,catId,index,boardIndex,team:t.turn,revealed:false,points:(boardIndex+1)*100,
+      key,catId,index,boardIndex,team:t.turn,revealed:false,points:triviaPointsForIndex(boardIndex),
       challengeTeam:t.pendingChallenge?.team||null
     },pendingChallenge:null});
   }catch(error){console.error('Could not open trivia question:',error);alert('تعذر فتح السؤال. تحقق من الاتصال وحاول مرة أخرى.');}
@@ -280,12 +291,9 @@ function renderTriviaQuestionHost(code,t){
   const category=TRIVIA_BANK.find(item=>item.id===current?.catId);
   const question=category?.qs[current?.index];
   if(!question)return renderTriviaBoard(code,t);
-  const team=current.team||'A',points=(Number(current.points)||100)*(current.double?2:1);
+  const team=current.team||'A',points=(Number(current.points)||triviaPointsForIndex(current.boardIndex))*(current.double?2:1);
   const aids=t.aidsByTeam?.[team]||[];
   const used=t.usedAids?.[team]||{};
-  const wrongKeep=question[2].find(option=>option!==question[1]);
-  const shownOptions=current.fifty?question[2].filter(option=>option===question[1]||option===wrongKeep):question[2];
-  const options=shownOptions.map((option,index)=>`<div class="trivia-option">${String.fromCharCode(65+index)} · ${escapeHtml(option)}</div>`).join('');
   const teamAidCards=['A','B'].map(aidTeam=>{
     const isActive=aidTeam===team;
     const teamAids=t.aidsByTeam?.[aidTeam]||[];
@@ -309,6 +317,7 @@ function renderTriviaQuestionHost(code,t){
   }).join('');
   const answerActions=current.revealed
     ? `<button class="btn" onclick="triviaScore('${code}','${team}',${points})">نقطة لـ ${escapeHtml(t.teams?.[team]||`الفريق ${team}`)}</button>
+       ${current.thrownByTeam?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team}',-${points})">لم يجب الفريق — خصم ${points} نقطة</button>`:''}
        ${current.stealAvailable&&!current.stealPrompted?`<button class="btn btn-ghost" onclick="triviaOfferSteal('${code}')">الإجابة خاطئة — إتاحة السرقة</button>`:''}
        ${current.stealAvailable&&current.stealPrompted?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team==='A'?'B':'A'}',${points})">سرقة النقاط لـ ${escapeHtml(t.teams?.[team==='A'?'B':'A']||'الفريق الآخر')}</button>`:''}
        <button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`
@@ -319,7 +328,8 @@ function renderTriviaQuestionHost(code,t){
       <aside class="trivia-question-sidebar" aria-label="وسائل مساعدة الفريقين">${teamAidCards}</aside>
       <main class="trivia-question-main">
         ${current.challengeTeam?`<p class="trivia-challenge-notice">تحدي فردي: يلتزم أحد لاعبي ${escapeHtml(t.teams?.[current.challengeTeam]||'الفريق الآخر')} بالصمت وعدم الإجابة في هذا السؤال.</p>`:''}
-        <h1>${escapeHtml(question[0])}</h1><div class="trivia-options">${options}</div>
+        ${current.thrownByTeam?`<p class="trivia-challenge-notice">مرّر ${escapeHtml(t.teams?.[current.thrownByTeam]||'الفريق الآخر')} السؤال إلى ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}.</p>`:''}
+        <h1>${escapeHtml(question[0])}</h1>
         ${current.hint?`<div class="trivia-hint">💡 ${escapeHtml(question[3])}</div>`:''}
         ${current.letterHint?`<div class="trivia-hint">حرف من الإجابة: <strong>${escapeHtml(current.letterHint)}</strong></div>`:''}
         ${current.revealed?`<div class="trivia-answer">الإجابة الصحيحة: <strong>${escapeHtml(question[1])}</strong></div>`:''}
@@ -356,7 +366,10 @@ window.triviaUseAid=async(code,id)=>{
     }
     if(id==='wheel')return;
     const patch={};patch[`usedAids/${team}/${id}`]=true;
-    if(id==='fifty')patch['current/fifty']=true;
+    if(id==='throw'){
+      patch['current/thrownByTeam']=team;
+      patch['current/team']=team==='A'?'B':'A';
+    }
     if(id==='hint')patch['current/hint']=true;
     if(id==='double')patch['current/double']=true;
     if(id==='steal')patch['current/stealAvailable']=true;
@@ -374,7 +387,7 @@ async function finishTriviaQuestion(code,team,pts,usedAidId=null){
     if(team)scores[team]=(scores[team]||0)+pts;
     const usedAids={A:{...(trivia.usedAids?.A||{})},B:{...(trivia.usedAids?.B||{})}};
     if(usedAidId)usedAids[current.team||'A'][usedAidId]=true;
-    const done=Object.keys(used).length>=30;
+    const done=Object.keys(used).length>=triviaQuestionLimit(trivia);
     await db.ref(`rooms/${code}`).update({status:'in_game',trivia:{
       ...trivia,phase:done?'done':'board',used,scores,usedAids,current:null,
       turn:current.team==='A'?'B':'A',pendingChallenge:null
@@ -454,7 +467,7 @@ async function resolveTriviaWheel(code,outcomeIndex){
     notice=`انتهى السؤال؛ في السؤال التالي يلتزم لاعب من ${trivia.teams?.[opponent]||'الفريق الآخر'} بالصمت وعدم الإجابة.`;
   }
   await db.ref(`rooms/${code}`).update({status:'in_game',trivia:{
-    ...trivia,phase:Object.keys(used).length>=30?'done':'board',used,scores,usedAids,current:null,
+    ...trivia,phase:Object.keys(used).length>=triviaQuestionLimit(trivia)?'done':'board',used,scores,usedAids,current:null,
     turn:team==='A'?'B':'A',notice,
     pendingChallenge:outcome.id==='bonus'&&current.challengeTeam?{team:current.challengeTeam}:null
   }});
