@@ -27,6 +27,7 @@
     'assets/icons/knowledge-challenge.svg',
     'assets/icons/question-drip.svg',
     'assets/icons/answer-buzzer.svg',
+    'assets/images/game-night.svg',
     'js/version.js'
   ];
 

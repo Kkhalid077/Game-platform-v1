@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <linearGradient id="scene" x1="84" y1="42" x2="1490" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#242352"/>
+      <stop offset=".52" stop-color="#111a38"/>
+      <stop offset="1" stop-color="#081526"/>
+    </linearGradient>
+    <linearGradient id="controller" x1="432" y1="308" x2="1165" y2="706" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#333565"/>
+      <stop offset="1" stop-color="#182440"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="600" y1="360" x2="1028" y2="657" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171c3e"/>
+      <stop offset="1" stop-color="#101a30"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(0 440 -690 0 800 495)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7771e8" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#17213c" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="stars" width="140" height="130" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="26" r="2" fill="#a9baff"/>
+      <circle cx="102" cy="54" r="1.5" fill="#8de7ff"/>
+      <circle cx="59" cy="112" r="1.5" fill="#dbb5ff"/>
+      <path d="M126 104v8m-4-4h8" stroke="#b9aaff" stroke-linecap="round"/>
+    </pattern>
+  </defs>
+  <path fill="url(#scene)" d="M0 0h1600v1000H0z"/>
+  <path fill="url(#glow)" d="M0 0h1600v1000H0z"/>
+  <path fill="url(#stars)" opacity=".62" d="M0 0h1600v1000H0z"/>
+
+  <g opacity=".32" stroke="#8585e7">
+    <circle cx="804" cy="504" r="248" stroke-width="2"/>
+    <circle cx="804" cy="504" r="336" stroke-dasharray="3 15" stroke-width="2"/>
+    <circle cx="804" cy="504" r="422" stroke-dasharray="2 20" stroke-width="2"/>
+  </g>
+  <g opacity=".55">
+    <rect x="230" y="300" width="150" height="186" rx="25" transform="rotate(-12 230 300)" fill="#24264d" stroke="#7772cf" stroke-width="3"/>
+    <rect x="278" y="343" width="77" height="96" rx="12" transform="rotate(-12 278 343)" fill="#171d3d"/>
+    <path d="m312 370 27 22-35 26 8-48Z" fill="#70d8ec"/>
+    <rect x="1265" y="539" width="145" height="182" rx="24" transform="rotate(13 1265 539)" fill="#25244a" stroke="#b268a1" stroke-width="3"/>
+    <circle cx="1331" cy="625" r="19" fill="#ea6587"/>
+    <path d="m1369 598 16 6-6 16-16-6 6-16Z" fill="#56d8c2"/>
+  </g>
+
+  <g>
+    <path d="M513 350c-57 0-102 42-119 108l-52 201c-18 72 40 130 97 95l170-106h382l170 106c57 35 115-23 97-95l-52-201c-17-66-62-108-119-108H513Z" fill="url(#controller)" stroke="#9c95ec" stroke-opacity=".65" stroke-width="5"/>
+    <rect x="590" y="382" width="428" height="276" rx="31" fill="url(#screen)" stroke="#7180bd" stroke-width="4"/>
+    <path d="M654 458h56m-28-28v56" stroke="#83e8ef" stroke-linecap="round" stroke-width="13"/>
+    <circle cx="953" cy="451" r="11" fill="#fa7197"/>
+    <circle cx="985" cy="482" r="11" fill="#65e3c3"/>
+    <circle cx="921" cy="483" r="11" fill="#f8c968"/>
+    <circle cx="953" cy="514" r="11" fill="#9290ff"/>
+    <path d="M747 510h130" stroke="#8f8ce7" stroke-linecap="round" stroke-width="7" stroke-dasharray="7 15"/>
+    <path d="M747 544h89" stroke="#6ac9da" stroke-linecap="round" stroke-width="7" stroke-dasharray="7 15"/>
+    <path d="M747 578h112" stroke="#db8fb7" stroke-linecap="round" stroke-width="7" stroke-dasharray="7 15"/>
+    <circle cx="482" cy="546" r="24" fill="#212747" stroke="#89dce6" stroke-width="3"/>
+    <path d="M482 532v28m-14-14h28" stroke="#a5f0f0" stroke-linecap="round" stroke-width="8"/>
+    <circle cx="1117" cy="546" r="24" fill="#212747" stroke="#d487b6" stroke-width="3"/>
+    <path d="m1106 535 22 22m0-22-22 22" stroke="#f4a4c9" stroke-linecap="round" stroke-width="7"/>
+    <path d="m703 734 96-42h165l95 42" stroke="#9a91e9" stroke-opacity=".4" stroke-linecap="round" stroke-width="5"/>
+  </g>
+
+  <g fill="#a7abff" opacity=".72">
+    <path d="m423 188 7 19 19 7-19 7-7 19-7-19-19-7 19-7 7-19Z"/>
+    <path d="m1173 241 6 15 15 6-15 6-6 15-6-15-15-6 15-6 6-15Z"/>
+    <path d="m1190 795 5 13 13 5-13 5-5 13-5-13-13-5 13-5 5-13Z"/>
+  </g>
+</svg>
