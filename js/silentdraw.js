@@ -6,6 +6,9 @@ function silentDrawTeamIds(sd, team){
   if (Array.isArray(members)) return members;
   return Object.values(members || {});
 }
+function silentDrawStrokesRef(code, team){
+  return db.ref(`rooms/${code}/silentdraw/strokes/${team}`);
+}
 
 window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
@@ -30,9 +33,9 @@ window.startSilentDrawGame = function(code){
     const teamNamesSnap = await roomRef.child('teamNames').once('value');
     const savedTeamNames = teamNamesSnap.val() || {};
 
-    db.ref('strokes/'+code+'_A').set(null);
-    db.ref('strokes/'+code+'_B').set(null);
-    roomRef.update({
+    await silentDrawStrokesRef(code,'A').remove();
+    await silentDrawStrokesRef(code,'B').remove();
+    await roomRef.update({
       status:'in_game', activeGame:'silentdraw',
       silentdraw:{
         phase:'round_start', round:1,
@@ -126,20 +129,26 @@ window.submitSilentGuess = function(code, team){
   input.value = '';
 };
 
-window.silentDrawNextRound = function(code){
+window.silentDrawNextRound = async function(code){
   const sdRef = db.ref('rooms/'+code+'/silentdraw');
-  sdRef.once('value', snap => {
-    const sd = snap.val(); if (!sd) return;
-    db.ref('strokes/'+code+'_A').set(null);
-    db.ref('strokes/'+code+'_B').set(null);
-    sdRef.update({
+  try {
+    const snapshot = await sdRef.once('value');
+    const sd = snapshot.val(); if (!sd) return;
+    await Promise.all([
+      silentDrawStrokesRef(code,'A').remove(),
+      silentDrawStrokesRef(code,'B').remove()
+    ]);
+    await sdRef.update({
       phase:'round_start', round:(sd.round||1)+1,
       guideOf:{ A: sd.drawerOf.A, B: sd.drawerOf.B },
       drawerOf:{ A: sd.guideOf.A, B: sd.guideOf.B },
       words:{ A: pickRandomWordPair().w, B: pickRandomWordPair().w },
       undosLeft:{ A:3, B:3 }, results:{ A:null, B:null }, awarded:{ A:false, B:false }, timerEnd:null
     });
-  });
+  } catch (error) {
+    console.error('تعذر بدء الجولة التالية:',error);
+    window.alert('تعذر بدء الجولة التالية. تحقق من الاتصال وحاول مجددًا.');
+  }
 };
 
 const silentDrawUndoBusy = {};
@@ -155,7 +164,7 @@ window.silentDrawUndo = async function(code, team){
     const snapshot = await sdRef.once('value');
     const sd = snapshot.val();
     if (!sd || sd.phase !== 'drawing' || (Number(sd.undosLeft?.[team]) || 0) <= 0) return;
-    const strokesRef = db.ref('strokes/'+code+'_'+team);
+    const strokesRef = silentDrawStrokesRef(code,team);
     const removal = await strokesRef.transaction(strokes => {
       if (!strokes || !Object.keys(strokes).length) return;
       const updatedStrokes = {...strokes};
@@ -196,7 +205,7 @@ function setupSilentCanvas(code, team){
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  const strokesRef = db.ref('strokes/'+code+'_'+team);
+  const strokesRef = silentDrawStrokesRef(code,team);
   canvas.style.touchAction = 'none';
   canvas.style.userSelect = 'none';
   canvas.style.webkitUserSelect = 'none';
@@ -380,8 +389,8 @@ function renderSilentDrawHost(code, room){
   `;
 
   if (showBoards){
-    mirrorCanvasFrom(code+'_A', 'canvasA');
-    mirrorCanvasFrom(code+'_B', 'canvasB');
+    mirrorCanvasFrom(`rooms/${code}/silentdraw/strokes/A`, 'canvasA');
+    mirrorCanvasFrom(`rooms/${code}/silentdraw/strokes/B`, 'canvasB');
   }
   const beginDrawingBtn = document.getElementById('beginDrawingBtn');
   if (beginDrawingBtn) beginDrawingBtn.addEventListener('click', () => window.silentDrawBeginDrawing(code));

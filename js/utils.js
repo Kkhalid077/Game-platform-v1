@@ -50,6 +50,15 @@ function drawSegment(ctx, canvas, s){
   });
   ctx.stroke();
 }
+function isSilentDrawStrokesOnlyChange(previousRoom, nextRoom){
+  if (!previousRoom || previousRoom.status !== 'in_game' || previousRoom.activeGame !== 'silentdraw' ||
+      nextRoom?.status !== 'in_game' || nextRoom.activeGame !== 'silentdraw') return false;
+  const {strokes:previousStrokes, ...previousSilentDraw} = previousRoom.silentdraw || {};
+  const {strokes:nextStrokes, ...nextSilentDraw} = nextRoom.silentdraw || {};
+  if (JSON.stringify(previousStrokes || null) === JSON.stringify(nextStrokes || null)) return false;
+  return JSON.stringify({...previousRoom,silentdraw:previousSilentDraw}) ===
+    JSON.stringify({...nextRoom,silentdraw:nextSilentDraw});
+}
 const mirrorRefs = {};
 function stopMirrorCanvases(){
   Object.values(mirrorRefs).forEach(({ref,handler}) => ref.off('value',handler));
@@ -64,7 +73,7 @@ function mirrorCanvasFrom(strokeKey, canvasId){
   const existing = mirrorRefs[canvasId];
   if (existing?.canvas === canvas) return;
   if (existing) existing.ref.off('value',existing.handler);
-  const sRef = db.ref('strokes/'+strokeKey);
+  const sRef = db.ref(strokeKey);
   const handler = snap => {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     Object.values(snap.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));

@@ -54,6 +54,10 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if (isSilentDrawStrokesOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    return;
+  }
   lastHostRoom = room;
   stopHostTimerWatch();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
@@ -209,14 +213,10 @@ window.startBuzzerTool = function(code){
 
 window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
-  db.ref('strokes/'+code+'_A').set(null);
-  db.ref('strokes/'+code+'_B').set(null);
 };
 
 window.hostLeaveRoom = function(code){
   db.ref('rooms/'+code).remove();
-  db.ref('strokes/'+code+'_A').remove();
-  db.ref('strokes/'+code+'_B').remove();
   localStorage.removeItem('hostSessionCode');
   renderHost();
 };

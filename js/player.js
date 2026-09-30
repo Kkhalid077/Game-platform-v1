@@ -58,9 +58,15 @@ function renderPlayer(code, invitedGameId){
     detachPlayerRoom();
     playerRoomRef = roomRef;
     let presenceWritePending = false;
+    let lastRenderedRoom = null;
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room || !room.status) { showSessionEnded(); return; }
+      if (isSilentDrawStrokesOnlyChange(lastRenderedRoom, room)) {
+        lastRenderedRoom = room;
+        return;
+      }
+      lastRenderedRoom = room;
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
       if (invitedGameId) {
