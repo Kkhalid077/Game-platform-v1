@@ -90,6 +90,7 @@ function startTriviaSetup(code,retainedTeams=null){
 }
 function renderTriviaHost(code,room){
   const t=room.trivia||{};
+  document.getElementById('stage')?.classList.toggle('trivia-landscape-stage',t.phase==='board'||t.phase==='question'||t.phase==='done');
   if(t.phase==='setup') return renderTriviaSetupHost(code,t);
   if(t.phase==='categories') return renderTriviaCategoriesHost(code,t);
   if(t.phase==='question') return renderTriviaQuestionHost(code,t);
