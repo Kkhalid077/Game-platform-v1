@@ -201,11 +201,23 @@ window.setPlayerTeam = function(code, myId, team){
 };
 
 let teamNamesSaveTimer = null;
+function updateTeamNameDisplays(names){
+  for (const team of ['A','B']) {
+    const name = names?.[team];
+    if (typeof name !== 'string') continue;
+    document.querySelectorAll(`[data-team-name="${team}"]`).forEach(display => {
+      display.textContent = name || (team === 'A' ? 'الفريق الأخضر' : 'الفريق البرتقالي');
+    });
+    const input = document.getElementById(`teamName${team}`);
+    if (input && document.activeElement !== input && input.value !== name) input.value = name;
+  }
+}
 window.queueTeamNamesSave = function(code, immediate=false){
   if (teamNamesSaveTimer) clearTimeout(teamNamesSaveTimer);
   const status = document.getElementById('teamNamesStatus');
   const nameA = document.getElementById('teamNameA')?.value.trim() || '';
   const nameB = document.getElementById('teamNameB')?.value.trim() || '';
+  updateTeamNameDisplays({A:nameA,B:nameB});
   if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
     if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
     return;
@@ -284,7 +296,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
       if (!member) return `<span class="team-seat team-seat-empty" aria-hidden="true"><span>+</span></span>`;
       return `<span class="team-seat">${teamMemberHtml(member[1])}</span>`;
     }).join('');
-    const contents = `<div class="team-name-display"><span class="team-card-title">${escapeHtml(teamNames[team])}</span>
+    const contents = `<div class="team-name-display"><span class="team-card-title" data-team-name="${team}">${escapeHtml(teamNames[team])}</span>
         ${isHost ? `<button type="button" class="team-name-edit" data-team-name-toggle="${team}" aria-label="تعديل اسم الفريق ${team}" onclick="toggleTeamNameEdit('${team}')">تعديل</button>` : ''}
       </div>
       ${isHost

@@ -61,6 +61,7 @@ function dispatchHostRender(code, room){
   room = roomForGame(room, activityId);
   if (hostDetailGameId && isTeamNamesOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
+    updateTeamNameDisplays(room.teamNames || {});
     return;
   }
   if (hostDetailGameId && isPlayerTeamOnlyChange(previousRoom, room)) {
