@@ -10,6 +10,10 @@ let playerRoomRef = null;
 let playerInviteGameId = null;
 let activeGuestInvite = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
+async function registerPlayerPresence(playerRef, record){
+  await playerRef.onDisconnect().remove();
+  await playerRef.set(record);
+}
 function setGuestExitButton(visible){
   let button = document.getElementById('guestExitButton');
   if (!visible) {
@@ -52,6 +56,7 @@ function renderPlayer(code, invitedGameId){
     ACTIVE_PLAYER_ID = id;
     detachPlayerRoom();
     playerRoomRef = roomRef;
+    let presenceWritePending = false;
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room || !room.status) { showSessionEnded(); return; }
@@ -59,10 +64,20 @@ function renderPlayer(code, invitedGameId){
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
       if (invitedGameId) {
         const currentRecord = room.players?.[id];
-        if (inviteOpen && !currentRecord) roomRef.child('players/' + id).set(record);
+        if (inviteOpen && !currentRecord && !presenceWritePending) {
+          presenceWritePending = true;
+          registerPlayerPresence(roomRef.child('players/' + id), record).catch(error => {
+            console.error('Could not restore invited player presence:', error);
+          }).finally(() => { presenceWritePending = false; });
+        }
         else if (!inviteOpen && currentRecord?.guest && currentRecord.gameId === invitedGameId) roomRef.child('players/' + id).remove();
       } else if (!(room.players && room.players[id])) {
-        roomRef.child('players/' + id).set(record);
+        if (!presenceWritePending) {
+          presenceWritePending = true;
+          registerPlayerPresence(roomRef.child('players/' + id), record).catch(error => {
+            console.error('Could not restore player presence:', error);
+          }).finally(() => { presenceWritePending = false; });
+        }
       }
       const currentName = room.players?.[id]?.name || name;
       CURRENT_PLAYER_NAME = currentName;
@@ -99,7 +114,7 @@ function renderPlayer(code, invitedGameId){
       activeGuestInvite = { code, gameId:invitedGameId, playerId:myId, nameKey:guestNameKey };
       const room = snap.val();
       const inviteOpen = room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
-      if (inviteOpen) await roomRef.child('players/' + myId).set(record);
+      if (inviteOpen) await registerPlayerPresence(roomRef.child('players/' + myId), record);
       attach(myId, savedName, record);
     }).catch(error => {
       activeGuestInvite = null;
@@ -114,8 +129,12 @@ function renderPlayer(code, invitedGameId){
   const myId = signedInUser.uid;
   const name = (signedInUser.displayName || signedInUser.email || 'لاعب').slice(0, 30);
   const record = { name, gameId:null, uid:myId, photoURL:signedInUser.photoURL || null };
-  roomRef.child('players/' + myId).set(record);
-  attach(myId, name, record);
+  registerPlayerPresence(roomRef.child('players/' + myId), record).then(() => {
+    attach(myId, name, record);
+  }).catch(error => {
+    console.error('Could not register player presence:', error);
+    app.innerHTML = `<div class="phone"><div class="card"><h2>تعذر الانضمام</h2><p class="muted">تعذر تسجيلك في الغرفة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة.</p></div></div>`;
+  });
 }
 
 window.exitInvitedPlayer = async function(){
@@ -129,7 +148,9 @@ window.exitInvitedPlayer = async function(){
   if (window.cleanupSilentCanvas) cleanupSilentCanvas();
   if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   try {
-    await db.ref(`rooms/${invite.code}/players/${invite.playerId}`).remove();
+    const playerRef = db.ref(`rooms/${invite.code}/players/${invite.playerId}`);
+    await playerRef.onDisconnect().cancel();
+    await playerRef.remove();
     localStorage.removeItem(invite.nameKey);
     activeGuestInvite = null;
     CURRENT_PLAYER_NAME = '';
