@@ -53,7 +53,13 @@ const TRIVIA_AIDS=[{id:'fifty',name:'حذف خيارين',icon:'✂️'},{id:'hi
 
 function startTriviaSetup(code){
   const game=TRIVIA_BANK.map(c=>({id:c.id,name:c.name,icon:c.icon}));
-  db.ref('rooms/'+code).update({status:'trivia_setup',activeGame:'trivia',trivia:{phase:'setup',categories:game.slice(0,6).map(c=>c.id),aids:{fifty:true,hint:true,double:true},usedAids:{},scores:{A:0,B:0},used:{},teams:{A:'الفريق أ',B:'الفريق ب'},turn:'A'}});
+  db.ref('rooms/'+code+'/teamNames').once('value').then(snapshot=>{
+    const names=snapshot.val()||{};
+    return db.ref('rooms/'+code).update({status:'trivia_setup',activeGame:'trivia',trivia:{phase:'setup',categories:game.slice(0,6).map(c=>c.id),aids:{fifty:true,hint:true,double:true},usedAids:{},scores:{A:0,B:0},used:{},teams:{A:names.A||'الفريق الأخضر',B:names.B||'الفريق البرتقالي'},turn:'A'}});
+  }).catch(error=>{
+    console.error('Could not start trivia setup:',error);
+    alert('تعذر تجهيز اللعبة. تحقق من الاتصال وحاول مرة أخرى.');
+  });
 }
 function renderTriviaHost(code,room){
   const t=room.trivia||{};

@@ -9,26 +9,26 @@ function silentDrawTeamIds(sd, team){
 
 window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
-  roomRef.child('players').once('value', snap => {
+  roomRef.child('players').once('value').then(async snap => {
     const players = snap.val() || {};
     const ids = Object.keys(players);
     if (ids.length < 4) { alert('تحتاج 4 لاعبين على الأقل (فريقين) لبدء إشارة ورسمة'); return; }
 
-    // توزيع اللاعبين بناءً على اختيارهم، مع موازنة متبقي اللاعبين تلقائياً
-    let teamA = ids.filter(id => players[id].team === 'A');
-    let teamB = ids.filter(id => players[id].team === 'B');
-    let unassigned = shuffle(ids.filter(id => players[id].team !== 'A' && players[id].team !== 'B'));
-
-    unassigned.forEach(id => {
-      if (teamA.length <= teamB.length) teamA.push(id);
-      else teamB.push(id);
-    });
-
-    while (teamA.length < 2 && teamB.length > 2) teamA.push(teamB.pop());
-    while (teamB.length < 2 && teamA.length > 2) teamB.push(teamA.pop());
+    let teamA = ids.filter(id => players[id].team === 'A').slice(0,2);
+    let teamB = ids.filter(id => players[id].team === 'B').slice(0,2);
+    const assigned = new Set([...teamA,...teamB]);
+    const available = shuffle(ids.filter(id => !assigned.has(id)));
+    while (teamA.length < 2 && available.length) teamA.push(available.pop());
+    while (teamB.length < 2 && available.length) teamB.push(available.pop());
+    if (teamA.length < 2 || teamB.length < 2) {
+      alert('تحتاج إلى لاعبين اثنين في كل فريق لبدء إشارة ورسمة.');
+      return;
+    }
 
     teamA = shuffle(teamA);
     teamB = shuffle(teamB);
+    const teamNamesSnap = await roomRef.child('teamNames').once('value');
+    const savedTeamNames = teamNamesSnap.val() || {};
 
     db.ref('strokes/'+code+'_A').set(null);
     db.ref('strokes/'+code+'_B').set(null);
@@ -36,6 +36,7 @@ window.startSilentDrawGame = function(code){
       status:'in_game', activeGame:'silentdraw',
       silentdraw:{
         phase:'round_start', round:1,
+        teamNames:{A:savedTeamNames.A||'الفريق الأخضر',B:savedTeamNames.B||'الفريق البرتقالي'},
         teams:{ A:teamA, B:teamB },
         guideOf:{ A:teamA[0], B:teamB[0] },
         drawerOf:{ A:teamA[1], B:teamB[1] },
@@ -46,6 +47,9 @@ window.startSilentDrawGame = function(code){
         timerEnd:null, winner:null
       }
     });
+  }).catch(error=>{
+    console.error('Could not start Silent Draw:',error);
+    alert('تعذر بدء اللعبة. تحقق من الاتصال وحاول مرة أخرى.');
   });
 };
 
@@ -286,8 +290,9 @@ function setupSilentCanvas(code, team){
 
 function silentDrawRankingHtml(sd, players){
   const teamLabel = t => silentDrawTeamIds(sd,t).map(id => players[id]?.name || '').join(' و ');
+  const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
   const ranked = ['A','B'].sort((a,b) => sd.correctCount[b] - sd.correctCount[a]);
-  return ranked.map((t,i) => `<div class="chip team-${t}">${i+1}. فريق ${t} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
+  return ranked.map((t,i) => `<div class="chip team-${t}">${i+1}. ${teamName(t)} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
 }
 
 function renderSilentDrawHost(code, room){
@@ -295,6 +300,7 @@ function renderSilentDrawHost(code, room){
   const res = sd.results || {};
   const players = room.players || {};
   const teamLabel = t => silentDrawTeamIds(sd,t).map(id=>players[id]?.name||'').join(' و ');
+  const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
   let narrator = '', control = '', boards = '';
   const showBoards = ['drawing','round_result','ended'].includes(sd.phase);
 
@@ -303,19 +309,19 @@ function renderSilentDrawHost(code, room){
     control = `<button type="button" class="btn" id="beginDrawingBtn">ابدأ الرسم <span aria-hidden="true"></span></button>`;
   } else if (sd.phase==='drawing'){
     narrator = ` <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
-    control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لفريق A</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لفريق B</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
+    control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لـ ${teamName('A')}</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لـ ${teamName('B')}</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
   } else if (sd.phase==='round_result'){
-    narrator = `نتيجة الجولة: فريق A ${res.A==='correct'?'':''} — فريق B ${res.B==='correct'?'':''}`;
+    narrator = `نتيجة الجولة: ${teamName('A')} ${res.A==='correct'?'':''} — ${teamName('B')} ${res.B==='correct'?'':''}`;
     control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية </button>`;
   } else if (sd.phase==='ended'){
-    narrator = ` فاز الفريق ${sd.winner}!`;
+    narrator = ` فاز ${teamName(sd.winner)}!`;
     control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة </button>`;
   }
 
   if (showBoards){
     boards = `<div class="draw-layout">${['A','B'].map(t => `
       <div class="team-board">
-        <h4 style="font-family:'Cairo';">لوحة الرسام — فريق ${t}: ${escapeHtml(teamLabel(t))}</h4>
+        <h4 style="font-family:'Cairo';">لوحة الرسام — ${teamName(t)}: ${escapeHtml(teamLabel(t))}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="320" height="320"></canvas></div>
         <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
         <p class="muted">${res[t]==='correct' ? ' خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? ' ينتظرون التخمين' : ' لم يخمّنوا')}</p>

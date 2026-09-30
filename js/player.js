@@ -105,7 +105,7 @@ function renderPlayer(code, invitedGameId){
   if (!signedInUser) { renderGoogleSignIn(); return; }
   const myId = signedInUser.uid;
   const name = (signedInUser.displayName || signedInUser.email || 'لاعب').slice(0, 30);
-  const record = { name, gameId:null, uid:myId };
+  const record = { name, gameId:null, uid:myId, photoURL:signedInUser.photoURL || null };
   roomRef.child('players/' + myId).set(record);
   attach(myId, name, record);
 }

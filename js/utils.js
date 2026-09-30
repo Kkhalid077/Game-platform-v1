@@ -80,9 +80,48 @@ window.setDrawColor = function(c){ currentColor = c; };
 // تغيير الفريق
 window.setPlayerTeam = function(code, myId, team){
   if (team !== 'A' && team !== 'B') return;
-  const teamRef = db.ref(`rooms/${code}/players/${myId}/team`);
-  teamRef.transaction(current => current === team ? null : team)
-    .catch(error => console.error('Could not update player team:', error));
+  const playersRef = db.ref(`rooms/${code}/players`);
+  playersRef.transaction(players => {
+    if (!players || !players[myId]) return;
+    const currentTeam = players[myId].team;
+    if (currentTeam === team) {
+      delete players[myId].team;
+      return players;
+    }
+    const teamSize = Object.entries(players).filter(([id, player]) => id !== myId && player.team === team).length;
+    if (teamSize >= 2) return;
+    players[myId].team = team;
+    return players;
+  }).then(result => {
+    if (!result.committed) {
+      alert('اكتمل هذا الفريق. اختر الفريق الآخر أو انتظر توفر مقعد.');
+    }
+  }).catch(error => {
+    console.error('Could not update player team:', error);
+    alert('تعذر تغيير الفريق. تحقق من الاتصال وحاول مرة أخرى.');
+  });
+};
+
+window.saveTeamNames = async function(code){
+  const nameA = document.getElementById('teamNameA')?.value.trim();
+  const nameB = document.getElementById('teamNameB')?.value.trim();
+  const status = document.getElementById('teamNamesStatus');
+  const button = document.getElementById('saveTeamNamesButton');
+  if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
+    if (status) status.textContent = 'اكتب اسمًا لكل فريق (24 حرفًا كحد أقصى).';
+    return;
+  }
+  if (button) button.disabled = true;
+  try {
+    await db.ref(`rooms/${code}/teamNames`).set({A:nameA, B:nameB});
+    if (status) status.textContent = 'تم حفظ اسمي الفريقين.';
+  } catch (error) {
+    console.error('Could not save team names:', error);
+    if (status) status.textContent = 'تعذر حفظ الأسماء. تحقق من الاتصال وحاول مرة أخرى.';
+  } finally {
+    const currentButton = document.getElementById('saveTeamNamesButton');
+    if (currentButton) currentButton.disabled = false;
+  }
 };
 
 /* =====================================================================
@@ -91,48 +130,54 @@ window.setPlayerTeam = function(code, myId, team){
 function teamSelectorHtml(game, room, code, myId, isHost){
   if (!game.needsTeams) return '';
   const players = room.players || {};
+  const teamNames = {
+    A:room.teamNames?.A || 'الفريق الأخضر',
+    B:room.teamNames?.B || 'الفريق البرتقالي'
+  };
   const teamMemberHtml = (player, id, currentPlayerId = null) => {
     const name = player.name || 'لاعب';
     const initial = escapeHtml(name.trim().charAt(0) || 'ل');
     const isCurrentPlayer = id === currentPlayerId;
     return `<span class="team-member ${isCurrentPlayer ? 'is-you' : ''}">
-      <span class="team-member-avatar" aria-hidden="true">${initial}</span>
+      <span class="team-member-avatar" aria-hidden="true">${player.photoURL ? `<img src="${escapeHtml(player.photoURL)}" alt="">` : initial}</span>
       <span class="team-member-name">${escapeHtml(name)}${isCurrentPlayer ? ' · أنت' : ''}</span>
     </span>`;
   };
+  const teamCardHtml = (team, isHost) => {
+    const members = Object.entries(players).filter(([,player]) => player.team === team).slice(0,2);
+    const availableSeats = Array.from({length:2}, (_,index) => {
+      const member = members[index];
+      if (!member) return `<span class="team-seat team-seat-empty" aria-hidden="true"><span>+</span></span>`;
+      return `<span class="team-seat">${teamMemberHtml(member[1], member[0], myId)}</span>`;
+    }).join('');
+    const contents = `<span class="team-card-title">${escapeHtml(teamNames[team])}</span>
+      ${isHost
+        ? `<label class="team-name-field"><span>اسم الفريق</span><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}"></label>`
+        : `<span class="team-card-count">${members.length} / 2 لاعبين</span>`}
+      <span class="team-seats">${availableSeats}</span>`;
+    if (isHost) {
+      return `<section class="team-option team-option-${team.toLowerCase()} team-card team-card-readonly">${contents}</section>`;
+    }
+    const selected = players[myId]?.team === team;
+    const full = members.length === 2 && !selected;
+    return `<button type="button" class="team-option team-option-${team.toLowerCase()} team-card ${selected ? 'is-selected' : ''}" aria-pressed="${selected}" ${full ? 'disabled' : ''} onclick="setPlayerTeam('${code}','${myId}','${team}')">
+      ${contents}<span class="team-card-action">${selected ? 'فريقك' : full ? 'مكتمل' : 'انضم للفريق'}</span>
+    </button>`;
+  };
   if (isHost) {
-    const teamRoster = team => Object.values(players).filter(p=>p.team===team);
     return `
       <div class="team-selector-box team-picker">
-        <div class="team-picker-heading"><div><span class="host-section-kicker">توزيع اللاعبين</span><h3>الفرق</h3></div><span class="team-picker-note">يمكن للاعبين تغيير فرقهم قبل البدء</span></div>
-        <div class="team-options team-options-readonly">
-          ${['A','B'].map(team => {
-            const roster = teamRoster(team);
-            return `<section class="team-option team-option-${team.toLowerCase()}">
-              <div class="team-option-header"><span class="team-option-indicator"></span><div><strong>الفريق ${team}</strong><small>${roster.length} ${roster.length === 1 ? 'لاعب' : 'لاعبين'}</small></div></div>
-              <div class="team-roster">${roster.map(player => teamMemberHtml(player)).join('') || '<span class="team-empty">بانتظار الانضمام</span>'}</div>
-            </section>`;
-          }).join('')}
-        </div>
-        <p class="team-picker-note">اللاعبون الذين لم يختاروا فريقًا سيُوزَّعون تلقائيًا عند بدء اللعبة.</p>
+        <div class="team-picker-heading"><div><span class="host-section-kicker">توزيع اللاعبين</span><h3>الفرق</h3></div><span class="team-picker-note">مقعدان لكل فريق</span></div>
+        <div class="team-options team-options-readonly">${['A','B'].map(team => teamCardHtml(team,true)).join('')}</div>
+        <div class="team-name-save"><button class="btn btn-ghost" id="saveTeamNamesButton" type="button" onclick="saveTeamNames('${code}')">حفظ أسماء الفرق</button><span id="teamNamesStatus" class="team-picker-note" role="status">يمكنك تعديل الاسم الظاهر فوق كل فريق.</span></div>
       </div>`;
   }
   const myTeam = players[myId]?.team || null;
-  const roster = team => Object.entries(players).filter(([, player]) => player.team === team);
   return `
     <div class="team-selector-box team-picker">
-      <div class="team-picker-heading"><div><span class="host-section-kicker">انضم إلى مجموعتك</span><h3>اختر فريقك</h3></div><span class="team-picker-note">${myTeam ? `أنت في الفريق ${myTeam}` : 'اختيارك اختياري ويمكن تغييره'}</span></div>
-      <div class="team-options">
-        ${['A','B'].map(team => {
-          const members = roster(team);
-          const selected = myTeam === team;
-          return `<button type="button" class="team-option team-option-${team.toLowerCase()} ${selected ? 'is-selected' : ''}" aria-pressed="${selected}" onclick="setPlayerTeam('${code}','${myId}','${team}')">
-            <span class="team-option-header"><span class="team-option-indicator"></span><span class="team-option-label"><strong>الفريق ${team}</strong><small>${members.length} ${members.length === 1 ? 'لاعب' : 'لاعبين'}</small></span><span class="team-option-check" aria-hidden="true">${selected ? '✓' : '+'}</span></span>
-            <span class="team-roster">${members.map(([id, player]) => teamMemberHtml(player, id, myId)).join('') || '<span class="team-empty">كن أول المنضمين</span>'}</span>
-          </button>`;
-        }).join('')}
-      </div>
-      <p class="team-picker-note">${myTeam ? `اضغط على فريقك مرة أخرى لإلغاء الانضمام، أو اختر الفريق الآخر للتبديل.` : 'لم تختر فريقًا بعد؛ يمكنك الانضمام إلى أي فريق.'}</p>
+      <div class="team-picker-heading"><div><span class="host-section-kicker">انضم إلى مجموعتك</span><h3>اختر فريقك</h3></div><span class="team-picker-note">${myTeam ? `أنت في ${escapeHtml(teamNames[myTeam])}` : 'مقعدان متاحان لكل فريق'}</span></div>
+      <div class="team-options">${['A','B'].map(team => teamCardHtml(team,false)).join('')}</div>
+      <p class="team-picker-note">${myTeam ? 'اضغط على فريقك لمغادرته، أو اختر الفريق الآخر للتبديل.' : 'اختر أحد الفريقين للانضمام؛ لكل فريق مقعدان.'}</p>
     </div>`;
 }
 
