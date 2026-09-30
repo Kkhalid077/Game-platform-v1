@@ -134,13 +134,12 @@ function teamSelectorHtml(game, room, code, myId, isHost){
     A:room.teamNames?.A || 'الفريق الأخضر',
     B:room.teamNames?.B || 'الفريق البرتقالي'
   };
-  const teamMemberHtml = (player, id, currentPlayerId = null) => {
+  const teamMemberHtml = player => {
     const name = player.name || 'لاعب';
     const initial = escapeHtml(name.trim().charAt(0) || 'ل');
-    const isCurrentPlayer = id === currentPlayerId;
-    return `<span class="team-member ${isCurrentPlayer ? 'is-you' : ''}">
+    return `<span class="team-member">
       <span class="team-member-avatar" aria-hidden="true">${player.photoURL ? `<img src="${escapeHtml(player.photoURL)}" alt="">` : initial}</span>
-      <span class="team-member-name">${escapeHtml(name)}${isCurrentPlayer ? ' · أنت' : ''}</span>
+      <span class="team-member-name">${escapeHtml(name)}</span>
     </span>`;
   };
   const teamCardHtml = (team, isHost) => {
@@ -148,7 +147,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
     const availableSeats = Array.from({length:2}, (_,index) => {
       const member = members[index];
       if (!member) return `<span class="team-seat team-seat-empty" aria-hidden="true"><span>+</span></span>`;
-      return `<span class="team-seat">${teamMemberHtml(member[1], member[0], myId)}</span>`;
+      return `<span class="team-seat">${teamMemberHtml(member[1])}</span>`;
     }).join('');
     const contents = `<span class="team-card-title">${escapeHtml(teamNames[team])}</span>
       ${isHost
@@ -167,17 +166,15 @@ function teamSelectorHtml(game, room, code, myId, isHost){
   if (isHost) {
     return `
       <div class="team-selector-box team-picker">
-        <div class="team-picker-heading"><div><span class="host-section-kicker">توزيع اللاعبين</span><h3>الفرق</h3></div><span class="team-picker-note">مقعدان لكل فريق</span></div>
+        <div class="team-picker-heading"><div><h3>الفرق</h3></div></div>
         <div class="team-options team-options-readonly">${['A','B'].map(team => teamCardHtml(team,true)).join('')}</div>
-        <div class="team-name-save"><button class="btn btn-ghost" id="saveTeamNamesButton" type="button" onclick="saveTeamNames('${code}')">حفظ أسماء الفرق</button><span id="teamNamesStatus" class="team-picker-note" role="status">يمكنك تعديل الاسم الظاهر فوق كل فريق.</span></div>
+        <div class="team-name-save"><button class="btn btn-ghost" id="saveTeamNamesButton" type="button" onclick="saveTeamNames('${code}')">حفظ أسماء الفرق</button><span id="teamNamesStatus" class="team-picker-note" role="status"></span></div>
       </div>`;
   }
-  const myTeam = players[myId]?.team || null;
   return `
     <div class="team-selector-box team-picker">
-      <div class="team-picker-heading"><div><span class="host-section-kicker">انضم إلى مجموعتك</span><h3>اختر فريقك</h3></div><span class="team-picker-note">${myTeam ? `أنت في ${escapeHtml(teamNames[myTeam])}` : 'مقعدان متاحان لكل فريق'}</span></div>
+      <div class="team-picker-heading"><div><h3>اختر فريقك</h3></div></div>
       <div class="team-options">${['A','B'].map(team => teamCardHtml(team,false)).join('')}</div>
-      <p class="team-picker-note">${myTeam ? 'اضغط على فريقك لمغادرته، أو اختر الفريق الآخر للتبديل.' : 'اختر أحد الفريقين للانضمام؛ لكل فريق مقعدان.'}</p>
     </div>`;
 }
 

@@ -150,12 +150,12 @@ function renderHostLobby(code, room){
     </div>`;
   }).join('');
   const toolsHtml = `<section class="host-tools-section" aria-labelledby="host-tools-heading">
-    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">أدوات الجلسة</h2><p>أدوات تفاعلية تستخدمها أثناء اللعب.</p></div>
+    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">أدوات الجلسة</h2></div>
     <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
   </section>`;
   const dashboardContent = hostDashboardTab === 'tools'
     ? toolsHtml
-    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2><p>اختر لعبة لعرض التعليمات وبدء جلسة اللعب.</p></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
+    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
     <div class="host-dashboard">
@@ -164,7 +164,6 @@ function renderHostLobby(code, room){
           <div>
             <span class="host-section-kicker">لوحة التحكم</span>
             <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
-            <p>${hostDashboardTab === 'tools' ? 'أدوات سريعة لجلسة اللعب.' : 'اختر لعبة وابدأ اللعب.'}</p>
           </div>
           ${accountInfoHtml()}
         </header>

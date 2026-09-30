@@ -147,7 +147,7 @@ function renderBuzzerHost(code, room, directState){
       <div id="buzzerTimerMount"></div>
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
       <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
-      <section class="buzzer-roster lobby-players-box"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><p class="buzzer-roster-hint">اضغطوا بعد ظهور الأسرع لعرض الفارق الزمني بين الإجابات.</p><div id="buzzerRoster" class="lobby-player-grid"></div></section>
+      <section class="buzzer-roster lobby-players-box"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><div id="buzzerRoster" class="lobby-player-grid"></div></section>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين لأسرع استجابة (على شبكة Wi‑Fi نفسها). وإن تعذّر الاتصال المباشر لأي لاعب يعمل جرسه تلقائيًا عبر الإنترنت.':'تُرسل الضغطات عبر Firebase لأن الاتصال المباشر غير مدعوم في هذا المتصفح.'}</p>
       <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
     </main></div>`;
@@ -165,8 +165,7 @@ function renderBuzzerHost(code, room, directState){
   if(winnerCard.dataset.key!==winnerKey){
     winnerCard.dataset.key=winnerKey;
     winnerCard.classList.toggle('has-winner',!!winner);
-    const pressedCount=Object.keys(state.presses||{}).length;
-    winnerCard.innerHTML=winner?`<span>أول من ضغط</span><strong>${escapeHtml(winner.name)}</strong><small class="buzzer-gap-summary">${pressedCount>1?'تظهر أدناه مدة تأخر كل لاعب عن الأسرع.':'بانتظار ضغط بقية اللاعبين لعرض الفارق.'}</small>`:`<span>${state.locked?'الأزرار مقفلة':'بانتظار أول إجابة'}</span><strong class="buzzer-ready">${Object.keys(players).length?'جاهزون!':'بانتظار انضمام اللاعبين'}</strong>`;
+    winnerCard.innerHTML=winner?`<span>أول من ضغط</span><strong>${escapeHtml(winner.name)}</strong>`:`<span>${state.locked?'الأزرار مقفلة':'بانتظار أول إجابة'}</span><strong class="buzzer-ready">${Object.keys(players).length?'جاهزون!':'بانتظار انضمام اللاعبين'}</strong>`;
   }
   const roster=document.getElementById('buzzerRoster');
   const firstTime=state.winner?buzzerPressTime(state,state.winner):null;
