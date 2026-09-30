@@ -198,7 +198,7 @@ window.startBuzzerTool = function(code){
   hostDetailGameId = null;
   if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
   const session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzerFallback:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzerFallback:null, buzzer:{ winner:null, pressedAt:null, presses:{}, locked:false, timer:null, round:0 } });
 };
 
 window.resetToLobby = function(code){

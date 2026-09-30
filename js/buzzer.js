@@ -8,7 +8,14 @@ let buzzerServerTimeOffset=0;
 db.ref('.info/serverTimeOffset').on('value',snapshot=>{buzzerServerTimeOffset=Number(snapshot.val())||0;});
 function buzzerNow(){ return Date.now()+buzzerServerTimeOffset; }
 
-function buzzerState(room,override){ return Object.assign({ winner:null, locked:false, timer:null, round:0 }, override || room.buzzer || {}); }
+function buzzerState(room,override){ return Object.assign({ winner:null, pressedAt:null, presses:{}, locked:false, timer:null, round:0 }, override || room.buzzer || {}); }
+function buzzerPressTime(state,playerId){
+  const value=state.presses&&state.presses[playerId];
+  return Number.isFinite(Number(value))?Number(value):(state.winner===playerId?Number(state.pressedAt)||null:null);
+}
+function buzzerTimeDifference(time,firstTime){
+  return Math.max(0,(time-firstTime)/1000).toFixed(2);
+}
 function rtcConfiguration(){return {iceServers:[]};}
 function waitForIceGathering(pc){
   if(pc.iceGatheringState==='complete')return Promise.resolve();
@@ -24,9 +31,14 @@ function publishRtcHostState(){
 }
 function handleRtcHostMessage(signalKey,peer,event){
   let message;try{message=JSON.parse(event.data);}catch(_error){return;}
-  if(message.type!=='press'||message.playerId!==peer.playerId||!lastHostRoom?.players?.[peer.playerId])return;
-  if(rtcHostState.locked||rtcHostState.winner){try{peer.channel.send(JSON.stringify({type:'state',state:rtcHostState}));}catch(_error){}return;}
-  rtcHostState.winner=peer.playerId;rtcHostState.pressedAt=Date.now();publishRtcHostState();
+  if(message.type!=='press'||message.playerId!==peer.playerId||message.round!==(rtcHostState.round||0)||!lastHostRoom?.players?.[peer.playerId])return;
+  if(rtcHostState.locked||buzzerPressTime(rtcHostState,peer.playerId))return;
+  const pressedAt=Number(message.pressedAt)||buzzerNow();
+  rtcHostState.presses={...(rtcHostState.presses||{}),[peer.playerId]:pressedAt};
+  if(!rtcHostState.winner||pressedAt<(Number(rtcHostState.pressedAt)||Infinity)){
+    rtcHostState.winner=peer.playerId;rtcHostState.pressedAt=pressedAt;
+  }
+  publishRtcHostState();
 }
 async function acceptRtcOffer(signalKey,snapshot,session){
   const signal=snapshot.val();if(!signal?.offer||rtcHostPeers.has(signalKey)||session!==rtcHostSession)return;
@@ -60,9 +72,14 @@ function startBuzzerRtcHost(code,session,room){
   rtcHostFallback=db.ref(`rooms/${code}/buzzerFallback/${session}`);
   rtcHostFallbackHandler=snap=>{
     const press=snap.val();
-    if(!press||!rtcHostState||press.round!==(rtcHostState.round||0)||rtcHostState.locked||rtcHostState.winner)return;
+    if(!press||!rtcHostState||press.round!==(rtcHostState.round||0)||rtcHostState.locked||buzzerPressTime(rtcHostState,press.playerId))return;
     if(!lastHostRoom?.players?.[press.playerId])return;
-    rtcHostState.winner=press.playerId;rtcHostState.pressedAt=Date.now();publishRtcHostState();
+    const pressedAt=Number(press.pressedAt)||buzzerNow();
+    rtcHostState.presses={...(rtcHostState.presses||{}),[press.playerId]:pressedAt};
+    if(!rtcHostState.winner||pressedAt<(Number(rtcHostState.pressedAt)||Infinity)){
+      rtcHostState.winner=press.playerId;rtcHostState.pressedAt=pressedAt;
+    }
+    publishRtcHostState();
   };
   rtcHostFallback.on('child_added',rtcHostFallbackHandler);
   return true;
@@ -130,7 +147,7 @@ function renderBuzzerHost(code, room, directState){
       <div id="buzzerTimerMount"></div>
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
       <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
-      <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><div id="buzzerRoster"></div></section>
+      <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><p class="buzzer-roster-hint">اضغطوا بعد ظهور الأسرع لعرض الفارق الزمني بين الإجابات.</p><div id="buzzerRoster"></div></section>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين لأسرع استجابة (على شبكة Wi‑Fi نفسها). وإن تعذّر الاتصال المباشر لأي لاعب يعمل جرسه تلقائيًا عبر الإنترنت.':'تُرسل الضغطات عبر Firebase لأن الاتصال المباشر غير مدعوم في هذا المتصفح.'}</p>
       <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
     </main></div>`;
@@ -144,17 +161,27 @@ function renderBuzzerHost(code, room, directState){
   lock.classList.toggle('btn-danger',state.locked);lock.classList.toggle('btn-ghost',!state.locked);
   document.getElementById('buzzerSound').textContent=buzzerMuted?'تشغيل الصوت':'كتم الصوت';
   const winnerCard=document.getElementById('buzzerWinner');
-  const winnerKey=winner?`winner:${state.winner}:${winner.name}`:state.locked?'locked':`ready:${Object.keys(players).length}`;
+  const winnerKey=winner?`winner:${state.winner}:${winner.name}:${JSON.stringify(state.presses||{})}`:state.locked?'locked':`ready:${Object.keys(players).length}`;
   if(winnerCard.dataset.key!==winnerKey){
     winnerCard.dataset.key=winnerKey;
     winnerCard.classList.toggle('has-winner',!!winner);
-    winnerCard.innerHTML=winner?`<span>أول من ضغط</span><strong>${escapeHtml(winner.name)}</strong>`:`<span>${state.locked?'الأزرار مقفلة':'بانتظار أول إجابة'}</span><strong class="buzzer-ready">${Object.keys(players).length?'جاهزون!':'بانتظار انضمام اللاعبين'}</strong>`;
+    const pressedCount=Object.keys(state.presses||{}).length;
+    winnerCard.innerHTML=winner?`<span>أول من ضغط</span><strong>${escapeHtml(winner.name)}</strong><small class="buzzer-gap-summary">${pressedCount>1?'تظهر أدناه مدة تأخر كل لاعب عن الأسرع.':'بانتظار ضغط بقية اللاعبين لعرض الفارق.'}</small>`:`<span>${state.locked?'الأزرار مقفلة':'بانتظار أول إجابة'}</span><strong class="buzzer-ready">${Object.keys(players).length?'جاهزون!':'بانتظار انضمام اللاعبين'}</strong>`;
   }
   const roster=document.getElementById('buzzerRoster');
-  const rosterKey=JSON.stringify(Object.entries(players).map(([id,p])=>[id,p.name,state.winner===id]));
+  const firstTime=state.winner?buzzerPressTime(state,state.winner):null;
+  const rosterKey=JSON.stringify([Object.entries(players).map(([id,p])=>[id,p.name,state.winner===id,buzzerPressTime(state,id)]),state.winner]);
   if(roster.dataset.key!==rosterKey){
     roster.dataset.key=rosterKey;
-    roster.innerHTML=Object.entries(players).map(([id,p])=>`<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${state.winner===id?'<b>الأسرع</b>':''}</div>`).join('')||'<p class="muted">لا يوجد مشاركون بعد. شارك رمز QR أو رابط الجرس.</p>';
+    const entries=Object.entries(players).sort(([idA],[idB])=>{
+      const timeA=buzzerPressTime(state,idA),timeB=buzzerPressTime(state,idB);
+      if(timeA&&timeB)return timeA-timeB;
+      return timeA?-1:timeB?1:0;
+    });
+    roster.innerHTML=entries.map(([id,p])=>{
+      const time=buzzerPressTime(state,id),delta=time&&firstTime&&id!==state.winner?`<b class="buzzer-time-gap">+${buzzerTimeDifference(time,firstTime)} ث</b>`:state.winner===id?'<b class="buzzer-fastest">الأسرع</b>':'<span class="buzzer-not-pressed">لم يضغط بعد</span>';
+      return `<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${delta}</div>`;
+    }).join('')||'<p class="muted">لا يوجد مشاركون بعد. شارك رمز QR أو رابط الجرس.</p>';
     document.getElementById('buzzerPlayerCount').textContent=Object.keys(players).length;
   }
   updateBuzzerTimerMount(state.timer);
@@ -171,11 +198,12 @@ function renderBuzzerPlayer(code, myId, name, room, directState){
     app.innerHTML=`<div class="phone buzzer-player-screen"><main class="buzzer-panel buzzer-player-panel" id="buzzerPlayerRoot"><div><span class="host-section-kicker">جرس الإجابة</span><h1>أهلاً ${escapeHtml(name)}</h1></div><div id="buzzerPlayerTimer"></div><button id="buzzerDome" class="buzzer-dome" onclick="buzzerPress('${code}','${myId}')" aria-label="اضغط للإجابة"></button><p id="buzzerPlayerStatus" class="buzzer-player-status"></p><p id="buzzerConn" class="buzzer-conn"></p></main></div>`;
   }
   const button=document.getElementById('buzzerDome');
-  const blocked=!!(state.locked||state.winner);
+  const pressedAt=buzzerPressTime(state,myId),firstPressedAt=state.winner?buzzerPressTime(state,state.winner):null;
+  const blocked=!!(state.locked||pressedAt);
   button.disabled=blocked;
   button.classList.toggle('is-disabled',blocked);button.classList.toggle('is-winner',won);
-  button.textContent=won?'أنت الأسرع!':first?`سبقك ${first.name}`:state.winner?'سبقك أحدهم':state.locked?'مقفلة':'اضغط للإجابة';
-  document.getElementById('buzzerPlayerStatus').textContent=won?'مبروك! أنت أول من ضغط':first?`أجاب أولاً: ${first.name}`:state.locked?'انتظر فتح الأزرار من المنظّم':'جاهز؟ اضغط عند معرفة الإجابة';
+  button.textContent=won?'أنت الأسرع!':pressedAt?'تم تسجيل ضغطتك':state.locked?'مقفلة':'اضغط للإجابة';
+  document.getElementById('buzzerPlayerStatus').textContent=won?'مبروك! أنت أول من ضغط':first&&pressedAt&&firstPressedAt?`تأخرت عن ${first.name} بـ ${buzzerTimeDifference(pressedAt,firstPressedAt)} ثانية`:pressedAt?'تم تسجيل وقت ضغطك':state.locked?'انتظر فتح الأزرار من المنظّم':first?`سبقك ${first.name}، اضغط لقياس الفارق`: 'جاهز؟ اضغط عند معرفة الإجابة';
   const conn=document.getElementById('buzzerConn');
   if(room.buzzerTransport==='rtc'){
     conn.textContent=rtcPlayerReady()?'اتصال مباشر ⚡':(rtcPlayerStatus==='failed'?'الاتصال عبر الإنترنت':'جارٍ إنشاء اتصال مباشر…');
@@ -194,21 +222,26 @@ function updateBuzzerTimerMount(timer,mountId='buzzerTimerMount'){
 
 window.buzzerPress=function(code,playerId){
   buzzerUnlockAudio(); buzzerPlayTone(740,0.16);
+  const pressedAt=buzzerNow();
   if(rtcPlayerSession&&rtcPlayerReady()){
-    try{rtcPlayerChannel.send(JSON.stringify({type:'press',playerId}));return;}catch(error){console.error('تعذر إرسال الضغطة عبر الاتصال المباشر',error);}
+    try{rtcPlayerChannel.send(JSON.stringify({type:'press',playerId,round:rtcPlayerState?.round||0,pressedAt}));return;}catch(error){console.error('تعذر إرسال الضغطة عبر الاتصال المباشر',error);}
   }
   const room=lastPlayerRoom, st=buzzerState(room||{});
   if(room&&room.buzzerTransport==='rtc'&&room.buzzerSession){
-    if(st.locked||st.winner)return;
-    db.ref(`rooms/${code}/buzzerFallback/${room.buzzerSession}`).push({playerId,round:st.round||0});
+    if(st.locked||buzzerPressTime(st,playerId))return;
+    db.ref(`rooms/${code}/buzzerFallback/${room.buzzerSession}`).push({playerId,round:st.round||0,pressedAt});
     return;
   }
   db.ref('rooms/'+code+'/buzzer').transaction(state=>{
-    if(!state||state.locked||state.winner) return;
-    state.winner=playerId; state.pressedAt=Date.now(); return state;
+    if(!state||state.locked||(state.presses&&state.presses[playerId])||(state.round||0)!==(st.round||0)) return;
+    state.presses={...(state.presses||{}),[playerId]:pressedAt};
+    if(!state.winner||pressedAt<(Number(state.pressedAt)||Infinity)){
+      state.winner=playerId;state.pressedAt=pressedAt;
+    }
+    return state;
   });
 };
-window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.round=(state.round||0)+1;}))return;db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
+window.buzzerReset=function(code){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.winner=null;state.pressedAt=null;state.presses={};state.round=(state.round||0)+1;}))return;db.ref('rooms/'+code+'/buzzer').transaction(state=>({winner:null,pressedAt:null,presses:{},locked:!!(state&&state.locked),timer:state&&state.timer||null,round:(state&&state.round||0)+1}));};
 window.buzzerToggleLock=function(code,locked){buzzerUnlockAudio();if(updateRtcHostState(code,state=>{state.locked=locked;}))return;db.ref('rooms/'+code+'/buzzer/locked').set(locked);};
 window.buzzerStartTimer=function(code,duration){buzzerUnlockAudio();const startedAt=buzzerNow()+500;if(updateRtcHostState(code,state=>{state.timer={duration,startedAt};}))return;db.ref('rooms/'+code+'/buzzer/timer').set({duration,startedAt});};
 window.buzzerStopTimer=function(code){if(updateRtcHostState(code,state=>{state.timer=null;}))return;db.ref('rooms/'+code+'/buzzer/timer').set(null);};
