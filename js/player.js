@@ -7,6 +7,7 @@ let ACTIVE_PLAYER_ID = null;
 let lastPlayerRoom = null;
 let playerDetailGameId = null;
 let playerRoomRef = null;
+let playerInviteGameId = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
 function showSessionEnded(){
   detachPlayerRoom();
@@ -16,6 +17,7 @@ function showSessionEnded(){
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
+  playerInviteGameId = invitedGameId || null;
   const roomRef = db.ref('rooms/' + code);
   const signedInUser = firebase.auth().currentUser;
   const guestNameKey = `guestPlayerName_${code}_${invitedGameId || 'default'}`;
@@ -33,7 +35,9 @@ function renderPlayer(code, invitedGameId){
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
       if (inviteOpen && !(room.players && room.players[id])) roomRef.child('players/' + id).set(record);
-      dispatchPlayerRender(code, id, name, room, invitedGameId);
+      const currentName = room.players?.[id]?.name || name;
+      CURRENT_PLAYER_NAME = currentName;
+      dispatchPlayerRender(code, id, currentName, room, invitedGameId);
     });
   }
 
@@ -110,16 +114,61 @@ function renderInvitedGame(code, myId, name, room, gameId){
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
     if (gameId === 'qatara') return renderQataraPlayer(code, myId, name, room);
   }
-  app.innerHTML = gameDetailHtml(game, room, code, myId, false) + `<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p>`;
+  app.innerHTML = `<div class="player-join-screen">${playerProfileHtml(code, myId, name)}${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
 
 window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
 window.hideGameDetail = function(){ playerDetailGameId = null; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
 
+function playerProfileHtml(code, myId, name){
+  return `<section class="player-profile-panel" aria-labelledby="player-profile-heading">
+    <div class="player-profile-heading"><span class="player-profile-avatar" aria-hidden="true">${escapeHtml(name.charAt(0) || 'ل')}</span><div><span class="host-section-kicker">ملف اللاعب</span><h3 id="player-profile-heading">${escapeHtml(name)}</h3></div></div>
+    <form class="player-name-form" onsubmit="event.preventDefault();savePlayerDisplayName('${code}','${myId}')">
+      <label for="playerDisplayName">اسم المستخدم</label>
+      <div class="player-name-controls"><input id="playerDisplayName" type="text" maxlength="30" minlength="2" value="${escapeHtml(name)}" autocomplete="nickname" required><button class="btn" type="submit">حفظ الاسم</button></div>
+      <p class="player-profile-status" id="playerNameStatus" role="status">غيّر الاسم الذي سيظهر للاعبين.</p>
+    </form>
+  </section>`;
+}
+
+window.savePlayerDisplayName = async function(code, playerId){
+  const input = document.getElementById('playerDisplayName');
+  const submit = input?.form?.querySelector('[type="submit"]');
+  const name = input?.value.trim() || '';
+  const updateStatus = message => {
+    const status = document.getElementById('playerNameStatus');
+    if (status) status.textContent = message;
+  };
+  if (name.length < 2 || name.length > 30) {
+    updateStatus('اكتب اسمًا يتراوح بين حرفين و30 حرفًا.');
+    return;
+  }
+  if (submit) submit.disabled = true;
+  let roomNameSaved = false;
+  const user = firebase.auth().currentUser;
+  const isAccountPlayer = user?.uid === playerId;
+  try {
+    await db.ref(`rooms/${code}/players/${playerId}/name`).set(name);
+    roomNameSaved = true;
+    if (isAccountPlayer && user.displayName !== name) await user.updateProfile({ displayName:name });
+    if (!isAccountPlayer) localStorage.setItem(`guestPlayerName_${code}_${playerInviteGameId || 'default'}`, name);
+    CURRENT_PLAYER_NAME = name;
+    updateStatus('تم حفظ الاسم. سيظهر للاعبين بهذا الاسم.');
+  } catch (error) {
+    console.error('Player display name update failed:', error);
+    updateStatus(roomNameSaved
+      ? isAccountPlayer ? 'حُفظ الاسم في الجلسة، لكن تعذر تحديث ملف Google.' : 'حُفظ الاسم في الجلسة، لكن تعذر تذكره على هذا الجهاز.'
+      : 'تعذر حفظ الاسم. تحقق من الاتصال وحاول مرة أخرى.');
+  } finally {
+    const currentSubmit = document.getElementById('playerDisplayName')?.form?.querySelector('[type="submit"]');
+    if (currentSubmit) currentSubmit.disabled = false;
+  }
+};
+
 function renderPlayerVoting(code, myId, name, room){
   if (playerDetailGameId){
     const game = GAMES_LIST.find(g => g.id === playerDetailGameId);
-    app.innerHTML = gameDetailHtml(game, room, code, myId, false);
+    app.innerHTML = `<div class="player-join-screen">${playerProfileHtml(code, myId, name)}${gameDetailHtml(game, room, code, myId, false)}</div>`;
     return;
   }
 
@@ -133,6 +182,7 @@ function renderPlayerVoting(code, myId, name, room){
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="renderHost()">الرئيسية</button>
+    ${playerProfileHtml(code, myId, name)}
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} </h2>
     <p class="muted">تصفّح الألعاب وانضم إلى فريق في الألعاب الجماعية. المنظّم يبدأ اللعبة ويعرضها على شاشته.</p>
     <div class="games-grid">${cardsHtml}</div>
@@ -145,6 +195,7 @@ function renderPlayerGameNotice(code, myId, name, room){
   const title = game ? game.title : (room.activeTool === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
   const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
+    ${playerProfileHtml(code, myId, name)}
     <div class="detail-icon">${game ? gameIconHtml(game, 'detail-icon-image') : iconImageHtml('assets/icons/answer-buzzer.svg', 'detail-icon-image')}</div>
     <h2 style="font-family:'Cairo';">${escapeHtml(title)}</h2>
     <p class="muted">اللعبة بدأت. المنظّم هو من يعرض اللعبة ويتحكم بها من شاشته؛ تابعوا الشاشة الرئيسية وشاركوا معه.</p>

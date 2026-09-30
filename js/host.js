@@ -5,6 +5,7 @@ let ACTIVE_HOST_CODE = null;
 let lastHostRoom = null;
 let hostDetailGameId = null;
 let hostRoomRef = null;
+let hostDashboardTab = 'games';
 function detachHostRoom(){ if (hostRoomRef){ hostRoomRef.off('value'); hostRoomRef = null; } }
 function allocateRoomCode(attempt = 0){
   const code = makeRoomCode();
@@ -67,6 +68,11 @@ window.showHostGameDetail = function(gameId){
   db.ref('rooms/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+window.setHostDashboardTab = function(tab){
+  if (tab !== 'games' && tab !== 'tools') return;
+  hostDashboardTab = tab;
+  if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom);
+};
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
 window.signOut = function(){
   detachHostRoom();
@@ -139,6 +145,13 @@ function renderHostLobby(code, room){
       <div class="vote-badge">الحد الأدنى ${g.minPlayers}</div>
     </div>`;
   }).join('');
+  const toolsHtml = `<section class="host-tools-section" aria-labelledby="host-tools-heading">
+    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">أدوات الجلسة</h2><p>أدوات تفاعلية تستخدمها أثناء اللعب.</p></div>
+    <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
+  </section>`;
+  const dashboardContent = hostDashboardTab === 'tools'
+    ? toolsHtml
+    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2><p>اختر لعبة لعرض التعليمات وبدء جلسة اللعب.</p></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
     <div class="host-dashboard">
@@ -146,16 +159,16 @@ function renderHostLobby(code, room){
         <header class="host-games-header host-page-header">
           <div>
             <span class="host-section-kicker">لوحة التحكم</span>
-            <h1>اختر لعبة</h1>
-            <p>اختر بطاقة لقراءة التعليمات وبدء اللعبة وعرضها للاعبين.</p>
+            <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
+            <p>${hostDashboardTab === 'tools' ? 'افتح أداة تفاعلية لاستخدامها أثناء الجلسة.' : 'تصفّح الألعاب واختر ما تريد أن تلعبوه.'}</p>
           </div>
           ${accountInfoHtml()}
         </header>
-        <div class="games-grid host-games-grid">${cardsHtml}</div>
-        <section class="host-tools-section" aria-labelledby="host-tools-heading">
-          <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">الأدوات</h2><p>أدوات تفاعلية تستخدمها أثناء الجلسة.</p></div>
-          <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
-        </section>
+        <nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
+          <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
+          <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
+        </nav>
+        ${dashboardContent}
       </main>
     </div>
   `;
