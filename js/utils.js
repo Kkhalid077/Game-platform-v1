@@ -91,6 +91,15 @@ window.setPlayerTeam = function(code, myId, team){
 function teamSelectorHtml(game, room, code, myId, isHost){
   if (!game.needsTeams) return '';
   const players = room.players || {};
+  const teamMemberHtml = (player, id, currentPlayerId = null) => {
+    const name = player.name || 'لاعب';
+    const initial = escapeHtml(name.trim().charAt(0) || 'ل');
+    const isCurrentPlayer = id === currentPlayerId;
+    return `<span class="team-member ${isCurrentPlayer ? 'is-you' : ''}">
+      <span class="team-member-avatar" aria-hidden="true">${initial}</span>
+      <span class="team-member-name">${escapeHtml(name)}${isCurrentPlayer ? ' · أنت' : ''}</span>
+    </span>`;
+  };
   if (isHost) {
     const teamRoster = team => Object.values(players).filter(p=>p.team===team);
     return `
@@ -101,7 +110,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
             const roster = teamRoster(team);
             return `<section class="team-option team-option-${team.toLowerCase()}">
               <div class="team-option-header"><span class="team-option-indicator"></span><div><strong>الفريق ${team}</strong><small>${roster.length} ${roster.length === 1 ? 'لاعب' : 'لاعبين'}</small></div></div>
-              <div class="team-roster">${roster.map(player => `<span class="team-member">${escapeHtml(player.name || 'لاعب')}</span>`).join('') || '<span class="team-empty">بانتظار الانضمام</span>'}</div>
+              <div class="team-roster">${roster.map(player => teamMemberHtml(player)).join('') || '<span class="team-empty">بانتظار الانضمام</span>'}</div>
             </section>`;
           }).join('')}
         </div>
@@ -119,7 +128,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
           const selected = myTeam === team;
           return `<button type="button" class="team-option team-option-${team.toLowerCase()} ${selected ? 'is-selected' : ''}" aria-pressed="${selected}" onclick="setPlayerTeam('${code}','${myId}','${team}')">
             <span class="team-option-header"><span class="team-option-indicator"></span><span class="team-option-label"><strong>الفريق ${team}</strong><small>${members.length} ${members.length === 1 ? 'لاعب' : 'لاعبين'}</small></span><span class="team-option-check" aria-hidden="true">${selected ? '✓' : '+'}</span></span>
-            <span class="team-roster">${members.map(([id, player]) => `<span class="team-member ${id === myId ? 'is-you' : ''}">${escapeHtml(player.name || 'لاعب')}${id === myId ? ' · أنت' : ''}</span>`).join('') || '<span class="team-empty">كن أول المنضمين</span>'}</span>
+            <span class="team-roster">${members.map(([id, player]) => teamMemberHtml(player, id, myId)).join('') || '<span class="team-empty">كن أول المنضمين</span>'}</span>
           </button>`;
         }).join('')}
       </div>
