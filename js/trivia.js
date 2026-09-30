@@ -101,7 +101,7 @@ function renderTriviaSetupHost(code,t){
       </header><div class="trivia-aid-grid">${aidChoices}</div>
     </section>`;
   }).join('');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap">
+  document.getElementById('stage').innerHTML=`${activityExitControlsHtml(code,'trivia')}<div class="trivia-wrap">
     <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>إعداد الفريقين</h1><p>سمّوا الفريقين، ثم يختار كل فريق 3 وسائل مساعدة.</p></div></header>
     <div class="trivia-team-setup-grid">${teamCards}</div>
     <div class="trivia-setup-actions">
@@ -113,7 +113,7 @@ function renderTriviaSetupHost(code,t){
 function renderTriviaCategoriesHost(code,t){
   const selected=t.categories||[];
   const cards=TRIVIA_BANK.map(c=>`<button class="trivia-category ${selected.includes(c.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${c.id}')"><span>${c.icon}</span><b>${c.name}</b><small>${selected.includes(c.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap">
+  document.getElementById('stage').innerHTML=`${activityExitControlsHtml(code,'trivia')}<div class="trivia-wrap">
     <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>تحديد الفئات</h1><p>اختاروا 6 فئات للوحة اللعب (${selected.length}/6).</p></div><button class="btn btn-ghost" onclick="triviaBackToTeams('${code}')">العودة للفريقين</button></header>
     <div class="trivia-category-grid">${cards}</div>
     <div class="trivia-setup-actions trivia-category-actions">
@@ -226,9 +226,8 @@ function renderTriviaBoard(code,t){
     <span>${escapeHtml(t.teams?.[team]||(team==='A'?'الفريق الأول':'الفريق الثاني'))}</span>
     <b>${scores[team]||0}</b><small>نقطة</small>
   </div>`).join('');
-  document.getElementById('stage').innerHTML=`<div class="trivia-wrap trivia-board-screen">
+  document.getElementById('stage').innerHTML=`${activityExitControlsHtml(code,'trivia')}<div class="trivia-wrap trivia-board-screen">
     <header class="trivia-gamebar">
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
       <div class="trivia-turn"><span>دور الاختيار</span><b>${escapeHtml(t.teams?.[t.turn]||'الفريق الأول')}</b></div>
       <button class="trivia-turn-switch" aria-label="تبديل الدور" title="تبديل الدور" onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">↔</button>
       <h1><span>تحدي الفئات</span><small>اختروا سؤالًا من اللوحة</small></h1>
@@ -277,7 +276,7 @@ function renderTriviaQuestionHost(code,t){
        ${current.stealAvailable&&current.stealPrompted?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team==='A'?'B':'A'}',${points})">سرقة النقاط لـ ${escapeHtml(t.teams?.[team==='A'?'B':'A']||'الفريق الآخر')}</button>`:''}
        <button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`
     : `<button class="btn" onclick="triviaReveal('${code}')">إظهار الإجابة</button>`;
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><div class="trivia-question-card">
+  document.getElementById('stage').innerHTML=`${activityExitControlsHtml(code,'trivia')}<div class="trivia-wrap"><div class="trivia-question-card">
     <header class="trivia-question-header"><span class="host-section-kicker">${category.icon} ${category.name}</span><span class="trivia-question-points">${points} نقطة</span></header>
     <div class="trivia-question-layout">
       <main class="trivia-question-main">
@@ -439,7 +438,7 @@ window.triviaBack=async code=>{
 function renderTriviaDone(code,t){
   const a=t.scores?.A||0,b=t.scores?.B||0;
   const winner=a===b?'تعادل!':a>b?(t.teams?.A||'الفريق الأول'):(t.teams?.B||'الفريق الثاني');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap trivia-final"><div class="trivia-question-card">${a!==b?winnerCelebrationHtml():''}<span class="host-section-kicker">نهاية الجولة</span><h1>${a===b?'تعادل رائع!':'🏆 '+escapeHtml(winner)+' يفوز!'}</h1><div class="trivia-scoreboard"><div class="trivia-score team-a"><span>${escapeHtml(t.teams?.A||'الفريق الأول')}</span><b>${a}</b></div><div class="trivia-score team-b"><span>${escapeHtml(t.teams?.B||'الفريق الثاني')}</span><b>${b}</b></div></div><div class="trivia-final-actions"><button class="btn" onclick="triviaReplay('${code}')">إعادة اللعبة بالأسماء نفسها</button><button class="btn btn-danger" onclick="resetToLobby('${code}')">إنهاء والعودة إلى الردهة</button></div></div></div>`;
+  document.getElementById('stage').innerHTML=`${activityExitControlsHtml(code,'trivia')}<div class="trivia-wrap trivia-final"><div class="trivia-question-card">${a!==b?winnerCelebrationHtml():''}<span class="host-section-kicker">نهاية الجولة</span><h1>${a===b?'تعادل رائع!':'🏆 '+escapeHtml(winner)+' يفوز!'}</h1><div class="trivia-scoreboard"><div class="trivia-score team-a"><span>${escapeHtml(t.teams?.A||'الفريق الأول')}</span><b>${a}</b></div><div class="trivia-score team-b"><span>${escapeHtml(t.teams?.B||'الفريق الثاني')}</span><b>${b}</b></div></div><div class="trivia-final-actions"><button class="btn" onclick="triviaReplay('${code}')">إعادة اللعبة بالأسماء نفسها</button></div></div></div>`;
 }
 window.triviaReplay=async code=>{
   const teams=lastHostRoom?.trivia?.teams;

@@ -142,7 +142,7 @@ function renderMafiaHost(code, room){
   }).join('');
 
   document.getElementById('stage').innerHTML = `
-    <button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
+    ${activityExitControlsHtml(code,'mafia')}
     ${m.phase==='ended' ? winnerCelebrationHtml() : ''}
     <h2 style="font-family:'Cairo'; color:var(--accent);">ليلة المافيا</h2>
     <p class="narrator">${narrator}</p>

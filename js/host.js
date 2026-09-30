@@ -256,7 +256,7 @@ function renderHostGenericPlaceholder(code, room){
   document.getElementById('stage').innerHTML = `
     <h2 style="font-family:'Cairo'; color:var(--accent);"> ${g ? g.title : ''}</h2>
     <p class="muted">هذه اللعبة قيد التطوير حاليًا.</p>
-    <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للرئيسية</button>
+    ${activityExitControlsHtml(code, room.activeGame)}
   `;
 }
 
@@ -278,6 +278,32 @@ window.startBuzzerTool = function(code){
 
 window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
+};
+
+function activityExitControlsHtml(code,gameId){
+  return `<div class="activity-exit-controls">
+    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
+    <button type="button" class="btn activity-return-detail" onclick="returnToGameDetail('${code}','${gameId}')">إنهاء اللعبة</button>
+  </div>`;
+}
+
+window.returnToGameDetail = async function(code,gameId){
+  if(!GAMES_LIST.some(game=>game.id===gameId)){
+    console.error('Cannot return to an unknown game detail page:',gameId);
+    return;
+  }
+  hostDetailGameId = gameId;
+  try{
+    await db.ref('rooms/'+code).update({
+      status:'voting',activeGame:null,activeTool:null,buzzerTransport:null,
+      buzzerSession:null,buzzerRtc:null,buzzerFallback:null,selectedGame:gameId,
+      votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,buzzer:null
+    });
+  }catch(error){
+    hostDetailGameId = null;
+    console.error('Could not return to game details:',error);
+    alert('تعذر إنهاء اللعبة والعودة إلى تفاصيلها. تحقق من الاتصال وحاول مرة أخرى.');
+  }
 };
 
 window.hostLeaveRoom = function(code){
