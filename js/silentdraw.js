@@ -339,6 +339,7 @@ function renderSilentDrawHost(code, room){
 
   document.getElementById('stage').innerHTML = `
     <button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
+    ${sd.phase==='ended' ? winnerCelebrationHtml() : ''}
     <h2 style="font-family:'Cairo'; color:var(--accent);">إشارة ورسمة</h2>
     <p class="narrator">${narrator}</p>
     <section class="players-box team-ranking-box"><h3>الترتيب <small>الفوز عند ٣ نقاط</small></h3>${silentDrawRankingHtml(sd, players)}</section>
@@ -448,6 +449,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
 
   if (sd.phase==='ended'){
     app.innerHTML = `<div class="phone"><div class="card">
+      ${winnerCelebrationHtml()}
       <h2 style="font-family:'Cairo';"> فاز الفريق ${sd.winner}!</h2>
       <div class="players-box">${silentDrawRankingHtml(sd, players)}</div>
     </div></div>`;

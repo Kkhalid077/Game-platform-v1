@@ -143,6 +143,7 @@ function renderMafiaHost(code, room){
 
   document.getElementById('stage').innerHTML = `
     <button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
+    ${m.phase==='ended' ? winnerCelebrationHtml() : ''}
     <h2 style="font-family:'Cairo'; color:var(--accent);">ليلة المافيا</h2>
     <p class="narrator">${narrator}</p>
     ${control}
@@ -257,6 +258,7 @@ function renderMafiaPlayer(code, myId, name, room){
   } else if (m.phase==='ended'){
     const allRoles = Object.keys(m.roles).filter(id=>players[id]).map(id=>`${escapeHtml(players[id].name)}: ${ROLE_META[m.roles[id]].icon} ${ROLE_META[m.roles[id]].name}`).join('<br>');
     app.innerHTML = `<div class="phone"><div class="card">
+      ${winnerCelebrationHtml()}
       <h2 style="font-family:'Cairo';">${m.winner==='mafia' ? ' فازت المافيا!' : ' فاز المواطنون!'}</h2>
       <p class="muted">${allRoles}</p>
     </div></div>`;

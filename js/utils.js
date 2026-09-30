@@ -232,6 +232,10 @@ function setActivityBackdrop(activityId){
     delete appRoot.dataset.activity;
   }
 }
+
+function winnerCelebrationHtml(){
+  return `<div class="winner-celebration" aria-hidden="true"><span class="winner-trophy">🏆</span><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>`;
+}
 window.toggleReady = function(code, myId, gameId){
   const ref = db.ref('rooms/'+code+'/votes/'+myId);
   ref.once('value', snap => { snap.val() === gameId ? ref.remove() : ref.set(gameId); });
