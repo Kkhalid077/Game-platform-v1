@@ -7,7 +7,10 @@ function silentDrawTeamIds(sd, team){
   return Object.values(members || {});
 }
 function silentDrawStrokesRef(code, team){
-  return db.ref(`rooms/${code}/silentdraw/strokes/${team}`);
+  return db.ref(`rooms/${code}/strokes/${team}`);
+}
+function silentDrawSyncError(error){
+  return error?.code || error?.message || 'خطأ اتصال';
 }
 
 window.startSilentDrawGame = function(code){
@@ -236,7 +239,7 @@ function setupSilentCanvas(code, team){
     activeStrokeRef.set(stroke).catch(error => {
       console.error('تعذر بث الرسم:', error);
       const status = document.getElementById('drawSyncStatus');
-      if (status) status.textContent = 'تعذر مزامنة الرسم. تحقق من الاتصال.';
+      if (status) status.textContent = `تعذر مزامنة الرسم (${silentDrawSyncError(error)}).`;
     });
   }
 
@@ -284,7 +287,11 @@ function setupSilentCanvas(code, team){
       if (disposed || document.getElementById('drawCanvas') !== canvas) return;
       ctx.clearRect(0,0,canvas.width,canvas.height);
       Object.values(snapshot.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
-    }).catch(error => console.error('تعذر تحديث اللوحة بعد التراجع:', error));
+    }).catch(error => {
+      console.error('تعذر تحديث اللوحة بعد التراجع:', error);
+      const status = document.getElementById('drawSyncStatus');
+      if (status) status.textContent = `تعذر تحديث اللوحة (${silentDrawSyncError(error)}).`;
+    });
   }
   strokesRef.on('child_removed', redrawAfterUndo);
   const supportsPointerEvents = 'PointerEvent' in window;
@@ -307,7 +314,11 @@ function setupSilentCanvas(code, team){
   strokesRef.once('value').then(snapshot => {
     if (disposed || document.getElementById('drawCanvas') !== canvas) return;
     Object.values(snapshot.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
-  }).catch(error => console.error('تعذر تحميل الرسم المحفوظ:', error));
+  }).catch(error => {
+    console.error('تعذر تحميل الرسم المحفوظ:', error);
+    const status = document.getElementById('drawSyncStatus');
+    if (status) status.textContent = `تعذر تحميل الرسم المحفوظ (${silentDrawSyncError(error)}).`;
+  });
 
   silentCanvasCleanup = () => {
     disposed = true;
@@ -389,8 +400,8 @@ function renderSilentDrawHost(code, room){
   `;
 
   if (showBoards){
-    mirrorCanvasFrom(`rooms/${code}/silentdraw/strokes/A`, 'canvasA');
-    mirrorCanvasFrom(`rooms/${code}/silentdraw/strokes/B`, 'canvasB');
+    mirrorCanvasFrom(`rooms/${code}/strokes/A`, 'canvasA');
+    mirrorCanvasFrom(`rooms/${code}/strokes/B`, 'canvasB');
   }
   const beginDrawingBtn = document.getElementById('beginDrawingBtn');
   if (beginDrawingBtn) beginDrawingBtn.addEventListener('click', () => window.silentDrawBeginDrawing(code));

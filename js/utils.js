@@ -53,11 +53,10 @@ function drawSegment(ctx, canvas, s){
 function isSilentDrawStrokesOnlyChange(previousRoom, nextRoom){
   if (!previousRoom || previousRoom.status !== 'in_game' || previousRoom.activeGame !== 'silentdraw' ||
       nextRoom?.status !== 'in_game' || nextRoom.activeGame !== 'silentdraw') return false;
-  const {strokes:previousStrokes, ...previousSilentDraw} = previousRoom.silentdraw || {};
-  const {strokes:nextStrokes, ...nextSilentDraw} = nextRoom.silentdraw || {};
+  const {strokes:previousStrokes, ...previousRoomData} = previousRoom;
+  const {strokes:nextStrokes, ...nextRoomData} = nextRoom;
   if (JSON.stringify(previousStrokes || null) === JSON.stringify(nextStrokes || null)) return false;
-  return JSON.stringify({...previousRoom,silentdraw:previousSilentDraw}) ===
-    JSON.stringify({...nextRoom,silentdraw:nextSilentDraw});
+  return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
 }
 const mirrorRefs = {};
 function stopMirrorCanvases(){
@@ -81,7 +80,7 @@ function mirrorCanvasFrom(strokeKey, canvasId){
   const cancel = error => {
     console.error(`Unable to mirror strokes for ${canvasId}:`,error);
     const status = document.getElementById(`${canvasId}Status`);
-    if (status) status.textContent = 'تعذر تحميل الرسم المباشر.';
+    if (status) status.textContent = `تعذر تحميل الرسم المباشر (${error.code || 'خطأ اتصال'}).`;
   };
   mirrorRefs[canvasId] = {ref:sRef,handler,canvas};
   sRef.on('value',handler,cancel);
