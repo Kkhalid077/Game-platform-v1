@@ -471,3 +471,118 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
   .buzzer-controls .btn{flex:1 1 130px}
   .host-tool-card{width:100%}
 }
+
+/* ---------- واجهة مستوحاة من ألوان تكوة ---------- */
+:root{
+  --bg:#041131;
+  --bg-2:#081735;
+  --surface:#0b1838;
+  --surface-2:#121e3e;
+  --line:rgba(131,207,255,.16);
+  --accent:#ffcc00;
+  --accent-2:#ff6b7a;
+  --green:#2ecc71;
+  --amber:#ffcc00;
+  --amber-sh:#a07a00;
+  --gold-soft:#ffe680;
+  --cyan:#83cfff;
+  --text:#dae2ff;
+  --text-dim:#9fb0d9;
+  --r-sm:12px;
+  --r-md:18px;
+  --r-lg:22px;
+  --shadow:0 16px 44px rgba(1,7,24,.4);
+}
+body{
+  background:radial-gradient(ellipse at 50% -20%,rgba(131,207,255,.09),transparent 52%),var(--bg);
+  font-family:'Cairo','Tajawal',system-ui,sans-serif;
+}
+#app[data-activity]::before{
+  background-image:
+    radial-gradient(1px 1px at 12% 20%,rgba(218,226,255,.5) 50%,transparent 100%),
+    radial-gradient(1px 1px at 78% 34%,rgba(218,226,255,.4) 50%,transparent 100%),
+    radial-gradient(1px 1px at 38% 78%,rgba(131,207,255,.45) 50%,transparent 100%),
+    radial-gradient(ellipse at 18% 26%,rgba(131,207,255,.08),transparent 46%),
+    radial-gradient(ellipse at 83% 72%,rgba(255,204,0,.045),transparent 44%),
+    linear-gradient(145deg,#041131,#071735 58%,#041131);
+}
+#app[data-activity]::after{display:none}
+:focus-visible{outline-color:var(--cyan)}
+.btn{
+  color:#3a2e00;
+  background:var(--amber);
+  box-shadow:0 4px 0 var(--amber-sh,#a07a00);
+  font-family:'Cairo',sans-serif;
+}
+.btn:active:not(:disabled){box-shadow:0 1px 0 var(--amber-sh,#a07a00)}
+.btn:disabled{background:#2c3859;color:#8594bd;box-shadow:0 4px 0 #1d2949}
+.btn-ghost{border-color:#2c3859;background:transparent;color:var(--text);box-shadow:none}
+.btn-ghost:hover:not(:disabled){border-color:var(--cyan);background:rgba(131,207,255,.07);color:var(--cyan)}
+.btn-danger{background:var(--accent-2);color:#fff;box-shadow:0 4px 0 #a63c4d}
+.btn-danger:active:not(:disabled){box-shadow:0 1px 0 #a63c4d}
+input[type=text]{
+  border-color:#2c3859;
+  background:#041131;
+  font-family:'Cairo','Tajawal',sans-serif;
+}
+input[type=text]:focus{border-color:var(--amber)}
+.card,.players-box,.account-card,.team-selector-box,.invite-card,.team-ranking-card,
+.trivia-category,.trivia-score,.trivia-question-card,.qatara-rank-card{
+  border-color:rgba(131,207,255,.14);
+  background-color:var(--surface);
+}
+.card,.trivia-question-card{box-shadow:0 16px 44px rgba(1,7,24,.42)}
+.players-box,.team-ranking-box{background:linear-gradient(145deg,#0b1838,#08152f)}
+.host-dashboard{max-width:1440px}
+.stage:has(.host-dashboard)::before{
+  background-image:linear-gradient(115deg,rgba(4,17,49,.96),rgba(6,22,54,.91) 52%,rgba(4,17,49,.96));
+}
+.host-games-section,.host-tools-section{
+  border-color:rgba(131,207,255,.14);
+  background:rgba(8,23,53,.88);
+  box-shadow:0 12px 34px rgba(1,7,24,.24);
+}
+.host-section-kicker{color:var(--cyan)}
+.dashboard-tabs{border-color:rgba(131,207,255,.14);background:#071633}
+.dashboard-tab{font-family:'Cairo',sans-serif}
+.dashboard-tab:hover{background:rgba(131,207,255,.08);color:var(--cyan)}
+.dashboard-tab.is-active{
+  background:rgba(255,204,0,.12);
+  color:var(--amber);
+  box-shadow:inset 0 0 0 1px rgba(255,204,0,.42);
+}
+.game-card,.host-games-grid .game-card,.host-tool-card{
+  border-color:rgba(131,207,255,.14);
+  background:linear-gradient(155deg,#0d1d41,#091630);
+}
+.game-card::before{height:3px;background:var(--amber)}
+.game-card:nth-child(4n+2),.game-card:nth-child(4n+3),.game-card:nth-child(4n+4){--tile:var(--cyan)}
+.game-card:hover:not(.disabled){border-color:var(--amber);box-shadow:0 10px 24px rgba(1,7,24,.3)}
+.game-icon-badge{background:rgba(255,204,0,.1)}
+.vote-badge{background:rgba(255,204,0,.12);color:var(--gold-soft,#ffe680)}
+.game-detail{color:var(--text)}
+.team-option{
+  border-color:color-mix(in srgb,var(--team-color) 28%,#2c3859);
+  background:linear-gradient(155deg,color-mix(in srgb,var(--team-color) 8%,#0b1838),#0b1838 72%);
+}
+.team-option:hover{box-shadow:0 8px 20px rgba(1,7,24,.2)}
+.team-option.is-selected{background:linear-gradient(155deg,color-mix(in srgb,var(--team-color) 15%,#0b1838),#0b1838 72%)}
+.team-name-field input[type=text]{background:#041131}
+.lobby-player-avatar{border-color:rgba(131,207,255,.28);background:linear-gradient(145deg,rgba(131,207,255,.12),rgba(255,204,0,.08)),var(--surface)}
+.team-ranking-box{border-color:rgba(131,207,255,.18)}
+.team-ranking-card.is-leading{border-color:color-mix(in srgb,var(--rank-color) 55%,#2c3859)}
+.trivia-category{background:linear-gradient(155deg,#0d1d41,#091630)}
+.trivia-category:hover{border-color:var(--amber)}
+.trivia-category.is-selected{border-color:var(--amber);background:rgba(255,204,0,.1)}
+.trivia-column h3{background:rgba(255,204,0,.12);color:var(--gold-soft,#ffe680)}
+.trivia-cell{border-color:rgba(255,204,0,.28);background:rgba(255,204,0,.1);color:var(--gold-soft,#ffe680)}
+.trivia-cell:hover:not(:disabled){background:rgba(255,204,0,.2)}
+.trivia-question-card{background:linear-gradient(155deg,#0d1d41,#091630)}
+.trivia-hint{border-color:rgba(131,207,255,.24);background:rgba(131,207,255,.07)}
+.team-ranking-place{background:color-mix(in srgb,var(--rank-color) 13%,#0b1838)}
+.team-ranking-members{border-color:rgba(131,207,255,.12)}
+.site-footer{border-color:rgba(131,207,255,.12);background:rgba(4,17,49,.96)}
+@media(max-width:760px){
+  .host-games-section,.host-tools-section{background:rgba(8,23,53,.94)}
+  .game-card,.host-games-grid .game-card,.host-tool-card{background:linear-gradient(155deg,#0d1d41,#091630)}
+}
