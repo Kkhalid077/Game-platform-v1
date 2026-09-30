@@ -100,10 +100,12 @@ function renderTriviaHost(code,room){
 function triviaExitControlsHtml(code,embedded=false){
   return `<div class="activity-exit-controls trivia-exit-controls${embedded?' is-embedded':''}">
     <button type="button" class="btn activity-return-detail" onclick="triviaFinishToCategories('${code}')">إنهاء اللعبة</button>
-    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
+    <button type="button" class="btn btn-danger" onclick="triviaRestorePortrait();resetToLobby('${code}')">خروج</button>
   </div>`;
 }
+window.triviaRestorePortrait=()=>document.getElementById('stage')?.classList.remove('trivia-landscape-stage');
 window.triviaFinishToCategories=async code=>{
+  triviaRestorePortrait();
   try{
     await db.ref(`rooms/${code}`).update({
       status:'trivia_setup',

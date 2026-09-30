@@ -59,6 +59,10 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if (!(room.status === 'in_game' && room.activeGame === 'trivia' &&
+        ['board','question','done'].includes(room.trivia?.phase))) {
+    window.triviaRestorePortrait?.();
+  }
   if (isTriviaQuestionTurnOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
     updateTriviaQuestionTurnDisplays(code, room);
