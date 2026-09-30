@@ -41,10 +41,14 @@ function initHostRoom(code, isNew){
 }
 
 function dispatchHostRender(code, room){
-  if (!room) return;
+  if (!room) {
+    if (window.stopQataraHostWatch) stopQataraHostWatch();
+    return;
+  }
   lastHostRoom = room;
   stopHostTimerWatch();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
+  if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraHostWatch) stopQataraHostWatch();
   // لا نعيد رسم الردهة أثناء فتح نافذة الحساب حتى لا تُغلق أو يضيع ما كُتب فيها
   if (room.status === 'voting' && document.getElementById('accountModal')?.classList.contains('is-open')) return;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
@@ -54,6 +58,7 @@ function dispatchHostRender(code, room){
   else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
   else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
+  else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
   else renderHostGenericPlaceholder(code, room);
 }
 
@@ -170,6 +175,7 @@ window.startGame = function(gameId, code){
   if (gameId === 'mafia') { startMafiaGame(code); return; }
   if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
   if (gameId === 'trivia') { startTriviaSetup(code); return; }
+  if (gameId === 'qatara') { startQataraGame(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 

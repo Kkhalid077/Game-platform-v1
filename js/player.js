@@ -10,6 +10,7 @@ let playerRoomRef = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
 function showSessionEnded(){
   detachPlayerRoom();
+  if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   app.innerHTML = `<div class="phone"><div class="card"><h2>انتهت الجلسة</h2><p class="muted">لم تعد هذه اللعبة متاحة. اطلب من المنظّم رابطًا جديدًا.</p></div></div>`;
 }
 
@@ -75,12 +76,17 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   lastPlayerRoom = room;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw') && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
+  if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   if (invitedGameId) {
     renderInvitedGame(code, myId, name, room, invitedGameId);
     return;
   }
   if (room.status === 'in_tool' && room.activeTool === 'buzzer') {
     renderBuzzerPlayer(code, myId, name, room);
+    return;
+  }
+  if (room.status === 'in_game' && room.activeGame === 'qatara') {
+    renderQataraPlayer(code, myId, name, room);
     return;
   }
   if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') {
@@ -102,6 +108,7 @@ function renderInvitedGame(code, myId, name, room, gameId){
     if (gameId === 'mafia') return renderMafiaPlayer(code, myId, name, room);
     if (gameId === 'silentdraw') return renderSilentDrawPlayer(code, myId, name, room);
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
+    if (gameId === 'qatara') return renderQataraPlayer(code, myId, name, room);
   }
   app.innerHTML = gameDetailHtml(game, room, code, myId, false) + `<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p>`;
 }
