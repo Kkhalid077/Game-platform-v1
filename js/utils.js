@@ -51,19 +51,31 @@ function drawSegment(ctx, canvas, s){
   ctx.stroke();
 }
 const mirrorRefs = {};
-function stopMirrorCanvases(){ Object.values(mirrorRefs).forEach(r => r.off('value')); Object.keys(mirrorRefs).forEach(k => delete mirrorRefs[k]); }
+function stopMirrorCanvases(){
+  Object.values(mirrorRefs).forEach(({ref,handler}) => ref.off('value',handler));
+  Object.keys(mirrorRefs).forEach(k => delete mirrorRefs[k]);
+}
 function stopHostTimerWatch(){ if (hostTimerInterval){ clearInterval(hostTimerInterval); hostTimerInterval = null; } }
 function mirrorCanvasFrom(strokeKey, canvasId){
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const existing = mirrorRefs[canvasId];
+  if (existing?.canvas === canvas) return;
+  if (existing) existing.ref.off('value',existing.handler);
   const sRef = db.ref('strokes/'+strokeKey);
-  sRef.off('value');
-  mirrorRefs[canvasId] = sRef;
-  sRef.on('value', snap => {
+  const handler = snap => {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     Object.values(snap.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
-  });
+  };
+  const cancel = error => {
+    console.error(`Unable to mirror strokes for ${canvasId}:`,error);
+    const status = document.getElementById(`${canvasId}Status`);
+    if (status) status.textContent = 'تعذر تحميل الرسم المباشر.';
+  };
+  mirrorRefs[canvasId] = {ref:sRef,handler,canvas};
+  sRef.on('value',handler,cancel);
 }
 let hostTimerInterval = null;
 function startHostTimerWatch(timerEnd){

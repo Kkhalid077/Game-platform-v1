@@ -142,17 +142,46 @@ window.silentDrawNextRound = function(code){
   });
 };
 
-window.silentDrawUndo = function(code, team){
+const silentDrawUndoBusy = {};
+window.silentDrawUndo = async function(code, team){
+  const undoKey = `${code}_${team}`;
+  if (silentDrawUndoBusy[undoKey]) return;
+  silentDrawUndoBusy[undoKey] = true;
+  const button = document.querySelector(`button[onclick="silentDrawUndo('${code}','${team}')"]`);
+  const originalLabel = button?.textContent || '';
+  if (button){ button.disabled = true; button.textContent = 'جارٍ التراجع…'; }
   const sdRef = db.ref('rooms/'+code+'/silentdraw');
-  sdRef.once('value', snap => {
-    const sd = snap.val(); if (!sd || sd.phase!=='drawing') return;
-    if ((sd.undosLeft[team]||0) <= 0) return;
+  try {
+    const snapshot = await sdRef.once('value');
+    const sd = snapshot.val();
+    if (!sd || sd.phase !== 'drawing' || (Number(sd.undosLeft?.[team]) || 0) <= 0) return;
     const strokesRef = db.ref('strokes/'+code+'_'+team);
-    strokesRef.limitToLast(1).once('value', s2 => {
-      s2.forEach(child => strokesRef.child(child.key).remove());
-      sdRef.child('undosLeft/'+team).set(sd.undosLeft[team]-1);
+    const removal = await strokesRef.transaction(strokes => {
+      if (!strokes || !Object.keys(strokes).length) return;
+      const updatedStrokes = {...strokes};
+      const lastKey = Object.keys(updatedStrokes).sort().pop();
+      delete updatedStrokes[lastKey];
+      return updatedStrokes;
     });
-  });
+    if (!removal.committed) return;
+    const counter = await sdRef.child('undosLeft/'+team).transaction(undos => {
+      const remaining = Number(undos) || 0;
+      return remaining > 0 ? remaining - 1 : undos;
+    });
+    if (!counter.committed) throw new Error('تعذر تحديث عدد مرات التراجع.');
+  } catch (error) {
+    console.error('تعذر التراجع عن الرسم:',error);
+    const status = document.getElementById('drawSyncStatus');
+    if (status) status.textContent = 'تعذر التراجع عن الرسم. تحقق من الاتصال.';
+    else window.alert('تعذر التراجع عن الرسم. تحقق من الاتصال ثم حاول مجددًا.');
+    return;
+  } finally {
+    silentDrawUndoBusy[undoKey] = false;
+    if (button?.isConnected){
+      button.disabled = false;
+      if (button.textContent === 'جارٍ التراجع…') button.textContent = originalLabel;
+    }
+  }
 };
 
 let silentCanvasCleanup = null;
@@ -195,7 +224,11 @@ function setupSilentCanvas(code, team){
   function persistStroke(){
     if (!activeStrokeRef || points.length === 0) return;
     const stroke = { points:points.slice(), color:activeStrokeColor, size:5 };
-    activeStrokeRef.set(stroke).catch(error => console.error('تعذر بث الرسم:', error));
+    activeStrokeRef.set(stroke).catch(error => {
+      console.error('تعذر بث الرسم:', error);
+      const status = document.getElementById('drawSyncStatus');
+      if (status) status.textContent = 'تعذر مزامنة الرسم. تحقق من الاتصال.';
+    });
   }
 
   function begin(event){
@@ -332,8 +365,7 @@ function renderSilentDrawHost(code, room){
       <div class="team-board">
         <h4 style="font-family:'Cairo';">لوحة الرسام — ${teamName(t)}: ${escapeHtml(teamLabel(t))}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="320" height="320"></canvas></div>
-        <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
-        <p class="muted">${res[t]==='correct' ? ' خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? ' ينتظرون التخمين' : ' لم يخمّنوا')}</p>
+        <p id="canvas${t}Status" class="muted" role="status" style="min-height:20px;margin:4px 0;"></p>
       </div>`).join('')}</div>`;
   }
 
@@ -422,6 +454,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
       app.innerHTML = `<div class="phone" style="padding:10px;">
         <div class="card" style="max-width:100%;">
           <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
+          <p id="drawSyncStatus" class="muted" role="status" style="min-height:20px;margin:4px 0;"></p>
           <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
             ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
           </div>
