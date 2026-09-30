@@ -13,6 +13,32 @@ function gameIconHtml(game, className='game-icon-image'){
 }
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 
+const PLATFORM_FONT_STORAGE_KEY = 'gamePlatformFont';
+function getPlatformFont(){
+  try {
+    return localStorage.getItem(PLATFORM_FONT_STORAGE_KEY) === 'thmanyah' ? 'thmanyah' : 'ibm-plex';
+  } catch (error) {
+    console.error('Could not read platform font preference:', error);
+    return 'ibm-plex';
+  }
+}
+function applyPlatformFontPreference(){
+  document.body.dataset.platformFont = getPlatformFont();
+}
+window.setPlatformFont = function(font){
+  if (font !== 'ibm-plex' && font !== 'thmanyah') return;
+  document.body.dataset.platformFont = font;
+  const status = document.getElementById('platformFontStatus');
+  try {
+    localStorage.setItem(PLATFORM_FONT_STORAGE_KEY, font);
+    if (status) status.textContent = 'تم حفظ تفضيل الخط على هذا الجهاز.';
+  } catch (error) {
+    console.error('Could not save platform font preference:', error);
+    if (status) status.textContent = 'طُبق الخط لهذه الجلسة، لكن تعذر حفظه على هذا الجهاز.';
+  }
+};
+applyPlatformFontPreference();
+
 function renderIllustration(wordText){
   const found = WORD_BANK.find(x => x.w === wordText);
   if (found && found.img) {
@@ -56,6 +82,13 @@ function isSilentDrawStrokesOnlyChange(previousRoom, nextRoom){
   const {strokes:previousStrokes, ...previousRoomData} = previousRoom;
   const {strokes:nextStrokes, ...nextRoomData} = nextRoom;
   if (JSON.stringify(previousStrokes || null) === JSON.stringify(nextStrokes || null)) return false;
+  return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
+}
+function isTeamNamesOnlyChange(previousRoom, nextRoom){
+  if (!previousRoom || previousRoom.status !== 'voting' || nextRoom?.status !== 'voting') return false;
+  const {teamNames:previousNames, ...previousRoomData} = previousRoom;
+  const {teamNames:nextNames, ...nextRoomData} = nextRoom;
+  if (JSON.stringify(previousNames || null) === JSON.stringify(nextNames || null)) return false;
   return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
 }
 const mirrorRefs = {};
@@ -122,25 +155,43 @@ window.setPlayerTeam = function(code, myId, team){
   });
 };
 
-window.saveTeamNames = async function(code){
-  const nameA = document.getElementById('teamNameA')?.value.trim();
-  const nameB = document.getElementById('teamNameB')?.value.trim();
+let teamNamesSaveTimer = null;
+window.queueTeamNamesSave = function(code, immediate=false){
+  if (teamNamesSaveTimer) clearTimeout(teamNamesSaveTimer);
   const status = document.getElementById('teamNamesStatus');
-  const button = document.getElementById('saveTeamNamesButton');
+  const nameA = document.getElementById('teamNameA')?.value.trim() || '';
+  const nameB = document.getElementById('teamNameB')?.value.trim() || '';
   if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
-    if (status) status.textContent = 'اكتب اسمًا لكل فريق (24 حرفًا كحد أقصى).';
+    if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
     return;
   }
-  if (button) button.disabled = true;
+  const names = {A:nameA,B:nameB};
+  if (immediate) {
+    teamNamesSaveTimer = null;
+    window.saveTeamNames(code,names);
+    return;
+  }
+  if (status) status.textContent = 'سيُحفظ التعديل تلقائيًا…';
+  teamNamesSaveTimer = setTimeout(() => {
+    teamNamesSaveTimer = null;
+    window.saveTeamNames(code,names);
+  }, 500);
+};
+
+window.saveTeamNames = async function(code, names=null){
+  const nameA = names?.A || document.getElementById('teamNameA')?.value.trim();
+  const nameB = names?.B || document.getElementById('teamNameB')?.value.trim();
+  const status = document.getElementById('teamNamesStatus');
+  if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
+    if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
+    return;
+  }
   try {
     await db.ref(`rooms/${code}/teamNames`).set({A:nameA, B:nameB});
-    if (status) status.textContent = 'تم حفظ اسمي الفريقين.';
+    if (status) status.textContent = 'تم الحفظ تلقائيًا.';
   } catch (error) {
     console.error('Could not save team names:', error);
     if (status) status.textContent = 'تعذر حفظ الأسماء. تحقق من الاتصال وحاول مرة أخرى.';
-  } finally {
-    const currentButton = document.getElementById('saveTeamNamesButton');
-    if (currentButton) currentButton.disabled = false;
   }
 };
 
@@ -171,7 +222,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
     }).join('');
     const contents = `<span class="team-card-title">${escapeHtml(teamNames[team])}</span>
       ${isHost
-        ? `<label class="team-name-field"><span>اسم الفريق</span><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}"></label>`
+        ? `<label class="team-name-field"><span>اسم الفريق</span><input id="teamName${team}" type="text" maxlength="24" value="${escapeHtml(teamNames[team])}" aria-label="اسم الفريق ${team}" oninput="queueTeamNamesSave('${code}')" onblur="queueTeamNamesSave('${code}',true)"></label>`
         : `<span class="team-card-count">${members.length} / 2 لاعبين</span>`}
       <span class="team-seats">${availableSeats}</span>`;
     if (isHost) {
@@ -188,7 +239,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
       <div class="team-selector-box team-picker">
         <div class="team-picker-heading"><div><h3>الفرق</h3></div></div>
         <div class="team-options team-options-readonly">${['A','B'].map(team => teamCardHtml(team,true)).join('')}</div>
-        <div class="team-name-save"><button class="btn btn-ghost" id="saveTeamNamesButton" type="button" onclick="saveTeamNames('${code}')">حفظ أسماء الفرق</button><span id="teamNamesStatus" class="team-picker-note" role="status"></span></div>
+        <div class="team-name-save"><span id="teamNamesStatus" class="team-picker-note" role="status"></span></div>
       </div>`;
   }
   return `
