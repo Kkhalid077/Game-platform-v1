@@ -59,6 +59,11 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if (isTriviaQuestionTurnOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    updateTriviaQuestionTurnDisplays(code, room);
+    return;
+  }
   if (hostDetailGameId && isTeamNamesOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
     updateTeamNameDisplays(room.teamNames || {});
@@ -98,6 +103,33 @@ function dispatchHostRender(code, room){
   lastHostViewKey = viewKey;
   if (shouldTransition) transitionAppView(renderView);
   else renderView();
+}
+
+function isTriviaQuestionTurnOnlyChange(previousRoom, room){
+  const previousTrivia = previousRoom?.trivia;
+  const trivia = room.trivia;
+  if (previousRoom?.status !== 'in_game' || previousRoom.activeGame !== 'trivia' ||
+      room.status !== 'in_game' || room.activeGame !== 'trivia' ||
+      previousTrivia?.phase !== 'question' || trivia?.phase !== 'question' ||
+      !previousTrivia.current || !trivia.current ||
+      previousTrivia.current.team === trivia.current.team) return false;
+  const withoutTurn = value => {
+    const comparable = {...value, current: {...value.current}};
+    delete comparable.current.team;
+    return JSON.stringify(comparable);
+  };
+  return withoutTurn(previousTrivia) === withoutTurn(trivia);
+}
+
+function updateTriviaQuestionTurnDisplays(code, room){
+  const current = room.trivia.current;
+  const team = current.team || 'A';
+  const label = document.querySelector('.trivia-question-turn > span');
+  const switchButton = document.querySelector('.trivia-question-turn-switch');
+  const sidebar = document.querySelector('.trivia-question-sidebar');
+  if (label) label.textContent = `دور ${room.trivia.teams?.[team] || 'الفريق صاحب الدور'}`;
+  if (switchButton) switchButton.setAttribute('onclick', `triviaSetQuestionTurn('${code}','${team==='A'?'B':'A'}')`);
+  if (sidebar) sidebar.innerHTML = renderTriviaTeamAidCards(code, room.trivia, current);
 }
 
 function updateHostGameDetailPlayers(code, room){

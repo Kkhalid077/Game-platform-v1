@@ -286,15 +286,9 @@ window.triviaOpenQuestion=async(code,key)=>{
     },pendingChallenge:null});
   }catch(error){console.error('Could not open trivia question:',error);alert('تعذر فتح السؤال. تحقق من الاتصال وحاول مرة أخرى.');}
 };
-function renderTriviaQuestionHost(code,t){
-  const current=t.current;
-  const category=TRIVIA_BANK.find(item=>item.id===current?.catId);
-  const question=category?.qs[current?.index];
-  if(!question)return renderTriviaBoard(code,t);
-  const team=current.team||'A',points=(Number(current.points)||triviaPointsForIndex(current.boardIndex))*(current.double?2:1);
-  const aids=t.aidsByTeam?.[team]||[];
-  const used=t.usedAids?.[team]||{};
-  const teamAidCards=['A','B'].map(aidTeam=>{
+function renderTriviaTeamAidCards(code,t,current){
+  const team=current.team||'A';
+  return ['A','B'].map(aidTeam=>{
     const isActive=aidTeam===team;
     const teamAids=t.aidsByTeam?.[aidTeam]||[];
     const teamUsed=t.usedAids?.[aidTeam]||{};
@@ -315,6 +309,16 @@ function renderTriviaQuestionHost(code,t){
       <div class="trivia-team-aid-list">${aidItems||'<p class="trivia-aids-empty">لا توجد وسائل مساعدة لهذا الفريق.</p>'}</div>
     </section>`;
   }).join('');
+}
+function renderTriviaQuestionHost(code,t){
+  const current=t.current;
+  const category=TRIVIA_BANK.find(item=>item.id===current?.catId);
+  const question=category?.qs[current?.index];
+  if(!question)return renderTriviaBoard(code,t);
+  const team=current.team||'A',points=(Number(current.points)||triviaPointsForIndex(current.boardIndex))*(current.double?2:1);
+  const aids=t.aidsByTeam?.[team]||[];
+  const used=t.usedAids?.[team]||{};
+  const teamAidCards=renderTriviaTeamAidCards(code,t,current);
   const answerActions=current.revealed
     ? `${['A','B'].map(scoreTeam=>`<button class="btn trivia-score-team trivia-score-team-${scoreTeam.toLowerCase()}" onclick="triviaScore('${code}','${scoreTeam}',${points})">احتساب ${points} نقطة لـ ${escapeHtml(t.teams?.[scoreTeam]||(scoreTeam==='A'?'الفريق الأول':'الفريق الثاني'))}</button>`).join('')}
        ${current.thrownByTeam?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team}',-${points})">لم يجب الفريق — خصم ${points} نقطة</button>`:''}
