@@ -206,9 +206,23 @@ window.stopQataraPlayerWatch = function(){
 };
 
 function qataraLeaderboardHtml(room, game){
-  return `<div class="qatara-leaderboard">${(game.participantIds || []).map(id =>
-    `<span class="qatara-score-chip">${escapeHtml(room.players?.[id]?.name || 'لاعب')} <b>${Number(game.scores?.[id]) || 0}</b></span>`
-  ).join('')}</div>`;
+  const ranked = [...(game.participantIds || [])].sort((a,b) =>
+    (Number(game.scores?.[b]) || 0) - (Number(game.scores?.[a]) || 0)
+  );
+  const topScore = Number(game.scores?.[ranked[0]]) || 0;
+  let previousScore = null, previousRank = 0;
+  const rows = ranked.map((id,index) => {
+    const score = Number(game.scores?.[id]) || 0;
+    const rank = score === previousScore ? previousRank : index+1;
+    previousScore = score;
+    previousRank = rank;
+    return `<article class="qatara-rank-card ${score===topScore?'is-leading':''}">
+      <span class="qatara-rank-number">${rank}</span>
+      <strong>${escapeHtml(room.players?.[id]?.name || 'لاعب')}</strong>
+      <span class="qatara-rank-score">${score}<small>نقطة</small></span>
+    </article>`;
+  }).join('');
+  return `<section class="qatara-leaderboard"><h2>الترتيب</h2><div class="qatara-ranking-grid">${rows}</div></section>`;
 }
 
 function renderQataraHost(code, room){
@@ -240,7 +254,7 @@ function renderQataraHost(code, room){
       <p class="muted">${game.answerText ? 'وصلت الإجابة، جارٍ التحقق منها.' : 'المهلة 10 ثوانٍ فقط.'}</p>`;
   } else if (game.phase === 'won') {
     const playerName = escapeHtml(room.players?.[game.winner]?.name || 'لاعب');
-    content = `<div class="qatara-question-display">${escapeHtml(question?.question || '')}</div>
+    content = `${winnerCelebrationHtml()}<div class="qatara-question-display">${escapeHtml(question?.question || '')}</div>
       <p class="qatara-feedback is-correct">إجابة صحيحة! ${playerName} يكسب ${game.lastAttempt?.points || 0} نقاط.</p>
       <p class="qatara-answer-reveal">الإجابة: ${escapeHtml(question?.answer || '')}</p>
       <button class="btn" onclick="qataraNextQuestion('${code}')">السؤال التالي</button>`;
@@ -257,7 +271,7 @@ function renderQataraHost(code, room){
     const ranking = [...(game.participantIds || [])].sort((a,b) => (Number(game.scores?.[b]) || 0) - (Number(game.scores?.[a]) || 0));
     const topScore = Number(game.scores?.[ranking[0]]) || 0;
     const winners = ranking.filter(id => (Number(game.scores?.[id]) || 0) === topScore);
-    content = `<h2 class="qatara-status-title">انتهت الأسئلة!</h2>
+    content = `${winners.length===1?winnerCelebrationHtml():''}<h2 class="qatara-status-title">انتهت الأسئلة!</h2>
       <p class="qatara-feedback is-correct">${winners.map(id => escapeHtml(room.players?.[id]?.name || 'لاعب')).join('، ')} ${winners.length > 1 ? 'يتعادلون' : 'يفوز'} بـ ${topScore} نقطة.</p>
       <button class="btn btn-danger" onclick="resetToLobby('${code}')">العودة للوحة التحكم</button>`;
   }
@@ -265,8 +279,8 @@ function renderQataraHost(code, room){
   const stage = document.getElementById('stage');
   if (!stage) return;
   stage.innerHTML = `<div class="qatara-wrap">
-    <header class="qatara-header"><span class="host-section-kicker">سؤال القَطّارة · السؤال ${Math.min(questionNumber, 10)} من 10</span>
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')">إنهاء اللعبة</button></header>
+    <button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
+    <header class="qatara-header"><span class="host-section-kicker">سؤال القَطّارة · السؤال ${Math.min(questionNumber, 10)} من 10</span></header>
     ${content}
     ${qataraLeaderboardHtml(room, game)}
   </div>`;
@@ -320,14 +334,16 @@ function renderQataraPlayer(code, playerId, name, room){
   } else if (game.phase === 'answering') {
     content = `<h2>سبقك لاعب آخر!</h2><p class="muted">يكتب ${escapeHtml(room.players?.[game.claim?.playerId]?.name || 'لاعب')} إجابته الآن.</p>`;
   } else if (game.phase === 'won') {
-    content = `<h2>${game.winner === playerId ? 'إجابة صحيحة!' : 'أجاب لاعب آخر إجابة صحيحة'}</h2>
+    content = `${winnerCelebrationHtml()}<h2>${game.winner === playerId ? 'إجابة صحيحة!' : 'أجاب لاعب آخر إجابة صحيحة'}</h2>
       <p class="qatara-answer-reveal">${escapeHtml(question?.answer || '')}</p>`;
   } else if (game.phase === 'revealed') {
     const wasEliminated = game.lastAttempt?.playerId === playerId;
     content = `${wasEliminated ? '<p class="qatara-feedback is-wrong">انتهت محاولتك، وخُصم 5 نقاط.</p>' : '<h2>الإجابة الصحيحة</h2>'}
       <p class="qatara-answer-reveal">${escapeHtml(question?.answer || '')}</p>`;
   } else if (game.phase === 'done') {
-    content = `<h2>انتهت اللعبة</h2><p class="muted">شاهد النتيجة النهائية على شاشة المضيف.</p>`;
+    const ranking = [...(game.participantIds || [])].sort((a,b) => (Number(game.scores?.[b]) || 0) - (Number(game.scores?.[a]) || 0));
+    const winner = ranking.length > 1 && (Number(game.scores?.[ranking[0]]) || 0) !== (Number(game.scores?.[ranking[1]]) || 0);
+    content = `${winner?winnerCelebrationHtml():''}<h2>انتهت اللعبة</h2><p class="muted">شاهد النتيجة النهائية على شاشة المضيف.</p>`;
   }
 
   app.innerHTML = `<div class="phone qatara-phone"><div class="card qatara-player-card">

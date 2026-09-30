@@ -46,10 +46,23 @@ function dispatchHostRender(code, room){
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  const previousRoom = lastHostRoom;
+  const activityId = room.status === 'in_tool'
+    ? room.activeTool
+    : room.status === 'voting'
+      ? hostDetailGameId
+      : room.activeGame;
+  setActivityBackdrop(activityId);
+  room = roomForGame(room, activityId);
+  if (isSilentDrawStrokesOnlyChange(previousRoom, room)) {
+    lastHostRoom = room;
+    return;
+  }
   lastHostRoom = room;
   stopHostTimerWatch();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
   if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraHostWatch) stopQataraHostWatch();
+  if (room.status === 'voting' && previousRoom?.status === 'voting' && !hostDetailGameId && document.querySelector('.host-dashboard')) return;
   // لا نعيد رسم الردهة أثناء فتح نافذة الحساب حتى لا تُغلق أو يضيع ما كُتب فيها
   if (room.status === 'voting' && document.getElementById('accountModal')?.classList.contains('is-open')) return;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
@@ -146,12 +159,12 @@ function renderHostLobby(code, room){
     </div>`;
   }).join('');
   const toolsHtml = `<section class="host-tools-section" aria-labelledby="host-tools-heading">
-    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">أدوات الجلسة</h2><p>أدوات تفاعلية تستخدمها أثناء اللعب.</p></div>
+    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">أدوات الجلسة</h2></div>
     <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
   </section>`;
   const dashboardContent = hostDashboardTab === 'tools'
     ? toolsHtml
-    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2><p>اختر لعبة لعرض التعليمات وبدء جلسة اللعب.</p></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
+    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
     <div class="host-dashboard">
@@ -160,7 +173,6 @@ function renderHostLobby(code, room){
           <div>
             <span class="host-section-kicker">لوحة التحكم</span>
             <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
-            <p>${hostDashboardTab === 'tools' ? 'افتح أداة تفاعلية لاستخدامها أثناء الجلسة.' : 'تصفّح الألعاب واختر ما تريد أن تلعبوه.'}</p>
           </div>
           ${accountInfoHtml()}
         </header>
@@ -196,19 +208,15 @@ window.startBuzzerTool = function(code){
   hostDetailGameId = null;
   if (window.buzzerUnlockAudio) window.buzzerUnlockAudio();
   const session=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzerFallback:null, buzzer:{ winner:null, locked:false, timer:null, round:0 } });
+  db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzerFallback:null, buzzer:{ winner:null, pressedAt:null, presses:{}, locked:false, timer:null, round:0 } });
 };
 
 window.resetToLobby = function(code){
   db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
-  db.ref('strokes/'+code+'_A').set(null);
-  db.ref('strokes/'+code+'_B').set(null);
 };
 
 window.hostLeaveRoom = function(code){
   db.ref('rooms/'+code).remove();
-  db.ref('strokes/'+code+'_A').remove();
-  db.ref('strokes/'+code+'_B').remove();
   localStorage.removeItem('hostSessionCode');
   renderHost();
 };

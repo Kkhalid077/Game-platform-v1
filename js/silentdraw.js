@@ -6,36 +6,43 @@ function silentDrawTeamIds(sd, team){
   if (Array.isArray(members)) return members;
   return Object.values(members || {});
 }
+function silentDrawStrokesRef(code, team){
+  return db.ref(`rooms/${code}/strokes/${team}`);
+}
+function silentDrawSyncError(error){
+  return error?.code || error?.message || 'خطأ اتصال';
+}
 
 window.startSilentDrawGame = function(code){
   const roomRef = db.ref('rooms/'+code);
-  roomRef.child('players').once('value', snap => {
+  roomRef.child('players').once('value').then(async snap => {
     const players = snap.val() || {};
     const ids = Object.keys(players);
     if (ids.length < 4) { alert('تحتاج 4 لاعبين على الأقل (فريقين) لبدء إشارة ورسمة'); return; }
 
-    // توزيع اللاعبين بناءً على اختيارهم، مع موازنة متبقي اللاعبين تلقائياً
-    let teamA = ids.filter(id => players[id].team === 'A');
-    let teamB = ids.filter(id => players[id].team === 'B');
-    let unassigned = shuffle(ids.filter(id => players[id].team !== 'A' && players[id].team !== 'B'));
-
-    unassigned.forEach(id => {
-      if (teamA.length <= teamB.length) teamA.push(id);
-      else teamB.push(id);
-    });
-
-    while (teamA.length < 2 && teamB.length > 2) teamA.push(teamB.pop());
-    while (teamB.length < 2 && teamA.length > 2) teamB.push(teamA.pop());
+    let teamA = ids.filter(id => players[id].team === 'A').slice(0,2);
+    let teamB = ids.filter(id => players[id].team === 'B').slice(0,2);
+    const assigned = new Set([...teamA,...teamB]);
+    const available = shuffle(ids.filter(id => !assigned.has(id)));
+    while (teamA.length < 2 && available.length) teamA.push(available.pop());
+    while (teamB.length < 2 && available.length) teamB.push(available.pop());
+    if (teamA.length < 2 || teamB.length < 2) {
+      alert('تحتاج إلى لاعبين اثنين في كل فريق لبدء إشارة ورسمة.');
+      return;
+    }
 
     teamA = shuffle(teamA);
     teamB = shuffle(teamB);
+    const teamNamesSnap = await roomRef.child('teamNames').once('value');
+    const savedTeamNames = teamNamesSnap.val() || {};
 
-    db.ref('strokes/'+code+'_A').set(null);
-    db.ref('strokes/'+code+'_B').set(null);
-    roomRef.update({
+    await silentDrawStrokesRef(code,'A').remove();
+    await silentDrawStrokesRef(code,'B').remove();
+    await roomRef.update({
       status:'in_game', activeGame:'silentdraw',
       silentdraw:{
         phase:'round_start', round:1,
+        teamNames:{A:savedTeamNames.A||'الفريق الأخضر',B:savedTeamNames.B||'الفريق البرتقالي'},
         teams:{ A:teamA, B:teamB },
         guideOf:{ A:teamA[0], B:teamB[0] },
         drawerOf:{ A:teamA[1], B:teamB[1] },
@@ -46,6 +53,9 @@ window.startSilentDrawGame = function(code){
         timerEnd:null, winner:null
       }
     });
+  }).catch(error=>{
+    console.error('Could not start Silent Draw:',error);
+    alert('تعذر بدء اللعبة. تحقق من الاتصال وحاول مرة أخرى.');
   });
 };
 
@@ -122,33 +132,68 @@ window.submitSilentGuess = function(code, team){
   input.value = '';
 };
 
-window.silentDrawNextRound = function(code){
+window.silentDrawNextRound = async function(code){
   const sdRef = db.ref('rooms/'+code+'/silentdraw');
-  sdRef.once('value', snap => {
-    const sd = snap.val(); if (!sd) return;
-    db.ref('strokes/'+code+'_A').set(null);
-    db.ref('strokes/'+code+'_B').set(null);
-    sdRef.update({
+  try {
+    const snapshot = await sdRef.once('value');
+    const sd = snapshot.val(); if (!sd) return;
+    await Promise.all([
+      silentDrawStrokesRef(code,'A').remove(),
+      silentDrawStrokesRef(code,'B').remove()
+    ]);
+    await sdRef.update({
       phase:'round_start', round:(sd.round||1)+1,
       guideOf:{ A: sd.drawerOf.A, B: sd.drawerOf.B },
       drawerOf:{ A: sd.guideOf.A, B: sd.guideOf.B },
       words:{ A: pickRandomWordPair().w, B: pickRandomWordPair().w },
       undosLeft:{ A:3, B:3 }, results:{ A:null, B:null }, awarded:{ A:false, B:false }, timerEnd:null
     });
-  });
+  } catch (error) {
+    console.error('تعذر بدء الجولة التالية:',error);
+    window.alert('تعذر بدء الجولة التالية. تحقق من الاتصال وحاول مجددًا.');
+  }
 };
 
-window.silentDrawUndo = function(code, team){
+const silentDrawUndoBusy = {};
+window.silentDrawUndo = async function(code, team){
+  const undoKey = `${code}_${team}`;
+  if (silentDrawUndoBusy[undoKey]) return;
+  silentDrawUndoBusy[undoKey] = true;
+  const button = document.querySelector(`button[onclick="silentDrawUndo('${code}','${team}')"]`);
+  const originalLabel = button?.textContent || '';
+  if (button){ button.disabled = true; button.textContent = 'جارٍ التراجع…'; }
   const sdRef = db.ref('rooms/'+code+'/silentdraw');
-  sdRef.once('value', snap => {
-    const sd = snap.val(); if (!sd || sd.phase!=='drawing') return;
-    if ((sd.undosLeft[team]||0) <= 0) return;
-    const strokesRef = db.ref('strokes/'+code+'_'+team);
-    strokesRef.limitToLast(1).once('value', s2 => {
-      s2.forEach(child => strokesRef.child(child.key).remove());
-      sdRef.child('undosLeft/'+team).set(sd.undosLeft[team]-1);
+  try {
+    const snapshot = await sdRef.once('value');
+    const sd = snapshot.val();
+    if (!sd || sd.phase !== 'drawing' || (Number(sd.undosLeft?.[team]) || 0) <= 0) return;
+    const strokesRef = silentDrawStrokesRef(code,team);
+    const removal = await strokesRef.transaction(strokes => {
+      if (!strokes || !Object.keys(strokes).length) return;
+      const updatedStrokes = {...strokes};
+      const lastKey = Object.keys(updatedStrokes).sort().pop();
+      delete updatedStrokes[lastKey];
+      return updatedStrokes;
     });
-  });
+    if (!removal.committed) return;
+    const counter = await sdRef.child('undosLeft/'+team).transaction(undos => {
+      const remaining = Number(undos) || 0;
+      return remaining > 0 ? remaining - 1 : undos;
+    });
+    if (!counter.committed) throw new Error('تعذر تحديث عدد مرات التراجع.');
+  } catch (error) {
+    console.error('تعذر التراجع عن الرسم:',error);
+    const status = document.getElementById('drawSyncStatus');
+    if (status) status.textContent = 'تعذر التراجع عن الرسم. تحقق من الاتصال.';
+    else window.alert('تعذر التراجع عن الرسم. تحقق من الاتصال ثم حاول مجددًا.');
+    return;
+  } finally {
+    silentDrawUndoBusy[undoKey] = false;
+    if (button?.isConnected){
+      button.disabled = false;
+      if (button.textContent === 'جارٍ التراجع…') button.textContent = originalLabel;
+    }
+  }
 };
 
 let silentCanvasCleanup = null;
@@ -163,7 +208,7 @@ function setupSilentCanvas(code, team){
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  const strokesRef = db.ref('strokes/'+code+'_'+team);
+  const strokesRef = silentDrawStrokesRef(code,team);
   canvas.style.touchAction = 'none';
   canvas.style.userSelect = 'none';
   canvas.style.webkitUserSelect = 'none';
@@ -191,7 +236,11 @@ function setupSilentCanvas(code, team){
   function persistStroke(){
     if (!activeStrokeRef || points.length === 0) return;
     const stroke = { points:points.slice(), color:activeStrokeColor, size:5 };
-    activeStrokeRef.set(stroke).catch(error => console.error('تعذر بث الرسم:', error));
+    activeStrokeRef.set(stroke).catch(error => {
+      console.error('تعذر بث الرسم:', error);
+      const status = document.getElementById('drawSyncStatus');
+      if (status) status.textContent = `تعذر مزامنة الرسم (${silentDrawSyncError(error)}).`;
+    });
   }
 
   function begin(event){
@@ -238,7 +287,11 @@ function setupSilentCanvas(code, team){
       if (disposed || document.getElementById('drawCanvas') !== canvas) return;
       ctx.clearRect(0,0,canvas.width,canvas.height);
       Object.values(snapshot.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
-    }).catch(error => console.error('تعذر تحديث اللوحة بعد التراجع:', error));
+    }).catch(error => {
+      console.error('تعذر تحديث اللوحة بعد التراجع:', error);
+      const status = document.getElementById('drawSyncStatus');
+      if (status) status.textContent = `تعذر تحديث اللوحة (${silentDrawSyncError(error)}).`;
+    });
   }
   strokesRef.on('child_removed', redrawAfterUndo);
   const supportsPointerEvents = 'PointerEvent' in window;
@@ -261,7 +314,11 @@ function setupSilentCanvas(code, team){
   strokesRef.once('value').then(snapshot => {
     if (disposed || document.getElementById('drawCanvas') !== canvas) return;
     Object.values(snapshot.val() || {}).forEach(stroke => drawSegment(ctx, canvas, stroke));
-  }).catch(error => console.error('تعذر تحميل الرسم المحفوظ:', error));
+  }).catch(error => {
+    console.error('تعذر تحميل الرسم المحفوظ:', error);
+    const status = document.getElementById('drawSyncStatus');
+    if (status) status.textContent = `تعذر تحميل الرسم المحفوظ (${silentDrawSyncError(error)}).`;
+  });
 
   silentCanvasCleanup = () => {
     disposed = true;
@@ -285,16 +342,36 @@ function setupSilentCanvas(code, team){
 }
 
 function silentDrawRankingHtml(sd, players){
-  const teamLabel = t => silentDrawTeamIds(sd,t).map(id => players[id]?.name || '').join(' و ');
-  const ranked = ['A','B'].sort((a,b) => sd.correctCount[b] - sd.correctCount[a]);
-  return ranked.map((t,i) => `<div class="chip team-${t}">${i+1}. فريق ${t} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
+  const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
+  const ranked = ['A','B'].sort((a,b) => (Number(sd.correctCount?.[b])||0) - (Number(sd.correctCount?.[a])||0));
+  const topScore = Number(sd.correctCount?.[ranked[0]]) || 0;
+  return `<div class="team-ranking-grid">${ranked.map((t,i) => {
+    const score = Number(sd.correctCount?.[t]) || 0;
+    const rank = i > 0 && score === (Number(sd.correctCount?.[ranked[i-1]]) || 0) ? i : i+1;
+    const members = silentDrawTeamIds(sd,t)
+      .map(id => players[id])
+      .filter(Boolean)
+      .map(player => playerAvatarCardHtml(player))
+      .join('');
+    return `<article class="team-ranking-card team-${t.toLowerCase()} ${score===topScore?'is-leading':''}">
+    <span class="team-ranking-place">${rank===1?'١':'٢'}</span>
+    <div class="team-ranking-info"><strong>${teamName(t)}</strong>
+      <div class="team-ranking-members">${members || '<span class="muted">بانتظار اللاعبين</span>'}</div>
+    </div>
+    <div class="team-ranking-score"><b>${score}</b><span>نقاط</span></div>
+  </article>`;
+  }).join('')}</div>`;
 }
 
 function renderSilentDrawHost(code, room){
   const sd = room.silentdraw; if (!sd) return;
   const res = sd.results || {};
   const players = room.players || {};
-  const teamLabel = t => silentDrawTeamIds(sd,t).map(id=>players[id]?.name||'').join(' و ');
+  const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
+  const teamHeading = t => {
+    const name = sd.teamNames?.[t] || `الفريق ${t === 'A' ? 'الأخضر' : 'البرتقالي'}`;
+    return escapeHtml(name.startsWith('الفريق ') ? `لوحة الرسام للفريق ${name.slice(7)}` : `لوحة الرسام لفريق ${name}`);
+  };
   let narrator = '', control = '', boards = '';
   const showBoards = ['drawing','round_result','ended'].includes(sd.phase);
 
@@ -303,39 +380,40 @@ function renderSilentDrawHost(code, room){
     control = `<button type="button" class="btn" id="beginDrawingBtn">ابدأ الرسم <span aria-hidden="true"></span></button>`;
   } else if (sd.phase==='drawing'){
     narrator = ` <span id="timerText">--</span> ثانية — ممنوع الكلام! فقط إشارات.`;
-    control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لفريق A</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لفريق B</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
+    control = `<div><button class="btn" ${sd.awarded && sd.awarded.A?'disabled':''} onclick="silentDrawAwardPoint('${code}','A')">احتساب نقطة لـ ${teamName('A')}</button><button class="btn" ${sd.awarded && sd.awarded.B?'disabled':''} onclick="silentDrawAwardPoint('${code}','B')">احتساب نقطة لـ ${teamName('B')}</button></div><button class="btn btn-ghost" onclick="silentDrawFinishRound('${code}')">إنهاء الجولة</button>`;
   } else if (sd.phase==='round_result'){
-    narrator = `نتيجة الجولة: فريق A ${res.A==='correct'?'':''} — فريق B ${res.B==='correct'?'':''}`;
+    narrator = `نتيجة الجولة: ${teamName('A')} ${res.A==='correct'?'':''} — ${teamName('B')} ${res.B==='correct'?'':''}`;
     control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية </button>`;
   } else if (sd.phase==='ended'){
-    narrator = ` فاز الفريق ${sd.winner}!`;
-    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة </button>`;
+    narrator = '';
+    control = `<div class="silentdraw-end-actions">
+      <button class="btn" onclick="startSilentDrawGame('${code}')">إعادة اللعبة</button>
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')">الخروج</button>
+    </div>`;
   }
 
   if (showBoards){
     boards = `<div class="draw-layout">${['A','B'].map(t => `
       <div class="team-board">
-        <h4 style="font-family:'Cairo';">لوحة الرسام — فريق ${t}: ${escapeHtml(teamLabel(t))}</h4>
+        <h4 style="font-family:'Cairo';">${teamHeading(t)}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="320" height="320"></canvas></div>
-        <p class="muted">الكلمة: <b>${escapeHtml(sd.words[t])}</b> — تراجعات متبقية: ${sd.undosLeft[t]}</p>
-        <p class="muted">${res[t]==='correct' ? ' خمّنوا الكلمة بنجاح' : (sd.phase==='drawing' ? ' ينتظرون التخمين' : ' لم يخمّنوا')}</p>
+        <p id="canvas${t}Status" class="muted" role="status" style="min-height:20px;margin:4px 0;"></p>
       </div>`).join('')}</div>`;
   }
 
   document.getElementById('stage').innerHTML = `
-    <div style="margin-bottom:15px;">
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للوحة التحكم</button>
-    </div>
+    ${sd.phase!=='ended' ? `<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>` : ''}
     <h2 style="font-family:'Cairo'; color:var(--accent);">إشارة ورسمة</h2>
+    ${sd.phase==='ended' ? `<section class="silentdraw-winner"><h3>فاز ${teamName(sd.winner)}!</h3>${winnerCelebrationHtml()}</section>` : ''}
     <p class="narrator">${narrator}</p>
-    <div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">الترتيب (الفوز عند 3 نقاط)</h3>${silentDrawRankingHtml(sd, players)}</div>
+    <section class="players-box team-ranking-box"><h3>الترتيب <small>الفوز عند ٣ نقاط</small></h3>${silentDrawRankingHtml(sd, players)}</section>
     ${boards}
     ${control}
   `;
 
   if (showBoards){
-    mirrorCanvasFrom(code+'_A', 'canvasA');
-    mirrorCanvasFrom(code+'_B', 'canvasB');
+    mirrorCanvasFrom(`rooms/${code}/strokes/A`, 'canvasA');
+    mirrorCanvasFrom(`rooms/${code}/strokes/B`, 'canvasB');
   }
   const beginDrawingBtn = document.getElementById('beginDrawingBtn');
   if (beginDrawingBtn) beginDrawingBtn.addEventListener('click', () => window.silentDrawBeginDrawing(code));
@@ -408,6 +486,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
       app.innerHTML = `<div class="phone" style="padding:10px;">
         <div class="card" style="max-width:100%;">
           <canvas id="drawCanvas" width="320" height="320" style="width:100%; touch-action:none; background:#fff; border-radius:12px;"></canvas>
+          <p id="drawSyncStatus" class="muted" role="status" style="min-height:20px;margin:4px 0;"></p>
           <div class="color-row" style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
             ${['#000000','#e74c3c','#3b82f6','#00b894','#f4c542'].map(c=>`<button onclick="setDrawColor('${c}')" style="width:28px; height:28px; border-radius:50%; background:${c}; border:2px solid #fff;"></button>`).join('')}
           </div>
@@ -435,6 +514,7 @@ function renderSilentDrawPlayer(code, myId, name, room){
 
   if (sd.phase==='ended'){
     app.innerHTML = `<div class="phone"><div class="card">
+      ${winnerCelebrationHtml()}
       <h2 style="font-family:'Cairo';"> فاز الفريق ${sd.winner}!</h2>
       <div class="players-box">${silentDrawRankingHtml(sd, players)}</div>
     </div></div>`;

@@ -10,6 +10,10 @@ let playerRoomRef = null;
 let playerInviteGameId = null;
 let activeGuestInvite = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
+async function registerPlayerPresence(playerRef, record){
+  await playerRef.onDisconnect().remove();
+  await playerRef.set(record);
+}
 function setGuestExitButton(visible){
   let button = document.getElementById('guestExitButton');
   if (!visible) {
@@ -39,6 +43,7 @@ function showSessionEnded(){
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
+  setActivityBackdrop(invitedGameId);
   playerInviteGameId = invitedGameId || null;
   if (invitedGameId) setGuestExitButton(false);
   const roomRef = db.ref('rooms/' + code);
@@ -52,12 +57,35 @@ function renderPlayer(code, invitedGameId){
     ACTIVE_PLAYER_ID = id;
     detachPlayerRoom();
     playerRoomRef = roomRef;
+    let presenceWritePending = false;
+    let lastRenderedRoom = null;
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room || !room.status) { showSessionEnded(); return; }
+      if (isSilentDrawStrokesOnlyChange(lastRenderedRoom, room)) {
+        lastRenderedRoom = room;
+        return;
+      }
+      lastRenderedRoom = room;
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
-      if (inviteOpen && !(room.players && room.players[id])) roomRef.child('players/' + id).set(record);
+      if (invitedGameId) {
+        const currentRecord = room.players?.[id];
+        if (inviteOpen && !currentRecord && !presenceWritePending) {
+          presenceWritePending = true;
+          registerPlayerPresence(roomRef.child('players/' + id), record).catch(error => {
+            console.error('Could not restore invited player presence:', error);
+          }).finally(() => { presenceWritePending = false; });
+        }
+        else if (!inviteOpen && currentRecord?.guest && currentRecord.gameId === invitedGameId) roomRef.child('players/' + id).remove();
+      } else if (!(room.players && room.players[id])) {
+        if (!presenceWritePending) {
+          presenceWritePending = true;
+          registerPlayerPresence(roomRef.child('players/' + id), record).catch(error => {
+            console.error('Could not restore player presence:', error);
+          }).finally(() => { presenceWritePending = false; });
+        }
+      }
       const currentName = room.players?.[id]?.name || name;
       CURRENT_PLAYER_NAME = currentName;
       dispatchPlayerRender(code, id, currentName, room, invitedGameId);
@@ -91,7 +119,9 @@ function renderPlayer(code, invitedGameId){
       localStorage.setItem(guestIdKey, myId);
       const record = { name:savedName, gameId:invitedGameId, guest:true };
       activeGuestInvite = { code, gameId:invitedGameId, playerId:myId, nameKey:guestNameKey };
-      await roomRef.child('players/' + myId).set(record);
+      const room = snap.val();
+      const inviteOpen = room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
+      if (inviteOpen) await registerPlayerPresence(roomRef.child('players/' + myId), record);
       attach(myId, savedName, record);
     }).catch(error => {
       activeGuestInvite = null;
@@ -105,9 +135,13 @@ function renderPlayer(code, invitedGameId){
   if (!signedInUser) { renderGoogleSignIn(); return; }
   const myId = signedInUser.uid;
   const name = (signedInUser.displayName || signedInUser.email || 'لاعب').slice(0, 30);
-  const record = { name, gameId:null, uid:myId };
-  roomRef.child('players/' + myId).set(record);
-  attach(myId, name, record);
+  const record = { name, gameId:null, uid:myId, photoURL:signedInUser.photoURL || null };
+  registerPlayerPresence(roomRef.child('players/' + myId), record).then(() => {
+    attach(myId, name, record);
+  }).catch(error => {
+    console.error('Could not register player presence:', error);
+    app.innerHTML = `<div class="phone"><div class="card"><h2>تعذر الانضمام</h2><p class="muted">تعذر تسجيلك في الغرفة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة.</p></div></div>`;
+  });
 }
 
 window.exitInvitedPlayer = async function(){
@@ -121,7 +155,9 @@ window.exitInvitedPlayer = async function(){
   if (window.cleanupSilentCanvas) cleanupSilentCanvas();
   if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   try {
-    await db.ref(`rooms/${invite.code}/players/${invite.playerId}`).remove();
+    const playerRef = db.ref(`rooms/${invite.code}/players/${invite.playerId}`);
+    await playerRef.onDisconnect().cancel();
+    await playerRef.remove();
     localStorage.removeItem(invite.nameKey);
     activeGuestInvite = null;
     CURRENT_PLAYER_NAME = '';
@@ -138,6 +174,9 @@ window.exitInvitedPlayer = async function(){
 };
 
 function dispatchPlayerRender(code, myId, name, room, invitedGameId){
+  const activityId = invitedGameId || (room.status === 'in_tool' ? room.activeTool : (room.activeGame || room.selectedGame));
+  setActivityBackdrop(activityId);
+  room = roomForGame(room, activityId);
   lastPlayerRoom = room;
   setGuestExitButton(!!invitedGameId && !!activeGuestInvite);
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
@@ -228,6 +267,7 @@ window.savePlayerDisplayName = async function(code, playerId){
 };
 
 function renderPlayerVoting(code, myId, name, room){
+  setActivityBackdrop(playerDetailGameId);
   if (playerDetailGameId){
     const game = GAMES_LIST.find(g => g.id === playerDetailGameId);
     app.innerHTML = `<div class="player-join-screen">${playerProfileHtml(code, myId, name)}${gameDetailHtml(game, room, code, myId, false)}</div>`;

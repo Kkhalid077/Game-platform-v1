@@ -23,10 +23,10 @@
     'js/player.js',
     'assets/icons/mafia-night.svg',
     'assets/icons/signal-sketch.svg',
-    'assets/icons/click-race.svg',
     'assets/icons/knowledge-challenge.svg',
     'assets/icons/question-drip.svg',
     'assets/icons/answer-buzzer.svg',
+    'assets/images/cosmic-data.svg',
     'js/version.js'
   ];
 
