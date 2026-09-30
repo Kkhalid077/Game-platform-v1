@@ -333,9 +333,7 @@ function landingShowcaseMarkup(id, label, items, type){
       </div>
     </div>
     <div class="landing-showcase-controls">
-      <button type="button" class="landing-showcase-arrow" data-showcase-step="-1" aria-label="السابق">‹</button>
       <div class="landing-showcase-dots">${indicators}</div>
-      <button type="button" class="landing-showcase-arrow" data-showcase-step="1" aria-label="التالي">›</button>
     </div>
   </div>`;
 }
@@ -379,8 +377,24 @@ function initLandingCarousels(){
     root.addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
-      if (button.hasAttribute('data-showcase-step')) show(Number(root.dataset.index) + Number(button.dataset.showcaseStep));
-      else if (button.hasAttribute('data-showcase-index')) show(Number(button.dataset.showcaseIndex));
+      if (button.hasAttribute('data-showcase-index')) show(Number(button.dataset.showcaseIndex));
+    });
+    let touchStartX = null;
+    root.addEventListener('pointerdown', event => {
+      if (event.pointerType !== 'touch') return;
+      touchStartX = event.clientX;
+      paused = true;
+    });
+    root.addEventListener('pointerup', event => {
+      if (touchStartX === null) return;
+      const distance = event.clientX - touchStartX;
+      if (Math.abs(distance) > 45) show(Number(root.dataset.index) + (distance < 0 ? 1 : -1));
+      touchStartX = null;
+      paused = false;
+    });
+    root.addEventListener('pointercancel', () => {
+      touchStartX = null;
+      paused = false;
     });
     root.addEventListener('pointerenter', () => { paused = true; });
     root.addEventListener('pointerleave', () => { paused = false; });
