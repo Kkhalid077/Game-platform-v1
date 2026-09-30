@@ -184,14 +184,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
 function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const players = roomPlayersForGame(room, game.id);
   const totalPlayers = Object.keys(players).length;
-  const playerCards = Object.entries(players).map(([id, player]) => {
-    const name = player.name || 'لاعب';
-    const initial = escapeHtml(name.trim().charAt(0) || 'ل');
-    const avatar = player.photoURL
-      ? `<img src="${escapeHtml(player.photoURL)}" alt="" loading="lazy" onerror="this.hidden=true"><span>${initial}</span>`
-      : `<span>${initial}</span>`;
-    return `<div class="lobby-player-card" title="${escapeHtml(name)}"><span class="lobby-player-avatar">${avatar}</span><strong>${escapeHtml(name)}</strong></div>`;
-  }).join('');
+  const playerCards = Object.values(players).map(player => playerAvatarCardHtml(player)).join('');
 
   return `
     <div class="game-detail">
@@ -211,6 +204,15 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       </div>
     </div>
   `;
+}
+
+function playerAvatarCardHtml(player, extraHtml=''){
+  const name = player.name || 'لاعب';
+  const initial = escapeHtml(name.trim().charAt(0) || 'ل');
+  const avatar = player.photoURL
+    ? `<img src="${escapeHtml(player.photoURL)}" alt="" loading="lazy" onerror="this.hidden=true"><span>${initial}</span>`
+    : `<span>${initial}</span>`;
+  return `<div class="lobby-player-card" title="${escapeHtml(name)}"><span class="lobby-player-avatar">${avatar}</span><strong>${escapeHtml(name)}</strong>${extraHtml}</div>`;
 }
 
 function roomPlayersForGame(room, gameId){

@@ -147,7 +147,7 @@ function renderBuzzerHost(code, room, directState){
       <div id="buzzerTimerMount"></div>
       <div class="buzzer-controls"><button id="buzzerLock" class="btn" onclick="buzzerToggleLock('${code}',true)"></button><button class="btn" onclick="buzzerReset('${code}')">سؤال جديد</button><button class="btn btn-ghost" onclick="buzzerFullscreen()">ملء الشاشة</button><button id="buzzerSound" class="btn btn-ghost" onclick="buzzerToggleSound()"></button></div>
       <div class="buzzer-timer-controls"><span>مؤقت السؤال:</span><button onclick="buzzerStartTimer('${code}',10)">10 ثوانٍ</button><button onclick="buzzerStartTimer('${code}',30)">30 ثانية</button><button onclick="buzzerStopTimer('${code}')">إيقاف</button></div>
-      <section class="buzzer-roster"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><p class="buzzer-roster-hint">اضغطوا بعد ظهور الأسرع لعرض الفارق الزمني بين الإجابات.</p><div id="buzzerRoster"></div></section>
+      <section class="buzzer-roster lobby-players-box"><h2>اللاعبون <b id="buzzerPlayerCount">0</b></h2><p class="buzzer-roster-hint">اضغطوا بعد ظهور الأسرع لعرض الفارق الزمني بين الإجابات.</p><div id="buzzerRoster" class="lobby-player-grid"></div></section>
       <p class="buzzer-network-note">${room.buzzerTransport==='rtc'?'تنتقل الضغطة مباشرةً بين جهاز المنظّم وهواتف اللاعبين لأسرع استجابة (على شبكة Wi‑Fi نفسها). وإن تعذّر الاتصال المباشر لأي لاعب يعمل جرسه تلقائيًا عبر الإنترنت.':'تُرسل الضغطات عبر Firebase لأن الاتصال المباشر غير مدعوم في هذا المتصفح.'}</p>
       <p class="buzzer-peer-status">الأجهزة المتصلة مباشرة: <strong id="buzzerPeerCount">0</strong></p>
     </main></div>`;
@@ -180,7 +180,7 @@ function renderBuzzerHost(code, room, directState){
     });
     roster.innerHTML=entries.map(([id,p])=>{
       const time=buzzerPressTime(state,id),delta=time&&firstTime&&id!==state.winner?`<b class="buzzer-time-gap">+${buzzerTimeDifference(time,firstTime)} ث</b>`:state.winner===id?'<b class="buzzer-fastest">الأسرع</b>':'<span class="buzzer-not-pressed">لم يضغط بعد</span>';
-      return `<div class="buzzer-player-row ${state.winner===id?'is-winner':''}"><span class="buzzer-player-dot"></span><strong>${escapeHtml(p.name)}</strong>${delta}</div>`;
+      return playerAvatarCardHtml(p,delta);
     }).join('')||'<p class="muted">لا يوجد مشاركون بعد. شارك رمز QR أو رابط الجرس.</p>';
     document.getElementById('buzzerPlayerCount').textContent=Object.keys(players).length;
   }
