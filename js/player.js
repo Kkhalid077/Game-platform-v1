@@ -490,7 +490,6 @@ function renderGoogleSignIn(){
         <section class="landing-games" id="landing-games" aria-labelledby="landing-games-title">
           <div class="landing-section-heading landing-games-heading">
             <div class="landing-games-title-group"><span class="landing-eyebrow">الألعاب</span><h2 id="landing-games-title">ألعاب جماعية ضمن المنصة</h2></div>
-            <span class="landing-games-note">ألعاب جماعية ضمن المنصة</span>
           </div>
           ${landingShowcaseMarkup('games','استعراض الألعاب',games,'game')}
         </section>
