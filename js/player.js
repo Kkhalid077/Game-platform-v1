@@ -327,7 +327,7 @@ function landingShowcaseMarkup(id, label, items, type){
     <div class="landing-showcase-panel">
       <div class="landing-showcase-visual" aria-hidden="true">${renderItem(items[0],0)}</div>
       <div class="landing-showcase-copy">
-        <span class="landing-showcase-kicker">${type === 'game' ? 'ضمن ألعاب المنصة' : items[0].available ? 'أداة مساندة' : 'أداة مستقبلية'}</span>
+        <span class="landing-showcase-kicker">${type === 'game' ? 'ضمن ألعاب المنصة' : ''}</span>
         <p>${escapeHtml(items[0].desc)}</p>
         <span class="landing-showcase-position">${String(1).padStart(2,'0')} <i>/</i> ${String(items.length).padStart(2,'0')}</span>
       </div>
@@ -359,7 +359,7 @@ function initLandingCarousels(){
       visual.innerHTML = type === 'games'
         ? `<div class="landing-showcase-visual-content"><span class="landing-showcase-index">${String(nextIndex + 1).padStart(2,'0')}</span><span class="landing-showcase-icon">${gameIconHtml(item,'landing-showcase-image')}</span><h3>${escapeHtml(item.title)}</h3></div>`
         : `<div class="landing-showcase-visual-content"><span class="landing-showcase-index">${String(nextIndex + 1).padStart(2,'0')}</span><span class="landing-showcase-icon">${iconImageHtml(item.icon,'landing-showcase-image')}</span><h3>${escapeHtml(item.title)}</h3><span class="landing-showcase-status ${item.available ? 'is-available' : 'is-upcoming'}">${item.available ? 'متاحة' : 'قيد التطوير'}</span></div>`;
-      copy.querySelector('.landing-showcase-kicker').textContent = type === 'game' ? 'ضمن ألعاب المنصة' : item.available ? 'أداة مساندة' : 'أداة مستقبلية';
+      copy.querySelector('.landing-showcase-kicker').textContent = type === 'game' ? 'ضمن ألعاب المنصة' : '';
       copy.querySelector('p').textContent = item.desc;
       copy.querySelector('.landing-showcase-position').innerHTML = `${String(nextIndex + 1).padStart(2,'0')} <i>/</i> ${String(items.length).padStart(2,'0')}`;
       root.querySelectorAll('.landing-showcase-dot').forEach((dot, dotIndex) => {
@@ -464,7 +464,7 @@ function renderGoogleSignIn(){
 
         <section class="landing-about" id="landing-about" aria-labelledby="landing-about-title">
           <div class="landing-section-heading">
-            <span class="landing-eyebrow">عن المنصة</span>
+            <span class="landing-eyebrow">عن لَمّة</span>
             <h2 id="landing-about-title">الألعاب والأدوات في مكان واحد</h2>
             <p>توفر لَمّة جلسات منظمة للألعاب الجماعية، وأدوات تفاعلية يمكن استخدامها مع ألعاب أخرى.</p>
           </div>
