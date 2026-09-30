@@ -11,6 +11,18 @@ function iconImageHtml(src, className='game-icon-image'){
 function gameIconHtml(game, className='game-icon-image'){
   return iconImageHtml(game.icon, className);
 }
+function platformBrandHtml(className=''){
+  return `<a class="landing-brand ${className}" href="#" aria-label="لَمّة — الصفحة الرئيسية">
+    <span class="landing-brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none">
+        <path d="M8 14.5A7.5 7.5 0 0 1 15.5 7h17A7.5 7.5 0 0 1 40 14.5v9a7.5 7.5 0 0 1-7.5 7.5H22l-9 7v-8.1A7.5 7.5 0 0 1 8 23.5v-9Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="m21 15 10 5.5-10 5.5V15Z" fill="currentColor"/>
+        <circle cx="13" cy="13" r="2" fill="#f3c94b"/>
+      </svg>
+    </span>
+    <span class="landing-brand-name">لَمّة</span>
+  </a>`;
+}
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 
 const PLATFORM_FONT_STORAGE_KEY = 'gamePlatformFont';

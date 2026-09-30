@@ -915,3 +915,62 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
   .landing-login,.landing-register{padding-inline:9px}
   .landing-game-card{font-size:10px}
 }
+
+.landing-page{
+  background:
+    radial-gradient(ellipse at 72% 12%,rgba(27,75,105,.16),transparent 36%),
+    radial-gradient(ellipse at 12% 55%,rgba(126,95,35,.065),transparent 32%),
+    linear-gradient(160deg,#030916,#040b19 54%,#020713);
+}
+.landing-nav{min-height:82px;border-bottom-color:rgba(171,190,210,.09)}
+.landing-hero{min-height:530px;padding-block:42px 64px}
+.landing-hero h1{font-size:clamp(48px,6.1vw,72px);letter-spacing:-2px}
+.landing-eyebrow{color:#d9bd68;font-size:12px;letter-spacing:.15px}
+.landing-art-center{border-color:rgba(224,192,110,.26);background:radial-gradient(circle at 36% 27%,rgba(224,192,110,.13),rgba(5,17,36,.96) 67%);box-shadow:0 0 55px rgba(224,177,48,.09),inset 0 0 32px rgba(112,177,221,.06)}
+.landing-art-chip{border-color:rgba(161,183,203,.12);background:rgba(5,14,29,.9);box-shadow:0 10px 30px rgba(0,0,0,.23)}
+.landing-art-chip span{display:grid;place-items:center;width:25px;height:25px;border:1px solid rgba(224,192,110,.22);border-radius:9px;background:rgba(224,192,110,.07);color:#dfc776;font:700 10px 'IBM Plex Sans Arabic',sans-serif}
+.landing-feature{background:linear-gradient(145deg,rgba(11,26,44,.64),rgba(4,12,25,.58));border-color:rgba(144,177,201,.1)}
+.landing-feature-icon{border-color:rgba(224,192,110,.18);background:rgba(224,192,110,.055);color:#dfc776}
+.landing-game-card{background:rgba(7,18,34,.52);border-color:rgba(144,177,201,.1)}
+.landing-game-icon{border-color:rgba(224,192,110,.12);background:rgba(224,192,110,.04)}
+.landing-tools{padding-block:0 76px}
+.landing-tools-heading{margin-bottom:25px}
+.landing-tool-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.landing-tool-card{position:relative;display:flex;align-items:center;gap:17px;min-height:154px;overflow:hidden;padding:22px;border:1px solid rgba(144,177,201,.12);border-radius:18px;background:linear-gradient(135deg,rgba(10,25,43,.66),rgba(4,13,27,.68))}
+.landing-tool-card::after{position:absolute;top:0;right:0;bottom:0;width:2px;background:rgba(137,168,191,.22);content:""}
+.landing-tool-live::after{background:linear-gradient(180deg,rgba(220,196,121,.68),rgba(220,196,121,.08))}
+.landing-tool-symbol{display:grid;flex:none;place-items:center;width:54px;height:54px;border:1px solid rgba(220,196,121,.18);border-radius:17px;background:rgba(220,196,121,.06);color:#ddc576}
+.landing-tool-symbol>span{font-size:20px;text-shadow:0 0 14px rgba(243,201,75,.5)}
+.landing-draw-symbol{border-color:rgba(112,177,221,.18);background:rgba(112,177,221,.055);color:#98c9dd}
+.landing-draw-symbol>span{font-size:27px}
+.landing-tool-copy{min-width:0}
+.landing-tool-status{color:#d9c780;font-size:11px;font-weight:700}
+.landing-tool-coming{color:#8fb9ce}
+.landing-tool-copy h3{margin:2px 0 4px;color:#edf0f4;font-size:18px}
+.landing-tool-copy p{max-width:390px;margin:0;color:#92a1b5;font-size:12px;line-height:1.8}
+.landing-tool-index{align-self:flex-start;margin-inline-start:auto;color:rgba(164,184,203,.38);font:600 11px 'IBM Plex Sans Arabic',sans-serif}
+.landing-tools-footnote{margin:14px 0 0;color:#78899f;font-size:11px;text-align:center}
+.landing-bottom-cta{border-color:rgba(220,196,121,.15);background:radial-gradient(ellipse at 88% 0%,rgba(220,196,121,.07),transparent 45%),linear-gradient(120deg,rgba(10,25,42,.88),rgba(5,14,28,.9))}
+.landing-bottom-spark{color:rgba(220,196,121,.16)}
+.landing-footer{border-top-color:rgba(154,170,195,.08)}
+.host-shell{display:flex;flex:1;flex-direction:column;width:100%;max-width:1440px;min-height:0;margin:0 auto}
+.host-topbar{display:flex;flex:none;align-items:center;justify-content:space-between;gap:18px;min-height:64px;margin-bottom:clamp(16px,2.6vh,28px);padding:0 2px 13px;border-bottom:1px solid rgba(144,177,201,.12)}
+.host-brand{gap:8px}
+.host-brand .landing-brand-mark{width:38px;height:38px;border-radius:13px}
+.host-brand .landing-brand-mark svg{width:27px;height:27px}
+.host-brand .landing-brand-name{font-size:22px}
+.host-dashboard{min-height:0;flex:1}
+.host-page-header{align-items:center}
+.account-avatar-button{width:44px;height:44px;border-color:rgba(220,196,121,.5);background:linear-gradient(145deg,rgba(220,196,121,.12),rgba(112,177,221,.1))}
+body.has-dashboard-footer .site-footer.is-entry-visible{background:rgba(2,11,32,.12);border-top-color:rgba(144,177,201,.06);color:rgba(179,194,213,.48);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+@media(max-width:760px){
+  .host-topbar{min-height:54px;margin-bottom:14px;padding-bottom:9px}
+  .host-brand .landing-brand-mark{width:34px;height:34px;border-radius:11px}
+  .host-brand .landing-brand-name{font-size:20px}
+  .landing-tool-list{grid-template-columns:1fr}
+  .landing-tool-card{min-height:130px;padding:18px}
+  .landing-tools{padding-bottom:55px}
+}
+@media(max-width:680px){
+  .landing-hero{padding-block:46px 50px}
+}

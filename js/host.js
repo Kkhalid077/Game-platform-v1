@@ -46,6 +46,8 @@ function dispatchHostRender(code, room){
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  const isDashboard = room.status === 'voting' && !hostDetailGameId;
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(isDashboard, isDashboard);
   const previousRoom = lastHostRoom;
   const activityId = room.status === 'in_tool'
     ? room.activeTool
@@ -147,6 +149,7 @@ function accountInfoHtml(){
 
 function renderHostLobby(code, room){
   if (hostDetailGameId) {
+    if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
     const inviteUrl = joinGameUrl(code, game.id);
     const invite = game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
@@ -154,6 +157,7 @@ function renderHostLobby(code, room){
     if (game.minPlayers > 1) initJoinCard('gameInvite', inviteUrl);
     return;
   }
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
 
   const players = room.players || {};
 
@@ -180,21 +184,26 @@ function renderHostLobby(code, room){
     : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
-    <div class="host-dashboard">
-      <main class="host-games-main">
-        <header class="host-games-header host-page-header">
-          <div>
-            <span class="host-section-kicker">لوحة التحكم</span>
-            <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
-          </div>
-          ${accountInfoHtml()}
-        </header>
-        <nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
-          <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
-          <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
-        </nav>
-        ${dashboardContent}
-      </main>
+    <div class="host-shell">
+      <header class="host-topbar">
+        ${platformBrandHtml('host-brand')}
+        ${accountInfoHtml()}
+      </header>
+      <div class="host-dashboard">
+        <main class="host-games-main">
+          <header class="host-games-header host-page-header">
+            <div>
+              <span class="host-section-kicker">لوحة التحكم</span>
+              <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
+            </div>
+          </header>
+          <nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
+            <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
+            <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
+          </nav>
+          ${dashboardContent}
+        </main>
+      </div>
     </div>
   `;
 }

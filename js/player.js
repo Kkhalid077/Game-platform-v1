@@ -306,10 +306,11 @@ function renderPlayerGameNotice(code, myId, name, room){
   </div></div>`;
 }
 
-function setVersionFooterVisibility(visible){
+function setVersionFooterVisibility(visible, dashboard = false){
   const footer = document.querySelector('.site-footer');
   if (footer) footer.classList.toggle('is-entry-visible', visible);
   document.body.classList.toggle('has-version-footer', visible);
+  document.body.classList.toggle('has-dashboard-footer', visible && dashboard);
 }
 
 function renderGoogleSignIn(){
@@ -326,18 +327,10 @@ function renderGoogleSignIn(){
   app.innerHTML = `
     <div class="landing-page">
       <header class="landing-nav">
-        <a class="landing-brand" href="#" aria-label="لَمّة — الصفحة الرئيسية">
-          <span class="landing-brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 48 48" fill="none">
-              <path d="M8 14.5A7.5 7.5 0 0 1 15.5 7h17A7.5 7.5 0 0 1 40 14.5v9a7.5 7.5 0 0 1-7.5 7.5H22l-9 7v-8.1A7.5 7.5 0 0 1 8 23.5v-9Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="m21 15 10 5.5-10 5.5V15Z" fill="currentColor"/>
-              <circle cx="13" cy="13" r="2" fill="#f3c94b"/>
-            </svg>
-          </span>
-          <span class="landing-brand-name">لَمّة</span>
-        </a>
+        ${platformBrandHtml()}
         <nav class="landing-nav-links" aria-label="التنقل الرئيسي">
           <a href="#landing-games">الألعاب</a>
+          <a href="#landing-tools">الأدوات</a>
           <a href="#landing-about">عن لَمّة</a>
         </nav>
         <div class="landing-nav-actions">
@@ -349,11 +342,11 @@ function renderGoogleSignIn(){
       <main>
         <section class="landing-hero">
           <div class="landing-hero-copy">
-            <span class="landing-eyebrow"><i></i> جمعتكم تستاهل لَمّة</span>
-            <h1>اللّمة تحلى<br><span>باللعب.</span></h1>
-            <p class="landing-lead">اجمعوا أصحابكم، اختاروا لعبتكم، وخلو أجمل لحظاتكم تبدأ من هنا.</p>
+            <span class="landing-eyebrow"><i></i> مساحة للّقاء واللعب</span>
+            <h1>حين تجتمعون،<br><span>تبدأ الحكاية.</span></h1>
+            <p class="landing-lead">ألعاب جماعية وأدوات مساندة، صُممت لتمنح لقاءاتكم مزيدًا من المرح وتترك لكم أجمل الذكريات.</p>
             <div class="landing-hero-actions">
-              <button class="landing-primary-cta" type="button" data-auth-action="register">ابدأ لَمّتكم <span aria-hidden="true">←</span></button>
+              <button class="landing-primary-cta" type="button" data-auth-action="register">ابدؤوا لَمّتكم <span aria-hidden="true">←</span></button>
               <button class="landing-secondary-cta" type="button" data-auth-action="login">عندي حساب</button>
             </div>
             <p class="landing-auth-hint">دخولك أو تسجيلك يتم بسهولة عبر Google. ينشأ حسابك تلقائيًا أول مرة.</p>
@@ -366,60 +359,78 @@ function renderGoogleSignIn(){
             <div class="landing-art-spark landing-spark-one">✦</div>
             <div class="landing-art-spark landing-spark-two">✧</div>
             <div class="landing-art-center"><span>لَمّة</span><small>اللعب يجمعنا</small></div>
-            <div class="landing-art-chip landing-chip-mafia"><span>🌙</span><b>ليلة المافيا</b></div>
-            <div class="landing-art-chip landing-chip-draw"><span>🎨</span><b>إشارة ورسمة</b></div>
-            <div class="landing-art-chip landing-chip-trivia"><span>💡</span><b>تحدي المعرفة</b></div>
-            <div class="landing-art-chip landing-chip-qatara"><span>❓</span><b>سؤال القَطّارة</b></div>
+            <div class="landing-art-chip landing-chip-mafia"><span>01</span><b>ليلة المافيا</b></div>
+            <div class="landing-art-chip landing-chip-draw"><span>02</span><b>إشارة ورسمة</b></div>
+            <div class="landing-art-chip landing-chip-trivia"><span>03</span><b>تحدي المعرفة</b></div>
+            <div class="landing-art-chip landing-chip-qatara"><span>04</span><b>سؤال القَطّارة</b></div>
             <div class="landing-art-people"><i>ل</i><i>م</i><i>ة</i><span>أحلى مع الشلّة</span></div>
           </div>
         </section>
 
         <section class="landing-about" id="landing-about" aria-labelledby="landing-about-title">
           <div class="landing-section-heading">
-            <span class="landing-eyebrow">مكانكم للّعب سوا</span>
-            <h2 id="landing-about-title">من أول دعوة... تبدأ الحكاية</h2>
-            <p>لَمّة تجمع ألعابكم في مكان واحد، وتخلّي كل شخص يشارك من جواله بكل سهولة.</p>
+            <span class="landing-eyebrow">مساحة تجمعكم</span>
+            <h2 id="landing-about-title">كل ما تحتاجونه لوقتٍ أجمل</h2>
+            <p>من تنظيم الجلسة إلى تفاصيل الجولة، صُممت لَمّة لتجعل اللعب أسهل واللقاء أقرب.</p>
           </div>
           <div class="landing-features">
             <article class="landing-feature">
-              <span class="landing-feature-icon">↗</span>
-              <h3>اجمعوا الشلّة</h3>
-              <p>أنشئوا جلسة وشاركوا رابط الدعوة، والباقي ينضم مباشرة.</p>
+              <span class="landing-feature-icon">١</span>
+              <h3>جلسة واحدة للجميع</h3>
+              <p>أنشئوا غرفة خاصة وشاركوا رابطها؛ ينضم الأصدقاء من أجهزتهم بسهولة.</p>
             </article>
             <article class="landing-feature">
-              <span class="landing-feature-icon">◈</span>
-              <h3>اختاروا لعبتكم</h3>
-              <p>ألعاب جماعية متنوعة؛ تحدّوا بعض أو تعاونوا كفريق.</p>
+              <span class="landing-feature-icon">٢</span>
+              <h3>ألعاب بروح المجموعة</h3>
+              <p>اختاروا بين التحدي والتعاون، ودعوا كل جولة تصنع ذكرى جديدة.</p>
             </article>
             <article class="landing-feature">
-              <span class="landing-feature-icon">✦</span>
-              <h3>عيشوا اللحظة</h3>
-              <p>المنظّم يدير الجولة، وأنتم ركّزوا على الضحك والمنافسة.</p>
+              <span class="landing-feature-icon">٣</span>
+              <h3>أدوات تتجاوز المنصة</h3>
+              <p>مساندات مرنة تضيف الحماس لألعابكم المعتادة خارج لَمّة.</p>
             </article>
           </div>
         </section>
 
         <section class="landing-games" id="landing-games" aria-labelledby="landing-games-title">
           <div class="landing-section-heading landing-games-heading">
-            <div><span class="landing-eyebrow">وش نلعب اليوم؟</span><h2 id="landing-games-title">ألعاب تقرّبكم أكثر</h2></div>
-            <span class="landing-games-note">وتزيد حماس جمعتكم</span>
+            <div><span class="landing-eyebrow">ألعاب لَمّة</span><h2 id="landing-games-title">لكل جمعة حكاية</h2></div>
+            <span class="landing-games-note">ألعاب جماعية صُممت لتلعبوها معًا</span>
           </div>
           <div class="landing-game-list">${gameCards}</div>
         </section>
 
+        <section class="landing-tools" id="landing-tools" aria-labelledby="landing-tools-title">
+          <div class="landing-section-heading landing-tools-heading">
+            <span class="landing-eyebrow">أكثر من ألعاب</span>
+            <h2 id="landing-tools-title">أدوات تكمّل لعبكم</h2>
+            <p>مساندات تستخدمونها مع ألعابكم الخارجية، وتتوسع مع احتياج جمعتكم.</p>
+          </div>
+          <div class="landing-tool-list">
+            <article class="landing-tool-card landing-tool-live">
+              <span class="landing-tool-symbol" aria-hidden="true"><span>●</span></span>
+              <div class="landing-tool-copy"><span class="landing-tool-status">متاحة الآن</span><h3>جرس الإجابة</h3><p>للحسم السريع في ألعاب الأسئلة والتحديات التي تلعبونها خارج لَمّة.</p></div>
+              <span class="landing-tool-index">01</span>
+            </article>
+            <article class="landing-tool-card">
+              <span class="landing-tool-symbol landing-draw-symbol" aria-hidden="true"><span>✎</span></span>
+              <div class="landing-tool-copy"><span class="landing-tool-status landing-tool-coming">قريبًا</span><h3>لوح رسم مشترك</h3><p>مساحة للرسم والتخمين، تساعدكم على إضافة جولة إبداعية لأي جمعة.</p></div>
+              <span class="landing-tool-index">02</span>
+            </article>
+          </div>
+          <p class="landing-tools-footnote">وأدوات جديدة تنضم إلى لَمّة تباعًا.</p>
+        </section>
+
         <section class="landing-bottom-cta">
           <span class="landing-bottom-spark" aria-hidden="true">✦</span>
-          <div><span class="landing-eyebrow">مكانكم جاهز</span><h2>ناقصكم بس تجتمعون</h2><p>ابدأوا أول لَمّة وخلو اللعب علينا.</p></div>
-          <button class="landing-primary-cta" type="button" data-auth-action="register">يلا نبدأ <span aria-hidden="true">←</span></button>
+          <div><span class="landing-eyebrow">على مهلٍ، وبصحبة أحبابكم</span><h2>للمّاتٍ لا تُنسى</h2><p>ابدأوا جلستكم الأولى في لَمّة.</p></div>
+          <button class="landing-primary-cta" type="button" data-auth-action="register">ابدأوا الآن <span aria-hidden="true">←</span></button>
         </section>
       </main>
 
       <footer class="landing-footer">
-        <a class="landing-brand landing-footer-brand" href="#" aria-label="لَمّة">
-          <span class="landing-brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M8 14.5A7.5 7.5 0 0 1 15.5 7h17A7.5 7.5 0 0 1 40 14.5v9a7.5 7.5 0 0 1-7.5 7.5H22l-9 7v-8.1A7.5 7.5 0 0 1 8 23.5v-9Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="m21 15 10 5.5-10 5.5V15Z" fill="currentColor"/><circle cx="13" cy="13" r="2" fill="#f3c94b"/></svg></span>
-          <span class="landing-brand-name">لَمّة</span>
-        </a>
-        <span>كل جمعة أحلى مع لَمّة</span>
+        ${platformBrandHtml('landing-footer-brand')}
+        <span>اللّمة تحلو بكم</span>
         <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
       </footer>
     </div>`;
