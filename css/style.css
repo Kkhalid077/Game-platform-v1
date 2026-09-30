@@ -965,16 +965,32 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .host-shell{display:flex;flex:1;flex-direction:column;width:100%;max-width:1440px;min-height:0;margin:0 auto}
 .host-topbar{display:grid;grid-template-columns:1fr auto 1fr;flex:none;align-items:center;gap:18px;min-height:64px;margin-bottom:clamp(16px,2.6vh,28px);padding:0 2px 13px;border-bottom:1px solid rgba(144,177,201,.12)}
 .host-brand .landing-brand-name{font-size:27px}
-.host-topbar-title{margin:0;color:var(--text);font-size:18px;font-weight:700;white-space:nowrap}
+.host-topbar-nav{display:flex;align-items:center;gap:6px;padding:5px;border:1px solid rgba(112,177,221,.12);border-radius:var(--r-md);background:rgba(4,14,35,.72)}
+.host-topbar-link{min-height:38px;padding:0 16px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--text-dim);font:700 14px 'Cairo',sans-serif;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s}
+.host-topbar-link:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.host-topbar-link.is-active{background:linear-gradient(120deg,rgba(139,123,255,.25),rgba(76,212,255,.12));color:var(--text)}
 .host-topbar>.host-brand{justify-self:start}
 .host-topbar>.account-menu{justify-self:end}
 .host-dashboard{min-height:0;flex:1}
 .account-avatar-button{width:44px;height:44px;border-color:rgba(220,196,121,.5);background:linear-gradient(145deg,rgba(220,196,121,.12),rgba(112,177,221,.1))}
+.host-pricing-section{flex:1;padding:clamp(18px,2.5vw,36px);border:1px solid rgba(185,191,255,.16);border-radius:var(--r-lg);background:rgba(14,17,39,.82);box-shadow:0 8px 24px rgba(3,5,18,.16)}
+.host-pricing-section>.host-games-header p{margin:6px 0 0;color:var(--text-dim);font-size:13px}
+.host-pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:26px}
+.host-pricing-card{display:flex;flex-direction:column;align-items:flex-start;min-height:230px;padding:22px;border:1px solid rgba(144,177,201,.16);border-radius:var(--r-md);background:rgba(26,31,64,.56)}
+.host-pricing-card.is-featured{border-color:rgba(220,196,121,.42);background:linear-gradient(155deg,rgba(220,196,121,.09),rgba(26,31,64,.62))}
+.host-pricing-card h3{margin:10px 0 4px;color:var(--text);font-size:20px}
+.host-pricing-card>p:not(.host-pricing-amount){margin:0 0 18px;color:var(--text-dim);font-size:13px;line-height:1.8}
+.host-pricing-amount{margin:0 0 10px;color:var(--text);font-size:28px;font-weight:800}
+.host-pricing-amount span{color:var(--text-dim);font-size:12px;font-weight:500}
+.host-pricing-label{margin-top:auto;padding:5px 10px;border:1px solid rgba(220,196,121,.2);border-radius:999px;color:var(--accent-2);font-size:11px}
 body.has-dashboard-footer .site-footer.is-entry-visible{background:rgba(2,11,32,.12);border-top-color:rgba(144,177,201,.06);color:rgba(179,194,213,.48);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 @media(max-width:760px){
   .host-topbar{gap:8px;min-height:54px;margin-bottom:14px;padding-bottom:9px}
   .host-brand .landing-brand-name{font-size:24px}
-  .host-topbar-title{font-size:16px}
+  .host-topbar-nav{gap:2px;padding:4px}
+  .host-topbar-link{min-height:36px;padding-inline:10px;font-size:12px}
+  .host-pricing-grid{grid-template-columns:1fr;gap:12px;margin-top:20px}
+  .host-pricing-card{min-height:0;padding:18px}
   .landing-tools{padding-bottom:55px}
 }
 @media(max-width:680px){

@@ -89,7 +89,7 @@ window.showHostGameDetail = function(gameId){
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 window.setHostDashboardTab = function(tab){
-  if (tab !== 'games' && tab !== 'tools') return;
+  if (tab !== 'games' && tab !== 'tools' && tab !== 'pricing') return;
   hostDashboardTab = tab;
   if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom);
 };
@@ -182,21 +182,35 @@ function renderHostLobby(code, room){
   </section>`;
   const dashboardContent = hostDashboardTab === 'tools'
     ? toolsHtml
-    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
+    : hostDashboardTab === 'pricing'
+      ? `<section class="host-pricing-section" aria-labelledby="host-pricing-heading">
+          <div class="host-games-header"><span class="host-section-kicker">باقات شهرية</span><h2 id="host-pricing-heading">التسعيرة المقترحة</h2>
+            <p>أسعار مبدئية للمراجعة؛ الاشتراكات والدفع غير متاحين حاليًا.</p>
+          </div>
+          <div class="host-pricing-grid">
+            <article class="host-pricing-card"><span class="host-section-kicker">للبداية</span><h3>مجانية</h3><p class="host-pricing-amount">٠ <span>ر.س / شهر</span></p><p>للتعرّف على الألعاب والأدوات واستخدامها.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
+            <article class="host-pricing-card is-featured"><span class="host-section-kicker">للاستخدام المنتظم</span><h3>أساسية</h3><p class="host-pricing-amount">١٩ <span>ر.س / شهر</span></p><p>للاستخدام المتكرر للمنصة في الجلسات.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
+            <article class="host-pricing-card"><span class="host-section-kicker">للمجموعات</span><h3>مميزة</h3><p class="host-pricing-amount">٤٩ <span>ر.س / شهر</span></p><p>للمجموعات والمنظمين ذوي الاستخدام المكثف.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
+          </div>
+        </section>`
+      : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
     <div class="host-shell">
       <header class="host-topbar">
         ${platformBrandHtml('host-brand')}
-        <h1 class="host-topbar-title">لوحة التحكم</h1>
+        <nav class="host-topbar-nav" aria-label="التنقل">
+          <button type="button" class="host-topbar-link ${hostDashboardTab !== 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab !== 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">لوحة التحكم</button>
+          <button type="button" class="host-topbar-link ${hostDashboardTab === 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('pricing')">التسعيرة</button>
+        </nav>
         ${accountInfoHtml()}
       </header>
       <div class="host-dashboard">
         <main class="host-games-main">
-          <nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
+          ${hostDashboardTab !== 'pricing' ? `<nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
             <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
             <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
-          </nav>
+          </nav>` : ''}
           ${dashboardContent}
         </main>
       </div>
