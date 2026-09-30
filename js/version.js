@@ -17,6 +17,7 @@
     'js/host.js',
     'js/mafia.js',
     'js/silentdraw.js',
+    'js/drawboards.js',
     'js/trivia.js',
     'js/qatara.js',
     'js/buzzer.js',

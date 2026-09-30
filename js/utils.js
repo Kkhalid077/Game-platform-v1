@@ -110,6 +110,14 @@ function isSilentDrawStrokesOnlyChange(previousRoom, nextRoom){
   if (JSON.stringify(previousStrokes || null) === JSON.stringify(nextStrokes || null)) return false;
   return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
 }
+function isDrawBoardRosterOnlyChange(previousRoom,nextRoom){
+  if(!previousRoom||previousRoom.status!=='in_tool'||previousRoom.activeTool!=='drawboard'||
+     nextRoom?.status!=='in_tool'||nextRoom.activeTool!=='drawboard')return false;
+  const {players:previousPlayers,...previousData}=previousRoom;
+  const {players:nextPlayers,...nextData}=nextRoom;
+  return JSON.stringify(previousData)===JSON.stringify(nextData)&&
+    JSON.stringify(previousPlayers||{})!==JSON.stringify(nextPlayers||{});
+}
 function isTeamNamesOnlyChange(previousRoom, nextRoom){
   if (!previousRoom || previousRoom.status !== 'voting' || nextRoom?.status !== 'voting') return false;
   const {teamNames:previousNames, ...previousRoomData} = previousRoom;
@@ -377,7 +385,7 @@ function roomForGame(room, gameId){
 function setActivityBackdrop(activityId){
   const appRoot = document.getElementById('app');
   if (!appRoot) return;
-  if (['mafia','silentdraw','trivia','qatara','buzzer'].includes(activityId)) {
+  if (['mafia','silentdraw','trivia','qatara','buzzer','drawboard'].includes(activityId)) {
     appRoot.dataset.activity = activityId;
   } else {
     delete appRoot.dataset.activity;
