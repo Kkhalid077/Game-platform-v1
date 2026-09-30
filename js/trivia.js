@@ -218,15 +218,26 @@ window.triviaBegin=async code=>{
 };
 function renderTriviaBoard(code,t){
   const categories=(t.categories||[]).map(id=>TRIVIA_BANK.find(c=>c.id===id)).filter(Boolean);
-  const cells=categories.map(c=>`<section class="trivia-column"><h3>${c.icon} ${c.name}</h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${(i+1)*100}</button>`}).join('')}</section>`).join('');
+  const cells=categories.map(c=>`<section class="trivia-column"><h3><span>${c.icon}</span><b>${c.name}</b></h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${(i+1)*100}</button>`}).join('')}</section>`).join('');
   const scores=t.scores||{A:0,B:0};
   const rankedTeams=['A','B'].sort((left,right)=>(scores[right]||0)-(scores[left]||0));
   const scoreCards=rankedTeams.map((team,index)=>`<div class="trivia-score team-${team.toLowerCase()} ${index===0&&scores.A!==scores.B?'is-leading':''}">
-    <span class="trivia-rank">${scores.A===scores.B?'تعادل':index===0?'المتصدّر':'المركز الثاني'}</span>
+    <span class="trivia-rank">${scores.A===scores.B?'تعادل':index===0?'المتصدّر':'الفريق الآخر'}</span>
     <span>${escapeHtml(t.teams?.[team]||(team==='A'?'الفريق الأول':'الفريق الثاني'))}</span>
     <b>${scores[team]||0}</b><small>نقطة</small>
   </div>`).join('');
-  document.getElementById('stage').innerHTML=`<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button><div class="trivia-wrap"><header class="trivia-head"><div><span class="host-section-kicker">لوحة اللعب</span><h1>تحدي الفئات</h1></div></header>${t.notice?`<p class="trivia-notice" role="status">${escapeHtml(t.notice)}</p>`:''}<div class="trivia-turn">دور الاختيار<br><b>${escapeHtml(t.teams?.[t.turn]||'الفريق الأول')}</b><button onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">تبديل الدور</button></div><div class="trivia-board">${cells}</div><p class="trivia-footnote">النقاط: 500 · 400 · 300 · 200 · 100</p><section class="trivia-standings" aria-label="ترتيب الفرق">${scoreCards}</section></div>`;
+  document.getElementById('stage').innerHTML=`<div class="trivia-wrap trivia-board-screen">
+    <header class="trivia-gamebar">
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
+      <div class="trivia-turn"><span>دور الاختيار</span><b>${escapeHtml(t.teams?.[t.turn]||'الفريق الأول')}</b></div>
+      <button class="trivia-turn-switch" aria-label="تبديل الدور" title="تبديل الدور" onclick="triviaSetTurn('${code}','${t.turn==='A'?'B':'A'}')">↔</button>
+      <h1><span>تحدي الفئات</span><small>اختروا سؤالًا من اللوحة</small></h1>
+    </header>
+    ${t.notice?`<p class="trivia-notice" role="status">${escapeHtml(t.notice)}</p>`:''}
+    <div class="trivia-board-frame"><div class="trivia-board">${cells}</div></div>
+    <p class="trivia-footnote">اختر سؤالًا؛ قيمة النقاط تتناقص من أعلى إلى أسفل</p>
+    <section class="trivia-standings" aria-label="ترتيب الفرق">${scoreCards}</section>
+  </div>`;
 }
 window.triviaSetTurn=(code,team)=>db.ref(`rooms/${code}/trivia/turn`).set(team);
 window.triviaOpenQuestion=async(code,key)=>{
