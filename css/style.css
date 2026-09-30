@@ -614,3 +614,71 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 }
 .account-font-setting select:focus{border-color:var(--amber);outline:2px solid rgba(215,173,0,.18)}
 .account-font-setting small{min-height:1.5em}
+
+/* Bring back the activity atmosphere and give game artwork more presence. */
+#app[data-activity]::before{
+  background-image:
+    radial-gradient(1px 1px at 12% 20%,rgba(211,220,237,.46) 50%,transparent 100%),
+    radial-gradient(1px 1px at 78% 34%,rgba(211,220,237,.38) 50%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 38% 78%,rgba(112,177,221,.42) 50%,transparent 100%),
+    radial-gradient(ellipse at 18% 26%,var(--activity-nebula-a),transparent 48%),
+    radial-gradient(ellipse at 83% 72%,var(--activity-nebula-b),transparent 46%),
+    radial-gradient(ellipse at 54% 8%,rgba(41,72,123,.14),transparent 54%),
+    linear-gradient(145deg,#020b20,#051127 58%,#020b20);
+  background-size:100% 100%,100% 100%,100% 100%,145% 145%,145% 145%,135% 135%,100% 100%;
+  animation:activity-nebula-drift 28s ease-in-out infinite alternate;
+}
+#app[data-activity]::after{
+  display:grid;
+  color:rgba(157,191,226,.025);
+  text-shadow:0 0 90px rgba(112,177,221,.08);
+}
+#app[data-activity="mafia"]{--activity-nebula-a:rgba(112,25,42,.27);--activity-nebula-b:rgba(48,20,55,.22)}
+#app[data-activity="silentdraw"]{--activity-nebula-a:rgba(21,66,100,.27);--activity-nebula-b:rgba(33,57,81,.22)}
+#app[data-activity="trivia"]{--activity-nebula-a:rgba(29,57,108,.28);--activity-nebula-b:rgba(23,78,91,.2)}
+#app[data-activity="qatara"]{--activity-nebula-a:rgba(94,59,19,.25);--activity-nebula-b:rgba(73,30,57,.2)}
+#app[data-activity="buzzer"]{--activity-nebula-a:rgba(100,44,15,.27);--activity-nebula-b:rgba(68,26,37,.21)}
+@keyframes activity-nebula-drift{
+  from{background-position:0% 0%,100% 100%,50% 0%,0% 35%,100% 65%,50% 0%,center}
+  to{background-position:12% 8%,88% 92%,46% 8%,100% 65%,0% 35%,58% 16%,center}
+}
+.stage:has(.host-dashboard)::before{
+  animation:dashboard-backdrop-drift 32s ease-in-out infinite alternate;
+}
+@keyframes dashboard-backdrop-drift{
+  from{transform:translate3d(-1.2%,-.4%,0) scale(1)}
+  to{transform:translate3d(1.2%,.4%,0) scale(1.04)}
+}
+.game-card{min-height:176px}
+.game-icon-badge{
+  width:82px;
+  height:82px;
+  margin-bottom:11px;
+  border:1px solid color-mix(in srgb,var(--tile) 28%,transparent);
+  border-radius:25px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--tile) 16%,transparent),rgba(255,255,255,.025));
+  box-shadow:0 9px 24px rgba(0,4,15,.28),inset 0 1px rgba(255,255,255,.08);
+}
+.game-icon-badge .game-icon-image{
+  width:64px;
+  height:64px;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.25));
+  transition:transform .2s ease;
+}
+.game-card:hover:not(.disabled) .game-icon-badge .game-icon-image{transform:translateY(-2px) scale(1.08)}
+.host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{
+  width:72px;
+  height:72px;
+  margin-bottom:9px;
+  border-radius:22px;
+}
+.host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:56px;height:56px}
+.detail-icon-image{width:112px;height:112px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.28))}
+@media(max-width:760px){
+  .game-card{min-height:164px}
+  .game-icon-badge{width:72px;height:72px;border-radius:22px}
+  .game-icon-badge .game-icon-image{width:56px;height:56px}
+  .host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{width:64px;height:64px}
+  .host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:50px;height:50px}
+  .detail-icon-image{width:96px;height:96px}
+}
