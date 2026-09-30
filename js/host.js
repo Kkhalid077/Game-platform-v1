@@ -129,6 +129,15 @@ function accountInfoHtml(){
         <span class="host-section-kicker">${accountType}</span>
         <h2>${name}</h2>
         ${email ? `<p class="account-email">${email}</p>` : ''}
+        <section class="account-game-name account-font-setting">
+          <span class="host-section-kicker">إعدادات المنصة</span>
+          <label for="platformFontSelect">خط المنصة</label>
+          <select id="platformFontSelect" onchange="setPlatformFont(this.value)">
+            <option value="ibm-plex" ${getPlatformFont()==='ibm-plex'?'selected':''}>IBM Plex Sans Arabic</option>
+            <option value="thmanyah" ${getPlatformFont()==='thmanyah'?'selected':''}>خط ثمانية</option>
+          </select>
+          <small id="platformFontStatus" role="status">يُحفظ اختيارك على هذا الجهاز.</small>
+        </section>
         ${isAdminGuest ? `<section class="account-game-name"><span>الاسم المستخدم في لوحة التحكم</span><strong>${name}</strong></section>` : `<section class="account-game-name"><label for="gameUsernameInput">اسم المستخدم في الألعاب</label><input id="gameUsernameInput" type="text" maxlength="30" value="${name}" autocomplete="nickname"><small>سيظهر هذا الاسم للاعبين أثناء المشاركة.</small><button type="button" class="btn account-save-name" onclick="saveGameUsername()">حفظ الاسم</button><small id="usernameStatus"></small></section>`}
         <button type="button" class="btn btn-ghost account-signout" onclick="signOut()">تسجيل الخروج</button>
       </article>

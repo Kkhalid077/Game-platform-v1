@@ -473,6 +473,11 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 }
 
 /* ---------- واجهة مستوحاة من ألوان تكوة ---------- */
+@font-face{font-family:'Thmanyah Sans';font-style:normal;font-weight:300;font-display:swap;src:url('https://framerusercontent.com/assets/Lh8puxCFq405qBv7dKpg9NsHZNk.woff2') format('woff2')}
+@font-face{font-family:'Thmanyah Sans';font-style:normal;font-weight:400;font-display:swap;src:url('https://framerusercontent.com/assets/x6EBzvXf1Fi35XhsRoHxePDVo.woff2') format('woff2')}
+@font-face{font-family:'Thmanyah Sans';font-style:normal;font-weight:500;font-display:swap;src:url('https://framerusercontent.com/assets/oE98mOPE28KTzUeptOLRIaqW1I.woff2') format('woff2')}
+@font-face{font-family:'Thmanyah Sans';font-style:normal;font-weight:700;font-display:swap;src:url('https://framerusercontent.com/assets/LZvgFRUsP7pGWYj3tKxMUrKuhSY.woff2') format('woff2')}
+@font-face{font-family:'Thmanyah Sans';font-style:normal;font-weight:900;font-display:swap;src:url('https://framerusercontent.com/assets/ulQLGTktcl2Qq4AmD6RuVgELZKg.woff2') format('woff2')}
 :root{
   --bg:#020b20;
   --bg-2:#061129;
@@ -591,3 +596,21 @@ input[type=text]:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(215,1
   .host-games-section,.host-tools-section{background:rgba(6,17,41,.97)}
   .game-card,.host-games-grid .game-card,.host-tool-card{background:linear-gradient(155deg,#091631,#050e23)}
 }
+body[data-platform-font="thmanyah"] #app *,
+body[data-platform-font="thmanyah"] #app *::before,
+body[data-platform-font="thmanyah"] #app *::after,
+body[data-platform-font="thmanyah"]>.guest-exit-button{
+  font-family:'Thmanyah Sans',sans-serif!important;
+}
+.account-font-setting select{
+  width:100%;
+  min-height:var(--tap);
+  padding:10px 12px;
+  border:1px solid #25334e;
+  border-radius:var(--r-sm);
+  background:#020b20;
+  color:var(--text);
+  font:inherit;
+}
+.account-font-setting select:focus{border-color:var(--amber);outline:2px solid rgba(215,173,0,.18)}
+.account-font-setting small{min-height:1.5em}

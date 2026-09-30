@@ -13,6 +13,32 @@ function gameIconHtml(game, className='game-icon-image'){
 }
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 
+const PLATFORM_FONT_STORAGE_KEY = 'gamePlatformFont';
+function getPlatformFont(){
+  try {
+    return localStorage.getItem(PLATFORM_FONT_STORAGE_KEY) === 'thmanyah' ? 'thmanyah' : 'ibm-plex';
+  } catch (error) {
+    console.error('Could not read platform font preference:', error);
+    return 'ibm-plex';
+  }
+}
+function applyPlatformFontPreference(){
+  document.body.dataset.platformFont = getPlatformFont();
+}
+window.setPlatformFont = function(font){
+  if (font !== 'ibm-plex' && font !== 'thmanyah') return;
+  document.body.dataset.platformFont = font;
+  const status = document.getElementById('platformFontStatus');
+  try {
+    localStorage.setItem(PLATFORM_FONT_STORAGE_KEY, font);
+    if (status) status.textContent = 'تم حفظ تفضيل الخط على هذا الجهاز.';
+  } catch (error) {
+    console.error('Could not save platform font preference:', error);
+    if (status) status.textContent = 'طُبق الخط لهذه الجلسة، لكن تعذر حفظه على هذا الجهاز.';
+  }
+};
+applyPlatformFontPreference();
+
 function renderIllustration(wordText){
   const found = WORD_BANK.find(x => x.w === wordText);
   if (found && found.img) {
