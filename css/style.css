@@ -944,6 +944,9 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-tool-copy p{max-width:390px;margin:0;color:#92a1b5;font-size:12px;line-height:1.8}
 .landing-tool-index{align-self:flex-start;margin-inline-start:auto;color:rgba(164,184,203,.38);font:600 11px 'IBM Plex Sans Arabic',sans-serif}
 .landing-tools-footnote{margin:14px 0 0;color:#78899f;font-size:11px;text-align:center}
+.landing-games-heading{align-items:center;flex-direction:column;gap:5px;text-align:center}
+.landing-games-title-group{display:flex;flex-direction:column;align-items:center}
+.landing-games-heading .landing-games-note{padding:0}
 .landing-bottom-cta{border-color:rgba(220,196,121,.15);background:radial-gradient(ellipse at 88% 0%,rgba(220,196,121,.07),transparent 45%),linear-gradient(120deg,rgba(10,25,42,.88),rgba(5,14,28,.9))}
 .landing-bottom-spark{color:rgba(220,196,121,.16)}
 .landing-footer{border-top-color:rgba(154,170,195,.08)}

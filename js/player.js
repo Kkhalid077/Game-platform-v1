@@ -392,7 +392,7 @@ function renderGoogleSignIn(){
 
         <section class="landing-games" id="landing-games" aria-labelledby="landing-games-title">
           <div class="landing-section-heading landing-games-heading">
-            <div><span class="landing-eyebrow">المحتوى</span><h2 id="landing-games-title">الألعاب المتاحة</h2></div>
+            <div class="landing-games-title-group"><span class="landing-eyebrow">المحتوى</span><h2 id="landing-games-title">الألعاب المتاحة</h2></div>
             <span class="landing-games-note">ألعاب جماعية ضمن المنصة</span>
           </div>
           <div class="landing-game-list">${gameCards}</div>
@@ -419,11 +419,6 @@ function renderGoogleSignIn(){
           <p class="landing-tools-footnote">تُضاف أدوات أخرى مستقبلًا.</p>
         </section>
 
-        <section class="landing-bottom-cta">
-          <span class="landing-bottom-spark" aria-hidden="true">✦</span>
-          <div><span class="landing-eyebrow">منصة لَمّة</span><h2>أنشئ جلسة ألعاب جماعية</h2><p>سجّل الدخول للوصول إلى الألعاب والأدوات وإدارة الجلسات.</p></div>
-          <button class="landing-primary-cta" type="button" data-auth-action="register">ابدأ الآن <span aria-hidden="true">←</span></button>
-        </section>
       </main>
 
       <footer class="landing-footer">
