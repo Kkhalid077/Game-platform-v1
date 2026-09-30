@@ -7,15 +7,40 @@ let ACTIVE_PLAYER_ID = null;
 let lastPlayerRoom = null;
 let playerDetailGameId = null;
 let playerRoomRef = null;
+let playerInviteGameId = null;
+let activeGuestInvite = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
+function setGuestExitButton(visible){
+  let button = document.getElementById('guestExitButton');
+  if (!visible) {
+    button?.remove();
+    return;
+  }
+  if (!button) {
+    button = document.createElement('button');
+    button.id = 'guestExitButton';
+    button.className = 'guest-exit-button';
+    button.type = 'button';
+    button.textContent = 'خروج وتغيير الاسم';
+    button.setAttribute('aria-label', 'الخروج وتغيير الاسم');
+    button.onclick = () => window.exitInvitedPlayer();
+    document.body.appendChild(button);
+  }
+  button.disabled = false;
+  button.textContent = 'خروج وتغيير الاسم';
+}
 function showSessionEnded(){
   detachPlayerRoom();
+  activeGuestInvite = null;
+  setGuestExitButton(false);
   if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   app.innerHTML = `<div class="phone"><div class="card"><h2>انتهت الجلسة</h2><p class="muted">لم تعد هذه اللعبة متاحة. اطلب من المنظّم رابطًا جديدًا.</p></div></div>`;
 }
 
 function renderPlayer(code, invitedGameId){
   setVersionFooterVisibility(false);
+  playerInviteGameId = invitedGameId || null;
+  if (invitedGameId) setGuestExitButton(false);
   const roomRef = db.ref('rooms/' + code);
   const signedInUser = firebase.auth().currentUser;
   const guestNameKey = `guestPlayerName_${code}_${invitedGameId || 'default'}`;
@@ -33,33 +58,46 @@ function renderPlayer(code, invitedGameId){
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
       if (inviteOpen && !(room.players && room.players[id])) roomRef.child('players/' + id).set(record);
-      dispatchPlayerRender(code, id, name, room, invitedGameId);
+      const currentName = room.players?.[id]?.name || name;
+      CURRENT_PLAYER_NAME = currentName;
+      dispatchPlayerRender(code, id, currentName, room, invitedGameId);
     });
   }
 
   if (invitedGameId) {
     const savedName = localStorage.getItem(guestNameKey);
     if (!savedName) {
+      detachPlayerRoom();
+      activeGuestInvite = null;
+      setGuestExitButton(false);
       const gameTitle = GAMES_LIST.find(game => game.id === invitedGameId)?.title || (invitedGameId === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
-      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${escapeHtml(gameTitle)}</h2><p class="muted">اكتب اسمك للانضمام إلى اللعبة.</p><input type="text" id="guestNameInput" maxlength="30" placeholder="اسمك" autofocus><button class="btn" id="guestEnterBtn" style="width:100%; margin-top:12px;">دخول اللعبة</button></div></div>`;
-      const enter = () => {
+      app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${escapeHtml(gameTitle)}</h2><p class="muted">اكتب اسمك للانضمام إلى اللعبة.</p><form id="guestJoinForm"><input type="text" id="guestNameInput" maxlength="30" minlength="2" placeholder="اسمك" autocomplete="nickname" autofocus required><button class="btn" type="submit" style="width:100%; margin-top:12px;">دخول اللعبة</button></form><p class="muted" id="guestJoinStatus" role="status"></p></div></div>`;
+      document.getElementById('guestJoinForm').onsubmit = event => {
+        event.preventDefault();
         const name = document.getElementById('guestNameInput').value.trim();
-        if (!name) return;
+        if (name.length < 2) {
+          document.getElementById('guestJoinStatus').textContent = 'اكتب اسمًا من حرفين على الأقل.';
+          return;
+        }
         localStorage.setItem(guestNameKey, name);
         renderPlayer(code, invitedGameId);
       };
-      document.getElementById('guestEnterBtn').onclick = enter;
-      document.getElementById('guestNameInput').addEventListener('keydown', event => { if (event.key === 'Enter') enter(); });
       return;
     }
     // لا نُنشئ غرفة وهمية إذا كان الرابط قديمًا أو الرمز خاطئًا
-    roomRef.once('value').then(snap => {
+    roomRef.once('value').then(async snap => {
       if (!snap.exists() || !snap.val().status) { showSessionEnded(); return; }
       const myId = localStorage.getItem(guestIdKey) || `guest_${roomRef.child('players').push().key}`;
       localStorage.setItem(guestIdKey, myId);
       const record = { name:savedName, gameId:invitedGameId, guest:true };
-      roomRef.child('players/' + myId).set(record);
+      activeGuestInvite = { code, gameId:invitedGameId, playerId:myId, nameKey:guestNameKey };
+      await roomRef.child('players/' + myId).set(record);
       attach(myId, savedName, record);
+    }).catch(error => {
+      activeGuestInvite = null;
+      setGuestExitButton(false);
+      console.error('Could not join the invited game:', error);
+      app.innerHTML = `<div class="phone"><div class="card"><h2>تعذر الانضمام</h2><p class="muted">تحقق من الاتصال ثم أعد تحميل الصفحة للمحاولة مجددًا.</p></div></div>`;
     });
     return;
   }
@@ -72,8 +110,36 @@ function renderPlayer(code, invitedGameId){
   attach(myId, name, record);
 }
 
+window.exitInvitedPlayer = async function(){
+  const invite = activeGuestInvite;
+  const button = document.getElementById('guestExitButton');
+  if (!invite || !button || button.disabled) return;
+  button.disabled = true;
+  button.textContent = 'جارٍ الخروج…';
+  detachPlayerRoom();
+  if (window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
+  if (window.cleanupSilentCanvas) cleanupSilentCanvas();
+  if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
+  try {
+    await db.ref(`rooms/${invite.code}/players/${invite.playerId}`).remove();
+    localStorage.removeItem(invite.nameKey);
+    activeGuestInvite = null;
+    CURRENT_PLAYER_NAME = '';
+    ACTIVE_PLAYER_ID = null;
+    ACTIVE_ROOM_CODE = null;
+    lastPlayerRoom = null;
+    setGuestExitButton(false);
+    renderPlayer(invite.code, invite.gameId);
+  } catch (error) {
+    console.error('Could not leave the invited game:', error);
+    button.disabled = false;
+    button.textContent = 'تعذر الخروج — حاول مجددًا';
+  }
+};
+
 function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   lastPlayerRoom = room;
+  setGuestExitButton(!!invitedGameId && !!activeGuestInvite);
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw') && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraPlayerWatch) stopQataraPlayerWatch();
@@ -110,16 +176,61 @@ function renderInvitedGame(code, myId, name, room, gameId){
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
     if (gameId === 'qatara') return renderQataraPlayer(code, myId, name, room);
   }
-  app.innerHTML = gameDetailHtml(game, room, code, myId, false) + `<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p>`;
+  app.innerHTML = `<div class="player-join-screen">${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
 
 window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
 window.hideGameDetail = function(){ playerDetailGameId = null; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
 
+function playerProfileHtml(code, myId, name){
+  return `<section class="player-profile-panel" aria-labelledby="player-profile-heading">
+    <div class="player-profile-heading"><span class="player-profile-avatar" aria-hidden="true">${escapeHtml(name.charAt(0) || 'ل')}</span><div><span class="host-section-kicker">ملف اللاعب</span><h3 id="player-profile-heading">${escapeHtml(name)}</h3></div></div>
+    <form class="player-name-form" onsubmit="event.preventDefault();savePlayerDisplayName('${code}','${myId}')">
+      <label for="playerDisplayName">اسم المستخدم</label>
+      <div class="player-name-controls"><input id="playerDisplayName" type="text" maxlength="30" minlength="2" value="${escapeHtml(name)}" autocomplete="nickname" required><button class="btn" type="submit">حفظ الاسم</button></div>
+      <p class="player-profile-status" id="playerNameStatus" role="status">غيّر الاسم الذي سيظهر للاعبين.</p>
+    </form>
+  </section>`;
+}
+
+window.savePlayerDisplayName = async function(code, playerId){
+  const input = document.getElementById('playerDisplayName');
+  const submit = input?.form?.querySelector('[type="submit"]');
+  const name = input?.value.trim() || '';
+  const updateStatus = message => {
+    const status = document.getElementById('playerNameStatus');
+    if (status) status.textContent = message;
+  };
+  if (name.length < 2 || name.length > 30) {
+    updateStatus('اكتب اسمًا يتراوح بين حرفين و30 حرفًا.');
+    return;
+  }
+  if (submit) submit.disabled = true;
+  let roomNameSaved = false;
+  const user = firebase.auth().currentUser;
+  const isAccountPlayer = user?.uid === playerId;
+  try {
+    await db.ref(`rooms/${code}/players/${playerId}/name`).set(name);
+    roomNameSaved = true;
+    if (isAccountPlayer && user.displayName !== name) await user.updateProfile({ displayName:name });
+    if (!isAccountPlayer) localStorage.setItem(`guestPlayerName_${code}_${playerInviteGameId || 'default'}`, name);
+    CURRENT_PLAYER_NAME = name;
+    updateStatus('تم حفظ الاسم. سيظهر للاعبين بهذا الاسم.');
+  } catch (error) {
+    console.error('Player display name update failed:', error);
+    updateStatus(roomNameSaved
+      ? isAccountPlayer ? 'حُفظ الاسم في الجلسة، لكن تعذر تحديث ملف Google.' : 'حُفظ الاسم في الجلسة، لكن تعذر تذكره على هذا الجهاز.'
+      : 'تعذر حفظ الاسم. تحقق من الاتصال وحاول مرة أخرى.');
+  } finally {
+    const currentSubmit = document.getElementById('playerDisplayName')?.form?.querySelector('[type="submit"]');
+    if (currentSubmit) currentSubmit.disabled = false;
+  }
+};
+
 function renderPlayerVoting(code, myId, name, room){
   if (playerDetailGameId){
     const game = GAMES_LIST.find(g => g.id === playerDetailGameId);
-    app.innerHTML = gameDetailHtml(game, room, code, myId, false);
+    app.innerHTML = `<div class="player-join-screen">${playerProfileHtml(code, myId, name)}${gameDetailHtml(game, room, code, myId, false)}</div>`;
     return;
   }
 
@@ -133,6 +244,7 @@ function renderPlayerVoting(code, myId, name, room){
 
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
     <button class="btn btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="renderHost()">الرئيسية</button>
+    ${playerProfileHtml(code, myId, name)}
     <h2 style="font-family:'Cairo';">أهلاً ${escapeHtml(name)} </h2>
     <p class="muted">تصفّح الألعاب وانضم إلى فريق في الألعاب الجماعية. المنظّم يبدأ اللعبة ويعرضها على شاشته.</p>
     <div class="games-grid">${cardsHtml}</div>
@@ -145,6 +257,7 @@ function renderPlayerGameNotice(code, myId, name, room){
   const title = game ? game.title : (room.activeTool === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
   const teamHtml = game?.needsTeams ? teamSelectorHtml(game, room, code, myId, false) : '';
   app.innerHTML = `<div class="phone"><div class="card" style="max-width:520px;">
+    ${playerProfileHtml(code, myId, name)}
     <div class="detail-icon">${game ? gameIconHtml(game, 'detail-icon-image') : iconImageHtml('assets/icons/answer-buzzer.svg', 'detail-icon-image')}</div>
     <h2 style="font-family:'Cairo';">${escapeHtml(title)}</h2>
     <p class="muted">اللعبة بدأت. المنظّم هو من يعرض اللعبة ويتحكم بها من شاشته؛ تابعوا الشاشة الرئيسية وشاركوا معه.</p>
