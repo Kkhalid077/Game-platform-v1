@@ -13,6 +13,7 @@ function allocateRoomCode(attempt = 0){
 }
 
 function renderHost(){
+  if (typeof stopLandingCarousels === 'function') stopLandingCarousels();
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
   if (typeof detachPlayerRoom === 'function') detachPlayerRoom();
   const savedCode = localStorage.getItem('hostSessionCode');
@@ -46,6 +47,8 @@ function dispatchHostRender(code, room){
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  const isDashboard = room.status === 'voting' && !hostDetailGameId;
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(isDashboard, isDashboard);
   const previousRoom = lastHostRoom;
   const activityId = room.status === 'in_tool'
     ? room.activeTool
@@ -86,7 +89,7 @@ window.showHostGameDetail = function(gameId){
 };
 window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
 window.setHostDashboardTab = function(tab){
-  if (tab !== 'games' && tab !== 'tools') return;
+  if (tab !== 'games' && tab !== 'tools' && tab !== 'pricing') return;
   hostDashboardTab = tab;
   if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom);
 };
@@ -147,6 +150,7 @@ function accountInfoHtml(){
 
 function renderHostLobby(code, room){
   if (hostDetailGameId) {
+    if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
     const inviteUrl = joinGameUrl(code, game.id);
     const invite = game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
@@ -154,6 +158,7 @@ function renderHostLobby(code, room){
     if (game.minPlayers > 1) initJoinCard('gameInvite', inviteUrl);
     return;
   }
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
 
   const players = room.players || {};
 
@@ -177,24 +182,38 @@ function renderHostLobby(code, room){
   </section>`;
   const dashboardContent = hostDashboardTab === 'tools'
     ? toolsHtml
-    : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
+    : hostDashboardTab === 'pricing'
+      ? `<section class="host-pricing-section" aria-labelledby="host-pricing-heading">
+          <div class="host-games-header"><span class="host-section-kicker">باقات شهرية</span><h2 id="host-pricing-heading">التسعيرة المقترحة</h2>
+            <p>أسعار مبدئية للمراجعة؛ الاشتراكات والدفع غير متاحين حاليًا.</p>
+          </div>
+          <div class="host-pricing-grid">
+            <article class="host-pricing-card"><span class="host-section-kicker">للبداية</span><h3>مجانية</h3><p class="host-pricing-amount">٠ <span>ر.س / شهر</span></p><p>للتعرّف على الألعاب والأدوات واستخدامها.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
+            <article class="host-pricing-card is-featured"><span class="host-section-kicker">للاستخدام المنتظم</span><h3>أساسية</h3><p class="host-pricing-amount">١٩ <span>ر.س / شهر</span></p><p>للاستخدام المتكرر للمنصة في الجلسات.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
+            <article class="host-pricing-card"><span class="host-section-kicker">للمجموعات</span><h3>مميزة</h3><p class="host-pricing-amount">٤٩ <span>ر.س / شهر</span></p><p>للمجموعات والمنظمين ذوي الاستخدام المكثف.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
+          </div>
+        </section>`
+      : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
-    <div class="host-dashboard">
-      <main class="host-games-main">
-        <header class="host-games-header host-page-header">
-          <div>
-            <span class="host-section-kicker">لوحة التحكم</span>
-            <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
-          </div>
-          ${accountInfoHtml()}
-        </header>
-        <nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
-          <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
-          <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
+    <div class="host-shell">
+      <header class="host-topbar">
+        ${platformBrandHtml('host-brand')}
+        <nav class="host-topbar-nav" aria-label="التنقل">
+          <button type="button" class="host-topbar-link ${hostDashboardTab !== 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab !== 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">لوحة التحكم</button>
+          <button type="button" class="host-topbar-link ${hostDashboardTab === 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('pricing')">التسعيرة</button>
         </nav>
-        ${dashboardContent}
-      </main>
+        ${accountInfoHtml()}
+      </header>
+      <div class="host-dashboard">
+        <main class="host-games-main">
+          ${hostDashboardTab !== 'pricing' ? `<nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
+            <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
+            <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
+          </nav>` : ''}
+          ${dashboardContent}
+        </main>
+      </div>
     </div>
   `;
 }

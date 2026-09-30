@@ -11,6 +11,11 @@ function iconImageHtml(src, className='game-icon-image'){
 function gameIconHtml(game, className='game-icon-image'){
   return iconImageHtml(game.icon, className);
 }
+function platformBrandHtml(className=''){
+  return `<a class="landing-brand ${className}" href="#" aria-label="لَمّة — الصفحة الرئيسية">
+      <span class="landing-brand-name">لَمّة</span>
+  </a>`;
+}
 function pickRandomWordPair(){ return shuffle(WORD_BANK)[0]; }
 
 const PLATFORM_FONT_STORAGE_KEY = 'gamePlatformFont';
