@@ -57,7 +57,13 @@ function renderPlayer(code, invitedGameId){
       if (!room || !room.status) { showSessionEnded(); return; }
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
-      if (inviteOpen && !(room.players && room.players[id])) roomRef.child('players/' + id).set(record);
+      if (invitedGameId) {
+        const currentRecord = room.players?.[id];
+        if (inviteOpen && !currentRecord) roomRef.child('players/' + id).set(record);
+        else if (!inviteOpen && currentRecord?.guest && currentRecord.gameId === invitedGameId) roomRef.child('players/' + id).remove();
+      } else if (!(room.players && room.players[id])) {
+        roomRef.child('players/' + id).set(record);
+      }
       const currentName = room.players?.[id]?.name || name;
       CURRENT_PLAYER_NAME = currentName;
       dispatchPlayerRender(code, id, currentName, room, invitedGameId);
@@ -91,7 +97,9 @@ function renderPlayer(code, invitedGameId){
       localStorage.setItem(guestIdKey, myId);
       const record = { name:savedName, gameId:invitedGameId, guest:true };
       activeGuestInvite = { code, gameId:invitedGameId, playerId:myId, nameKey:guestNameKey };
-      await roomRef.child('players/' + myId).set(record);
+      const room = snap.val();
+      const inviteOpen = room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
+      if (inviteOpen) await roomRef.child('players/' + myId).set(record);
       attach(myId, savedName, record);
     }).catch(error => {
       activeGuestInvite = null;
@@ -138,6 +146,8 @@ window.exitInvitedPlayer = async function(){
 };
 
 function dispatchPlayerRender(code, myId, name, room, invitedGameId){
+  const activityId = invitedGameId || (room.status === 'in_tool' ? room.activeTool : (room.activeGame || room.selectedGame));
+  room = roomForGame(room, activityId);
   lastPlayerRoom = room;
   setGuestExitButton(!!invitedGameId && !!activeGuestInvite);
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();

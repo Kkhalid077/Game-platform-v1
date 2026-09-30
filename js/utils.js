@@ -182,7 +182,7 @@ function teamSelectorHtml(game, room, code, myId, isHost){
 }
 
 function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
-  const players = room.players || {};
+  const players = roomPlayersForGame(room, game.id);
   const totalPlayers = Object.keys(players).length;
   const playerCards = Object.entries(players).map(([id, player]) => {
     const name = player.name || 'لاعب';
@@ -211,6 +211,17 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       </div>
     </div>
   `;
+}
+
+function roomPlayersForGame(room, gameId){
+  if (!gameId) return room.players || {};
+  return Object.fromEntries(Object.entries(room.players || {}).filter(([, player]) =>
+    !player.guest || player.gameId === gameId
+  ));
+}
+
+function roomForGame(room, gameId){
+  return gameId ? {...room, players:roomPlayersForGame(room, gameId)} : room;
 }
 window.toggleReady = function(code, myId, gameId){
   const ref = db.ref('rooms/'+code+'/votes/'+myId);

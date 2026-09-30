@@ -47,6 +47,8 @@ function dispatchHostRender(code, room){
     return;
   }
   const previousRoom = lastHostRoom;
+  const activityId = room.status === 'in_tool' ? room.activeTool : (room.activeGame || room.selectedGame);
+  room = roomForGame(room, activityId);
   lastHostRoom = room;
   stopHostTimerWatch();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
