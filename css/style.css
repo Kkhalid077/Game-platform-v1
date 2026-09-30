@@ -985,10 +985,10 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .host-pricing-label{margin-top:auto;padding:5px 10px;border:1px solid rgba(220,196,121,.2);border-radius:999px;color:var(--accent-2);font-size:11px}
 body.has-dashboard-footer .site-footer.is-entry-visible{background:rgba(2,11,32,.12);border-top-color:rgba(144,177,201,.06);color:rgba(179,194,213,.48);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 @media(max-width:760px){
-  .host-topbar{gap:8px;min-height:54px;margin-bottom:14px;padding-bottom:9px}
+  .host-topbar{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;min-height:54px;margin-bottom:14px;padding-bottom:9px}
   .host-brand .landing-brand-name{font-size:24px}
-  .host-topbar-nav{gap:2px;padding:4px}
-  .host-topbar-link{min-height:36px;padding-inline:10px;font-size:12px}
+  .host-topbar-nav{justify-self:center;max-width:100%;gap:2px;padding:4px;overflow-x:auto}
+  .host-topbar-link{flex:none;min-height:36px;padding-inline:8px;font-size:12px}
   .host-pricing-grid{grid-template-columns:1fr;gap:12px;margin-top:20px}
   .host-pricing-card{min-height:0;padding:18px}
   .landing-tools{padding-bottom:55px}

@@ -200,17 +200,14 @@ function renderHostLobby(code, room){
       <header class="host-topbar">
         ${platformBrandHtml('host-brand')}
         <nav class="host-topbar-nav" aria-label="التنقل">
-          <button type="button" class="host-topbar-link ${hostDashboardTab !== 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab !== 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">لوحة التحكم</button>
+          <button type="button" class="host-topbar-link ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
+          <button type="button" class="host-topbar-link ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
           <button type="button" class="host-topbar-link ${hostDashboardTab === 'pricing' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'pricing' ? 'page' : 'false'}" onclick="setHostDashboardTab('pricing')">التسعيرة</button>
         </nav>
         ${accountInfoHtml()}
       </header>
       <div class="host-dashboard">
         <main class="host-games-main">
-          ${hostDashboardTab !== 'pricing' ? `<nav class="dashboard-tabs" aria-label="صفحات لوحة التحكم">
-            <button type="button" class="dashboard-tab ${hostDashboardTab === 'games' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'games' ? 'page' : 'false'}" onclick="setHostDashboardTab('games')">الألعاب</button>
-            <button type="button" class="dashboard-tab ${hostDashboardTab === 'tools' ? 'is-active' : ''}" aria-current="${hostDashboardTab === 'tools' ? 'page' : 'false'}" onclick="setHostDashboardTab('tools')">الأدوات</button>
-          </nav>` : ''}
           ${dashboardContent}
         </main>
       </div>
