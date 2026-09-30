@@ -385,8 +385,11 @@ function renderSilentDrawHost(code, room){
     narrator = `نتيجة الجولة: ${teamName('A')} ${res.A==='correct'?'':''} — ${teamName('B')} ${res.B==='correct'?'':''}`;
     control = `<button class="btn" onclick="silentDrawNextRound('${code}')">الجولة التالية </button>`;
   } else if (sd.phase==='ended'){
-    narrator = ` فاز ${teamName(sd.winner)}!`;
-    control = `<button class="btn" onclick="resetToLobby('${code}')">لعبة جديدة </button>`;
+    narrator = '';
+    control = `<div class="silentdraw-end-actions">
+      <button class="btn" onclick="startSilentDrawGame('${code}')">إعادة اللعبة</button>
+      <button class="btn btn-danger" onclick="resetToLobby('${code}')">الخروج</button>
+    </div>`;
   }
 
   if (showBoards){
@@ -399,9 +402,9 @@ function renderSilentDrawHost(code, room){
   }
 
   document.getElementById('stage').innerHTML = `
-    <button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
-    ${sd.phase==='ended' ? winnerCelebrationHtml() : ''}
+    ${sd.phase!=='ended' ? `<button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>` : ''}
     <h2 style="font-family:'Cairo'; color:var(--accent);">إشارة ورسمة</h2>
+    ${sd.phase==='ended' ? `<section class="silentdraw-winner"><h3>فاز ${teamName(sd.winner)}!</h3>${winnerCelebrationHtml()}</section>` : ''}
     <p class="narrator">${narrator}</p>
     <section class="players-box team-ranking-box"><h3>الترتيب <small>الفوز عند ٣ نقاط</small></h3>${silentDrawRankingHtml(sd, players)}</section>
     ${boards}

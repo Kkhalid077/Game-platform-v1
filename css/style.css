@@ -383,20 +383,25 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .team-ranking-box{max-width:760px;border-color:rgba(160,172,255,.2);background:linear-gradient(145deg,rgba(19,25,52,.96),rgba(13,18,38,.94));text-align:right}
 .team-ranking-box>h3{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;font-family:'Cairo',sans-serif;font-size:16px}
 .team-ranking-box>h3 small{color:var(--text-dim);font:500 12px 'Tajawal',sans-serif}
-.team-ranking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.team-ranking-card{position:relative;display:flex;align-items:center;gap:11px;min-width:0;padding:13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.035);text-align:right}
+.team-ranking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.team-ranking-card{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;gap:8px 11px;min-width:0;padding:15px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.035);text-align:right}
 .team-ranking-card.team-a{--rank-color:var(--team-a)}.team-ranking-card.team-b{--rank-color:var(--team-b)}
 .team-ranking-card.is-leading{border-color:color-mix(in srgb,var(--rank-color) 55%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,var(--rank-color) 12%,transparent),rgba(255,255,255,.035))}
-.team-ranking-place{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:color-mix(in srgb,var(--rank-color) 16%,transparent);color:var(--rank-color);font-family:'Cairo',sans-serif;font-weight:900}
-.team-ranking-info{display:flex;flex:1;flex-direction:column;min-width:0}
+.team-ranking-place{grid-column:1;grid-row:1;display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:color-mix(in srgb,var(--rank-color) 16%,transparent);color:var(--rank-color);font-family:'Cairo',sans-serif;font-weight:900}
+.team-ranking-info{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;min-width:0}
 .team-ranking-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.team-ranking-members{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px}
-.team-ranking-members .lobby-player-card{width:64px;gap:4px}
-.team-ranking-members .lobby-player-avatar{width:52px;border-radius:12px;font-size:21px}
-.team-ranking-members .lobby-player-card strong{max-width:64px;font-size:11px}
-.team-ranking-score{display:flex;align-items:baseline;gap:4px;color:var(--rank-color)}
+.team-ranking-members{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;margin-top:4px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--rank-color) 20%,var(--line))}
+.team-ranking-members .lobby-player-card{width:72px;gap:5px}
+.team-ranking-members .lobby-player-avatar{width:60px;border-radius:14px;font-size:23px}
+.team-ranking-members .lobby-player-card strong{max-width:72px;font-size:12px}
+.team-ranking-score{grid-column:3;grid-row:1;display:flex;align-items:baseline;gap:4px;color:var(--rank-color)}
 .team-ranking-score b{font-family:'Cairo',sans-serif;font-size:26px;line-height:1}
 .team-ranking-score span{font-size:11px}
+.silentdraw-winner{width:min(760px,100%);margin:12px auto 18px;padding:12px 18px;border:1px solid rgba(255,194,75,.35);border-radius:var(--r-md);background:linear-gradient(145deg,rgba(255,194,75,.1),rgba(255,255,255,.025))}
+.silentdraw-winner h3{margin:0;color:var(--amber);font-family:'Cairo',sans-serif;font-size:clamp(20px,4vw,28px)}
+.silentdraw-winner .winner-celebration{margin-bottom:0}
+.silentdraw-end-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px auto}
+.silentdraw-end-actions .btn{min-width:150px;margin:0}
 .qatara-leaderboard{width:min(900px,100%);margin:28px auto 0;text-align:right}
 .qatara-leaderboard>h2{margin-bottom:10px;font-size:17px}
 .qatara-ranking-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
@@ -438,6 +443,8 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
   .qatara-header .btn{padding-inline:12px;font-size:13px}
   .team-ranking-grid{grid-template-columns:1fr}
   .team-board{width:min(100%,520px)}
+  .team-ranking-card{padding:12px}
+  .team-ranking-members{gap:8px}
   .qatara-ranking-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
   .qatara-rank-card{grid-template-columns:28px 1fr auto;gap:6px;padding:9px}
   .qatara-rank-number{width:26px;height:26px}
