@@ -342,16 +342,22 @@ function setupSilentCanvas(code, team){
 }
 
 function silentDrawRankingHtml(sd, players){
-  const teamLabel = t => silentDrawTeamIds(sd,t).map(id => players[id]?.name || '').filter(Boolean).join(' و ');
   const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
   const ranked = ['A','B'].sort((a,b) => (Number(sd.correctCount?.[b])||0) - (Number(sd.correctCount?.[a])||0));
   const topScore = Number(sd.correctCount?.[ranked[0]]) || 0;
   return `<div class="team-ranking-grid">${ranked.map((t,i) => {
     const score = Number(sd.correctCount?.[t]) || 0;
     const rank = i > 0 && score === (Number(sd.correctCount?.[ranked[i-1]]) || 0) ? i : i+1;
+    const members = silentDrawTeamIds(sd,t)
+      .map(id => players[id])
+      .filter(Boolean)
+      .map(player => playerAvatarCardHtml(player))
+      .join('');
     return `<article class="team-ranking-card team-${t.toLowerCase()} ${score===topScore?'is-leading':''}">
     <span class="team-ranking-place">${rank===1?'١':'٢'}</span>
-    <div class="team-ranking-info"><strong>${teamName(t)}</strong><small>${escapeHtml(teamLabel(t)||'بانتظار اللاعبين')}</small></div>
+    <div class="team-ranking-info"><strong>${teamName(t)}</strong>
+      <div class="team-ranking-members">${members || '<span class="muted">بانتظار اللاعبين</span>'}</div>
+    </div>
     <div class="team-ranking-score"><b>${score}</b><span>نقاط</span></div>
   </article>`;
   }).join('')}</div>`;
@@ -361,8 +367,11 @@ function renderSilentDrawHost(code, room){
   const sd = room.silentdraw; if (!sd) return;
   const res = sd.results || {};
   const players = room.players || {};
-  const teamLabel = t => silentDrawTeamIds(sd,t).map(id=>players[id]?.name||'').join(' و ');
   const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
+  const teamHeading = t => {
+    const name = sd.teamNames?.[t] || `الفريق ${t === 'A' ? 'الأخضر' : 'البرتقالي'}`;
+    return escapeHtml(name.startsWith('الفريق ') ? `لوحة الرسام للفريق ${name.slice(7)}` : `لوحة الرسام لفريق ${name}`);
+  };
   let narrator = '', control = '', boards = '';
   const showBoards = ['drawing','round_result','ended'].includes(sd.phase);
 
@@ -383,7 +392,7 @@ function renderSilentDrawHost(code, room){
   if (showBoards){
     boards = `<div class="draw-layout">${['A','B'].map(t => `
       <div class="team-board">
-        <h4 style="font-family:'Cairo';">لوحة الرسام — ${teamName(t)}: ${escapeHtml(teamLabel(t))}</h4>
+        <h4 style="font-family:'Cairo';">${teamHeading(t)}</h4>
         <div class="canvas-wrap"><canvas id="canvas${t}" width="320" height="320"></canvas></div>
         <p id="canvas${t}Status" class="muted" role="status" style="min-height:20px;margin:4px 0;"></p>
       </div>`).join('')}</div>`;
