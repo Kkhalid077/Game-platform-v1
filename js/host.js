@@ -46,10 +46,12 @@ function dispatchHostRender(code, room){
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  const previousRoom = lastHostRoom;
   lastHostRoom = room;
   stopHostTimerWatch();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
   if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraHostWatch) stopQataraHostWatch();
+  if (room.status === 'voting' && previousRoom?.status === 'voting' && !hostDetailGameId && document.querySelector('.host-dashboard')) return;
   // لا نعيد رسم الردهة أثناء فتح نافذة الحساب حتى لا تُغلق أو يضيع ما كُتب فيها
   if (room.status === 'voting' && document.getElementById('accountModal')?.classList.contains('is-open')) return;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
@@ -160,7 +162,7 @@ function renderHostLobby(code, room){
           <div>
             <span class="host-section-kicker">لوحة التحكم</span>
             <h1>${hostDashboardTab === 'tools' ? 'الأدوات' : 'الألعاب'}</h1>
-            <p>${hostDashboardTab === 'tools' ? 'افتح أداة تفاعلية لاستخدامها أثناء الجلسة.' : 'تصفّح الألعاب واختر ما تريد أن تلعبوه.'}</p>
+            <p>${hostDashboardTab === 'tools' ? 'أدوات سريعة لجلسة اللعب.' : 'اختر لعبة وابدأ اللعب.'}</p>
           </div>
           ${accountInfoHtml()}
         </header>

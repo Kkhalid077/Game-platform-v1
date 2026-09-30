@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" fill="none">
+  <path fill="#091321" d="M0 0h1600v900H0z"/>
+  <g stroke="#286878" stroke-width="1" opacity=".42">
+    <path d="M0 685 304 480l224 88 300-266 244 128 252-196 276 70"/>
+    <path d="m110 900 294-267 194 51 213-208 225 76 270-196 294 26"/>
+    <path d="m420 0 108 568 294-266 50 454"/>
+    <path d="m1072 0-52 430 252-196 76 482"/>
+    <path d="M0 300 304 480 278 900"/>
+  </g>
+  <g fill="#46d5d2" opacity=".62">
+    <circle cx="304" cy="480" r="4"/><circle cx="528" cy="568" r="4"/>
+    <circle cx="828" cy="302" r="5"/><circle cx="1072" cy="430" r="4"/>
+    <circle cx="1324" cy="234" r="5"/><circle cx="576" cy="684" r="3"/>
+    <circle cx="944" cy="476" r="3"/><circle cx="1248" cy="642" r="4"/>
+    <circle cx="278" cy="900" r="3"/><circle cx="1480" cy="500" r="3"/>
+  </g>
+  <g fill="#8ba0bc" font-family="monospace" font-size="16" opacity=".48">
+    <text x="348" y="450">0101 · 1010</text>
+    <text x="858" y="276">DATA / 07</text>
+    <text x="1100" y="402">A4-29-FF</text>
+    <text x="1338" y="220">010 · 110</text>
+    <text x="600" y="656">SYNC: 98.4%</text>
+    <text x="1268" y="620">NODE_12</text>
+    <text x="88" y="766">001101001011</text>
+    <text x="1000" y="840">SIGNAL // ACTIVE</text>
+  </g>
+  <g stroke="#53678a" stroke-width="1" stroke-dasharray="2 10" opacity=".38">
+    <path d="M45 132h398l110 120h310"/>
+    <path d="M875 162h315l130 140h220"/>
+    <path d="M96 820h278l80-86h275"/>
+    <path d="M990 720h194l128 116h230"/>
+  </g>
+  <g fill="#9a8bdb" opacity=".52">
+    <circle cx="442" cy="132" r="3"/><circle cx="818" cy="252" r="3"/>
+    <circle cx="1190" cy="162" r="3"/><circle cx="1540" cy="302" r="3"/>
+    <circle cx="374" cy="820" r="3"/><circle cx="729" cy="734" r="3"/>
+    <circle cx="1184" cy="720" r="3"/><circle cx="1542" cy="836" r="3"/>
+  </g>
+</svg>
