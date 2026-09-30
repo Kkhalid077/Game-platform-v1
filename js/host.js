@@ -13,6 +13,7 @@ function allocateRoomCode(attempt = 0){
 }
 
 function renderHost(){
+  if (typeof stopLandingCarousels === 'function') stopLandingCarousels();
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
   if (typeof detachPlayerRoom === 'function') detachPlayerRoom();
   const savedCode = localStorage.getItem('hostSessionCode');

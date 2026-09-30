@@ -841,10 +841,6 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-games-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;text-align:right}
 .landing-games-heading h2{margin-bottom:0}
 .landing-games-note{padding-bottom:6px;color:#8d9db4;font-size:13px}
-.landing-game-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:24px}
-.landing-game-card{display:flex;align-items:center;gap:12px;min-width:0;padding:15px;border:1px solid rgba(144,177,201,.13);border-radius:15px;background:rgba(7,20,39,.66);color:#dce5f0;font-size:13px;font-weight:700}
-.landing-game-icon{display:grid;flex:none;place-items:center;width:42px;height:42px;padding:6px;border:1px solid rgba(243,201,75,.15);border-radius:13px;background:rgba(243,201,75,.055)}
-.landing-game-icon .game-icon-image{width:100%;height:100%;object-fit:contain}
 .landing-bottom-cta{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;overflow:hidden;margin-bottom:50px;padding:clamp(24px,4vw,40px);border:1px solid rgba(243,201,75,.2);border-radius:22px;background:radial-gradient(ellipse at 88% 0%,rgba(243,201,75,.1),transparent 45%),linear-gradient(120deg,rgba(11,31,51,.94),rgba(5,16,33,.94))}
 .landing-bottom-cta h2{margin:7px 0 2px;font-size:clamp(23px,3vw,32px)}
 .landing-bottom-cta p{margin:0;color:#9eacc0;font-size:13px}
@@ -859,7 +855,6 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 @media(max-width:900px){
   .landing-hero{grid-template-columns:minmax(0,1fr) minmax(300px,.86fr);gap:22px;min-height:500px}
   .landing-art-chip{padding:9px 11px;font-size:11px}
-  .landing-game-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:680px){
   .landing-nav,.landing-page main,.landing-footer{width:calc(100% - 32px)}
@@ -892,9 +887,6 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
   .landing-games{padding-bottom:55px}
   .landing-games-heading{align-items:flex-start;flex-direction:column;gap:4px}
   .landing-games-note{padding-bottom:0}
-  .landing-game-list{gap:8px;margin-top:17px}
-  .landing-game-card{gap:8px;padding:10px;font-size:11px}
-  .landing-game-icon{width:36px;height:36px}
   .landing-bottom-cta{align-items:flex-start;flex-direction:column;margin-bottom:32px;padding:23px}
   .landing-bottom-cta .landing-primary-cta{width:100%}
   .landing-bottom-spark{left:10%;font-size:65px}
@@ -907,7 +899,6 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
   .landing-nav{gap:6px}
   .landing-nav-actions{gap:4px}
   .landing-login,.landing-register{padding-inline:9px}
-  .landing-game-card{font-size:10px}
 }
 
 .landing-page{
@@ -925,28 +916,54 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 .landing-art-chip span{display:grid;place-items:center;width:25px;height:25px;border:1px solid rgba(224,192,110,.22);border-radius:9px;background:rgba(224,192,110,.07);color:#dfc776;font:700 10px 'IBM Plex Sans Arabic',sans-serif}
 .landing-feature{background:linear-gradient(145deg,rgba(11,26,44,.64),rgba(4,12,25,.58));border-color:rgba(144,177,201,.1)}
 .landing-feature-icon{border-color:rgba(224,192,110,.18);background:rgba(224,192,110,.055);color:#dfc776}
-.landing-game-card{background:rgba(7,18,34,.52);border-color:rgba(144,177,201,.1)}
-.landing-game-icon{border-color:rgba(224,192,110,.12);background:rgba(224,192,110,.04)}
 .landing-tools{padding-block:0 76px}
-.landing-tools-heading{margin-bottom:25px}
-.landing-tool-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.landing-tool-card{position:relative;display:flex;align-items:center;gap:17px;min-height:154px;overflow:hidden;padding:22px;border:1px solid rgba(144,177,201,.12);border-radius:18px;background:linear-gradient(135deg,rgba(10,25,43,.66),rgba(4,13,27,.68))}
-.landing-tool-card::after{position:absolute;top:0;right:0;bottom:0;width:2px;background:rgba(137,168,191,.22);content:""}
-.landing-tool-live::after{background:linear-gradient(180deg,rgba(220,196,121,.68),rgba(220,196,121,.08))}
-.landing-tool-symbol{display:grid;flex:none;place-items:center;width:54px;height:54px;border:1px solid rgba(220,196,121,.18);border-radius:17px;background:rgba(220,196,121,.06);color:#ddc576}
-.landing-tool-symbol>span{font-size:20px;text-shadow:0 0 14px rgba(243,201,75,.5)}
-.landing-draw-symbol{border-color:rgba(112,177,221,.18);background:rgba(112,177,221,.055);color:#98c9dd}
-.landing-draw-symbol>span{font-size:27px}
-.landing-tool-copy{min-width:0}
-.landing-tool-status{color:#d9c780;font-size:11px;font-weight:700}
-.landing-tool-coming{color:#8fb9ce}
-.landing-tool-copy h3{margin:2px 0 4px;color:#edf0f4;font-size:18px}
-.landing-tool-copy p{max-width:390px;margin:0;color:#92a1b5;font-size:12px;line-height:1.8}
-.landing-tool-index{align-self:flex-start;margin-inline-start:auto;color:rgba(164,184,203,.38);font:600 11px 'IBM Plex Sans Arabic',sans-serif}
-.landing-tools-footnote{margin:14px 0 0;color:#78899f;font-size:11px;text-align:center}
 .landing-games-heading{align-items:center;flex-direction:column;gap:5px;text-align:center}
 .landing-games-title-group{display:flex;flex-direction:column;align-items:center}
 .landing-games-heading .landing-games-note{padding:0}
+.landing-showcase{
+  width:min(900px,100%);
+  margin:26px auto 0;
+  padding:clamp(20px,4vw,38px);
+  border:1px solid rgba(144,177,201,.12);
+  border-radius:22px;
+  background:linear-gradient(135deg,rgba(10,25,43,.62),rgba(4,13,27,.66));
+}
+.landing-showcase-panel{display:grid;grid-template-columns:1fr 1fr;align-items:center;min-height:245px;direction:rtl}
+.landing-showcase-visual{grid-column:1;display:grid;place-items:center;min-width:0;text-align:center}
+.landing-showcase-visual-content{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:180px;min-height:225px}
+.landing-showcase-index{position:absolute;top:0;right:0;color:rgba(164,184,203,.34);font:600 12px 'IBM Plex Sans Arabic',sans-serif}
+.landing-showcase-icon{display:grid;place-items:center;width:128px;height:128px;margin:0 0 13px;padding:19px;border:1px solid rgba(220,196,121,.22);border-radius:34px;background:radial-gradient(circle at 35% 25%,rgba(220,196,121,.12),rgba(112,177,221,.035) 70%);box-shadow:0 18px 42px rgba(0,0,0,.2),inset 0 1px rgba(255,255,255,.06)}
+.landing-showcase-image{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.24))}
+.landing-showcase-visual-content h3{margin:0;color:#e9edf3;font:800 19px 'Cairo',sans-serif}
+.landing-showcase-status{margin-top:5px;color:#d9c780;font-size:11px}
+.landing-showcase-status.is-upcoming{color:#91b6ca}
+.landing-showcase-copy{grid-column:2;display:flex;min-height:195px;flex-direction:column;align-items:flex-start;justify-content:center;padding-inline:clamp(14px,4vw,50px);border-right:1px solid rgba(144,177,201,.12);text-align:right}
+.landing-showcase-kicker{color:#d9bd68;font-size:12px;font-weight:700}
+.landing-showcase-copy p{max-width:410px;margin:11px 0 20px;color:#b0bdce;font-size:clamp(15px,1.8vw,18px);line-height:2}
+.landing-showcase-position{color:#75869d;font:600 11px 'IBM Plex Sans Arabic',sans-serif}
+.landing-showcase-position i{padding-inline:6px;color:#b2bdc9;font-style:normal}
+.landing-showcase-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:8px}
+.landing-showcase-arrow{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(144,177,201,.15);border-radius:50%;background:rgba(255,255,255,.025);color:#bdc9d7;font:24px/1 system-ui,sans-serif;cursor:pointer;transition:border-color .18s,background .18s,color .18s}
+.landing-showcase-arrow:hover{border-color:rgba(220,196,121,.45);background:rgba(220,196,121,.08);color:#f0d987}
+.landing-showcase-dots{display:flex;align-items:center;justify-content:center;gap:7px}
+.landing-showcase-dot{width:7px;height:7px;padding:0;border:0;border-radius:999px;background:rgba(165,184,201,.28);cursor:pointer;transition:width .22s,background .22s}
+.landing-showcase-dot.is-active{width:22px;background:#d9c276}
+.landing-tools .landing-showcase{margin-top:26px}
+.landing-tools .landing-showcase-icon{border-color:rgba(126,182,207,.22);background:radial-gradient(circle at 35% 25%,rgba(112,177,221,.14),rgba(112,177,221,.035) 70%)}
+@media(max-width:680px){
+  .landing-showcase{margin-top:19px;padding:17px;border-radius:18px}
+  .landing-showcase-panel{grid-template-columns:1fr;min-height:0}
+  .landing-showcase-visual,.landing-showcase-copy{grid-column:1}
+  .landing-showcase-visual-content{min-height:195px}
+  .landing-showcase-icon{width:104px;height:104px;padding:15px;border-radius:28px}
+  .landing-showcase-visual-content h3{font-size:17px}
+  .landing-showcase-copy{min-height:0;align-items:center;padding:18px 4px 4px;border-top:1px solid rgba(144,177,201,.12);border-right:0;text-align:center}
+  .landing-showcase-copy p{margin:8px 0 12px;font-size:14px;line-height:1.8}
+  .landing-showcase-controls{margin-top:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .landing-showcase-visual-content,.landing-showcase-copy{animation:none!important}
+}
 .landing-bottom-cta{border-color:rgba(220,196,121,.15);background:radial-gradient(ellipse at 88% 0%,rgba(220,196,121,.07),transparent 45%),linear-gradient(120deg,rgba(10,25,42,.88),rgba(5,14,28,.9))}
 .landing-bottom-spark{color:rgba(220,196,121,.16)}
 .landing-footer{border-top-color:rgba(154,170,195,.08)}
@@ -964,8 +981,6 @@ body.has-dashboard-footer .site-footer.is-entry-visible{background:rgba(2,11,32,
   .host-topbar{min-height:54px;margin-bottom:14px;padding-bottom:9px}
   .host-brand .landing-brand-mark{width:34px;height:34px;border-radius:11px}
   .host-brand .landing-brand-name{font-size:20px}
-  .landing-tool-list{grid-template-columns:1fr}
-  .landing-tool-card{min-height:130px;padding:18px}
   .landing-tools{padding-bottom:55px}
 }
 @media(max-width:680px){

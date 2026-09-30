@@ -9,7 +9,12 @@ let playerDetailGameId = null;
 let playerRoomRef = null;
 let playerInviteGameId = null;
 let activeGuestInvite = null;
+let landingCarouselTimers = [];
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
+function stopLandingCarousels(){
+  landingCarouselTimers.forEach(timer => clearInterval(timer));
+  landingCarouselTimers = [];
+}
 async function registerPlayerPresence(playerRef, record){
   await playerRef.onDisconnect().remove();
   await playerRef.set(record);
@@ -313,17 +318,95 @@ function setVersionFooterVisibility(visible, dashboard = false){
   document.body.classList.toggle('has-dashboard-footer', visible && dashboard);
 }
 
+function landingShowcaseMarkup(id, label, items, type){
+  const renderItem = (item, index) => type === 'game'
+    ? `<div class="landing-showcase-visual-content"><span class="landing-showcase-index">${String(index + 1).padStart(2,'0')}</span><span class="landing-showcase-icon">${iconImageHtml(item.icon,'landing-showcase-image')}</span><h3>${escapeHtml(item.title)}</h3></div>`
+    : `<div class="landing-showcase-visual-content"><span class="landing-showcase-index">${String(index + 1).padStart(2,'0')}</span><span class="landing-showcase-icon">${iconImageHtml(item.icon,'landing-showcase-image')}</span><h3>${escapeHtml(item.title)}</h3><span class="landing-showcase-status ${item.available ? 'is-available' : 'is-upcoming'}">${item.available ? 'متاحة' : 'قيد التطوير'}</span></div>`;
+  const indicators = items.map((_, index) => `<button type="button" class="landing-showcase-dot ${index === 0 ? 'is-active' : ''}" data-showcase-index="${index}" aria-label="${label} ${index + 1}" aria-pressed="${index === 0}"></button>`).join('');
+  return `<div class="landing-showcase" data-showcase="${id}" data-index="0" data-count="${items.length}" aria-label="${label}" role="region">
+    <div class="landing-showcase-panel">
+      <div class="landing-showcase-visual" aria-hidden="true">${renderItem(items[0],0)}</div>
+      <div class="landing-showcase-copy">
+        <span class="landing-showcase-kicker">${type === 'game' ? 'ضمن ألعاب المنصة' : items[0].available ? 'أداة مساندة' : 'أداة مستقبلية'}</span>
+        <p>${escapeHtml(items[0].desc)}</p>
+        <span class="landing-showcase-position">${String(1).padStart(2,'0')} <i>/</i> ${String(items.length).padStart(2,'0')}</span>
+      </div>
+    </div>
+    <div class="landing-showcase-controls">
+      <button type="button" class="landing-showcase-arrow" data-showcase-step="-1" aria-label="السابق">‹</button>
+      <div class="landing-showcase-dots">${indicators}</div>
+      <button type="button" class="landing-showcase-arrow" data-showcase-step="1" aria-label="التالي">›</button>
+    </div>
+  </div>`;
+}
+
+function initLandingCarousels(){
+  stopLandingCarousels();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  app.querySelectorAll('.landing-showcase').forEach(root => {
+    const type = root.dataset.showcase;
+    const items = type === 'games'
+      ? GAMES_LIST.filter(game => game.available)
+      : [
+          { title:'جرس الإجابة', icon:'assets/icons/answer-buzzer.svg', available:true, desc:'جرس رقمي لتحديد أسرع إجابة في ألعاب الأسئلة والتحديات الخارجية.' },
+          { title:'لوح رسم مشترك', icon:'assets/icons/signal-sketch.svg', available:false, desc:'أداة للرسم والتخمين لدعم الأنشطة والألعاب الخارجية.' }
+        ];
+    let paused = false;
+    const show = index => {
+      const nextIndex = (index + items.length) % items.length;
+      const item = items[nextIndex];
+      root.dataset.index = String(nextIndex);
+      const visual = root.querySelector('.landing-showcase-visual');
+      const copy = root.querySelector('.landing-showcase-copy');
+      visual.innerHTML = type === 'games'
+        ? `<div class="landing-showcase-visual-content"><span class="landing-showcase-index">${String(nextIndex + 1).padStart(2,'0')}</span><span class="landing-showcase-icon">${gameIconHtml(item,'landing-showcase-image')}</span><h3>${escapeHtml(item.title)}</h3></div>`
+        : `<div class="landing-showcase-visual-content"><span class="landing-showcase-index">${String(nextIndex + 1).padStart(2,'0')}</span><span class="landing-showcase-icon">${iconImageHtml(item.icon,'landing-showcase-image')}</span><h3>${escapeHtml(item.title)}</h3><span class="landing-showcase-status ${item.available ? 'is-available' : 'is-upcoming'}">${item.available ? 'متاحة' : 'قيد التطوير'}</span></div>`;
+      copy.querySelector('.landing-showcase-kicker').textContent = type === 'game' ? 'ضمن ألعاب المنصة' : item.available ? 'أداة مساندة' : 'أداة مستقبلية';
+      copy.querySelector('p').textContent = item.desc;
+      copy.querySelector('.landing-showcase-position').innerHTML = `${String(nextIndex + 1).padStart(2,'0')} <i>/</i> ${String(items.length).padStart(2,'0')}`;
+      root.querySelectorAll('.landing-showcase-dot').forEach((dot, dotIndex) => {
+        const active = dotIndex === nextIndex;
+        dot.classList.toggle('is-active', active);
+        dot.setAttribute('aria-pressed', String(active));
+      });
+      if (!reduceMotion) {
+        [visual,copy].forEach(element => element.animate(
+          [{ opacity:0, transform:'translate3d(0,8px,0)' },{ opacity:1, transform:'translate3d(0,0,0)' }],
+          { duration:320, easing:'ease-out' }
+        ));
+      }
+    };
+    root.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.hasAttribute('data-showcase-step')) show(Number(root.dataset.index) + Number(button.dataset.showcaseStep));
+      else if (button.hasAttribute('data-showcase-index')) show(Number(button.dataset.showcaseIndex));
+    });
+    root.addEventListener('pointerenter', () => { paused = true; });
+    root.addEventListener('pointerleave', () => { paused = false; });
+    root.addEventListener('focusin', () => { paused = true; });
+    root.addEventListener('focusout', event => {
+      if (!root.contains(event.relatedTarget)) paused = false;
+    });
+    if (!reduceMotion && items.length > 1) {
+      landingCarouselTimers.push(setInterval(() => {
+        if (!paused && !document.hidden && root.isConnected) show(Number(root.dataset.index) + 1);
+      }, 5500));
+    }
+  });
+}
+
 function renderGoogleSignIn(){
+  stopLandingCarousels();
   if (typeof detachHostRoom === 'function') detachHostRoom();
   detachPlayerRoom();
   setActivityBackdrop(null);
   setVersionFooterVisibility(true);
-  const gameCards = GAMES_LIST.filter(game => game.available).map(game => `
-    <article class="landing-game-card">
-      <span class="landing-game-icon">${gameIconHtml(game)}</span>
-      <span>${escapeHtml(game.title)}</span>
-    </article>
-  `).join('');
+  const games = GAMES_LIST.filter(game => game.available);
+  const tools = [
+    { title:'جرس الإجابة', icon:'assets/icons/answer-buzzer.svg', available:true, desc:'جرس رقمي لتحديد أسرع إجابة في ألعاب الأسئلة والتحديات الخارجية.' },
+    { title:'لوح رسم مشترك', icon:'assets/icons/signal-sketch.svg', available:false, desc:'أداة للرسم والتخمين لدعم الأنشطة والألعاب الخارجية.' }
+  ];
   app.innerHTML = `
     <div class="landing-page">
       <header class="landing-nav">
@@ -395,7 +478,7 @@ function renderGoogleSignIn(){
             <div class="landing-games-title-group"><span class="landing-eyebrow">المحتوى</span><h2 id="landing-games-title">الألعاب المتاحة</h2></div>
             <span class="landing-games-note">ألعاب جماعية ضمن المنصة</span>
           </div>
-          <div class="landing-game-list">${gameCards}</div>
+          ${landingShowcaseMarkup('games','استعراض الألعاب',games,'game')}
         </section>
 
         <section class="landing-tools" id="landing-tools" aria-labelledby="landing-tools-title">
@@ -404,18 +487,7 @@ function renderGoogleSignIn(){
             <h2 id="landing-tools-title">أدوات للألعاب الخارجية</h2>
             <p>أدوات تفاعلية تدعم الألعاب التي تُمارس خارج المنصة، ويجري تطوير المزيد منها.</p>
           </div>
-          <div class="landing-tool-list">
-            <article class="landing-tool-card landing-tool-live">
-              <span class="landing-tool-symbol" aria-hidden="true"><span>●</span></span>
-              <div class="landing-tool-copy"><span class="landing-tool-status">متاحة</span><h3>جرس الإجابة</h3><p>جرس رقمي لتحديد أسرع إجابة في ألعاب الأسئلة والتحديات الخارجية.</p></div>
-              <span class="landing-tool-index">01</span>
-            </article>
-            <article class="landing-tool-card">
-              <span class="landing-tool-symbol landing-draw-symbol" aria-hidden="true"><span>✎</span></span>
-              <div class="landing-tool-copy"><span class="landing-tool-status landing-tool-coming">قيد التطوير</span><h3>لوح رسم مشترك</h3><p>أداة للرسم والتخمين لدعم الأنشطة والألعاب الخارجية.</p></div>
-              <span class="landing-tool-index">02</span>
-            </article>
-          </div>
+          ${landingShowcaseMarkup('tools','استعراض الأدوات',tools,'tool')}
           <p class="landing-tools-footnote">تُضاف أدوات أخرى مستقبلًا.</p>
         </section>
 
@@ -427,6 +499,7 @@ function renderGoogleSignIn(){
         <button class="landing-admin-link" id="adminGuestBtn" type="button">دخول المشرف</button>
       </footer>
     </div>`;
+  initLandingCarousels();
   const signIn = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
@@ -450,6 +523,7 @@ function renderGoogleSignIn(){
 }
 
 function renderAdminNameEntry(){
+  stopLandingCarousels();
   app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">دخول Admin</h2><p class="muted">اكتب الاسم الذي سيظهر في لوحة التحكم.</p><input type="text" id="adminNameInput" maxlength="30" placeholder="الاسم" autofocus><button class="btn" id="adminEnterBtn" style="width:100%; margin-top:12px;">دخول</button><button class="btn btn-ghost" id="adminBackBtn" style="width:100%; margin-top:10px;">رجوع</button></div></div>`;
   const enter = () => {
     const name = document.getElementById('adminNameInput').value.trim();
