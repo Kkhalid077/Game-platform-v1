@@ -316,14 +316,14 @@ function renderTriviaQuestionHost(code,t){
     </section>`;
   }).join('');
   const answerActions=current.revealed
-    ? `<button class="btn" onclick="triviaScore('${code}','${team}',${points})">نقطة لـ ${escapeHtml(t.teams?.[team]||`الفريق ${team}`)}</button>
+    ? `${['A','B'].map(scoreTeam=>`<button class="btn trivia-score-team trivia-score-team-${scoreTeam.toLowerCase()}" onclick="triviaScore('${code}','${scoreTeam}',${points})">احتساب ${points} نقطة لـ ${escapeHtml(t.teams?.[scoreTeam]||(scoreTeam==='A'?'الفريق الأول':'الفريق الثاني'))}</button>`).join('')}
        ${current.thrownByTeam?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team}',-${points})">لم يجب الفريق — خصم ${points} نقطة</button>`:''}
        ${current.stealAvailable&&!current.stealPrompted?`<button class="btn btn-ghost" onclick="triviaOfferSteal('${code}')">الإجابة خاطئة — إتاحة السرقة</button>`:''}
        ${current.stealAvailable&&current.stealPrompted?`<button class="btn trivia-b" onclick="triviaScore('${code}','${team==='A'?'B':'A'}',${points})">سرقة النقاط لـ ${escapeHtml(t.teams?.[team==='A'?'B':'A']||'الفريق الآخر')}</button>`:''}
        <button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`
     : `<button class="btn" onclick="triviaReveal('${code}')">إظهار الإجابة</button>`;
   document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap"><div class="trivia-question-card">
-    <header class="trivia-question-header"><span class="trivia-question-points">${points}</span><span class="trivia-question-category">${category.icon} ${category.name}</span><span class="trivia-question-turn">دور ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</span></header>
+    <header class="trivia-question-header"><span class="trivia-question-points">${points}</span><span class="trivia-question-category">${category.icon} ${category.name}</span><div class="trivia-question-turn"><span>دور ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</span><button type="button" class="trivia-question-turn-switch" onclick="triviaSetQuestionTurn('${code}','${team==='A'?'B':'A'}')">تبديل الدور ↔</button></div></header>
     <div class="trivia-question-layout">
       <aside class="trivia-question-sidebar" aria-label="وسائل مساعدة الفريقين">${teamAidCards}</aside>
       <main class="trivia-question-main">
@@ -343,6 +343,13 @@ function renderTriviaQuestionHost(code,t){
 window.triviaOpenWheel=()=>{
   const dialog=document.getElementById('triviaWheelDialog');
   if(dialog&&!dialog.open)dialog.showModal();
+};
+window.triviaSetQuestionTurn=async(code,team)=>{
+  try{
+    const ref=db.ref(`rooms/${code}/trivia/current`),snapshot=await ref.once('value');
+    if(!snapshot.exists())return;
+    await ref.child('team').set(team);
+  }catch(error){console.error('Could not switch trivia question turn:',error);alert('تعذر تبديل دور الفريق. تحقق من الاتصال وحاول مرة أخرى.');}
 };
 window.triviaReveal=code=>db.ref(`rooms/${code}/trivia/current/revealed`).set(true);
 window.triviaOfferSteal=async code=>{
