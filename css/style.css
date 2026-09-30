@@ -417,13 +417,15 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .trivia-turn b{color:var(--text);font-family:'Cairo',sans-serif;font-size:15px}
 .trivia-turn button,.trivia-question-aids button{min-height:40px;padding:7px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:rgba(255,255,255,.06);color:var(--text);font:inherit;cursor:pointer}
 .trivia-board-screen{width:100%;max-width:1680px;margin:8px auto 24px;padding:clamp(12px,1.8vw,26px);border:1px solid rgba(125,164,221,.25);border-radius:24px;background:linear-gradient(155deg,rgba(11,23,49,.96),rgba(4,11,26,.98));box-shadow:0 22px 70px rgba(0,0,0,.4),inset 0 1px rgba(203,221,255,.08)}
-.trivia-gamebar{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:12px;padding:10px 14px;border:1px solid rgba(142,172,219,.16);border-radius:16px;background:rgba(24,39,69,.72)}
-.trivia-gamebar .trivia-turn{grid-column:3;grid-row:1;min-width:136px;padding:6px 14px;border:1px solid rgba(91,193,235,.32);border-radius:999px;background:rgba(57,166,210,.14);color:#bfeeff}
+.trivia-gamebar{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 14px;border:1px solid rgba(142,172,219,.16);border-radius:16px;background:rgba(24,39,69,.72)}
+.trivia-gamebar .trivia-turn{grid-column:1;grid-row:1;min-width:136px;padding:6px 14px;border:1px solid rgba(91,193,235,.32);border-radius:999px;background:rgba(57,166,210,.14);color:#bfeeff}
 .trivia-gamebar .trivia-turn b{color:#e6f7ff;font-size:14px}
 .trivia-turn-switch{grid-column:2;grid-row:1;display:grid;place-items:center;width:40px;height:40px;border:1px solid rgba(142,172,219,.24);border-radius:12px;background:rgba(255,255,255,.05);color:var(--text);font-size:20px;cursor:pointer}
-.trivia-gamebar h1{grid-column:4;grid-row:1;display:flex;align-items:baseline;justify-content:flex-start;gap:9px;margin:0;font-size:18px}
+.trivia-gamebar h1{grid-column:3;grid-row:1;display:flex;align-items:baseline;justify-content:flex-start;gap:9px;margin:0;font-size:18px}
 .trivia-gamebar h1 small{color:var(--text-dim);font-size:11px;font-weight:500}
-.trivia-exit-controls.is-embedded{position:static;grid-column:1;grid-row:1;flex-wrap:wrap}
+.trivia-exit-controls.is-embedded{position:static;grid-column:4;grid-row:1;flex-wrap:wrap}
+.trivia-exit-controls.is-embedded .activity-return-detail{order:1}
+.trivia-exit-controls.is-embedded .btn-danger{order:2}
 .trivia-exit-controls.is-embedded .btn{padding:8px 12px}
 .trivia-board-frame{margin-top:12px;padding:10px;border:1px solid rgba(104,143,194,.2);border-radius:18px;background:rgba(2,8,22,.52)}
 .trivia-board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;overflow-x:auto}
@@ -546,12 +548,12 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
   .trivia-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .trivia-team-setup-grid{grid-template-columns:1fr}
   .trivia-board-screen{width:100%;padding:9px;border-radius:17px}
-  .trivia-gamebar{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:9px}
-  .trivia-gamebar .trivia-turn{grid-column:2;grid-row:2;min-width:0;padding-inline:10px}
-  .trivia-turn-switch{grid-column:1;grid-row:2;width:36px;height:36px}
-  .trivia-gamebar h1{grid-column:2;grid-row:1;font-size:16px}
+  .trivia-gamebar{grid-template-columns:auto auto minmax(0,1fr);gap:8px;padding:9px}
+  .trivia-gamebar .trivia-turn{grid-column:1;grid-row:1;min-width:0;padding-inline:10px}
+  .trivia-turn-switch{grid-column:2;grid-row:1;width:36px;height:36px}
+  .trivia-gamebar h1{grid-column:3;grid-row:1;font-size:16px}
   .trivia-gamebar h1 small{display:none}
-  .trivia-exit-controls.is-embedded{grid-column:1;grid-row:1;gap:5px}
+  .trivia-exit-controls.is-embedded{grid-column:1/-1;grid-row:2;justify-self:end;gap:5px}
   .trivia-exit-controls.is-embedded .btn{padding:7px 9px;font-size:12px}
   .trivia-board-frame{padding:7px}
   .trivia-board{grid-template-columns:repeat(6,112px);gap:6px}

@@ -87,8 +87,8 @@ function renderTriviaHost(code,room){
 }
 function triviaExitControlsHtml(code,embedded=false){
   return `<div class="activity-exit-controls trivia-exit-controls${embedded?' is-embedded':''}">
-    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
     <button type="button" class="btn activity-return-detail" onclick="triviaFinishToCategories('${code}')">إنهاء اللعبة</button>
+    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
   </div>`;
 }
 window.triviaFinishToCategories=async code=>{
@@ -122,8 +122,8 @@ function renderTriviaSetupHost(code,t){
       </header><div class="trivia-aid-grid">${aidChoices}</div>
     </section>`;
   }).join('');
-  document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap">
-    <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>إعداد الفريقين</h1><p>سمّوا الفريقين، ثم يختار كل فريق 3 وسائل مساعدة.</p></div></header>
+  document.getElementById('stage').innerHTML=`<div class="trivia-wrap">
+    <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>إعداد الفريقين</h1><p>سمّوا الفريقين، ثم يختار كل فريق 3 وسائل مساعدة.</p></div><button type="button" class="btn btn-ghost" onclick="returnToGameDetail('${code}','trivia')">العودة إلى تعليمات اللعبة</button></header>
     <div class="trivia-team-setup-grid">${teamCards}</div>
     <div class="trivia-setup-actions">
       <button class="btn btn-ghost" onclick="triviaRandomizeAids('${code}')">اختيار عشوائي للوسائل</button>
@@ -134,7 +134,7 @@ function renderTriviaSetupHost(code,t){
 function renderTriviaCategoriesHost(code,t){
   const selected=t.categories||[];
   const cards=TRIVIA_BANK.map(c=>`<button class="trivia-category ${selected.includes(c.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${c.id}')"><span>${c.icon}</span><b>${c.name}</b><small>${selected.includes(c.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
-  document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap">
+  document.getElementById('stage').innerHTML=`<div class="trivia-wrap">
     <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>تحديد الفئات</h1><p>اختاروا 6 فئات للوحة اللعب (${selected.length}/6).</p></div><button class="btn btn-ghost" onclick="triviaBackToTeams('${code}')">العودة للفريقين</button></header>
     <div class="trivia-category-grid">${cards}</div>
     <div class="trivia-setup-actions trivia-category-actions">
