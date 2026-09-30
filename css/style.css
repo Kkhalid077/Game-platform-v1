@@ -75,6 +75,7 @@ input[type=text]:focus{border-color:var(--accent)}
 /* ---------- هياكل عامة ---------- */
 .stage{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 40px;text-align:center}
 .phone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
+.activity-exit-control{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));margin:0;padding:8px 15px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.38)}
 .card{width:100%;max-width:440px;padding:26px 22px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow);text-align:center}
 .card h2{font-size:22px;margin-bottom:6px}
 .muted{margin-top:10px;color:var(--text-dim);font-size:14px}
@@ -263,6 +264,7 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 
 /* ---------- جرس الإجابة ---------- */
 .buzzer-stage{justify-content:center}
+.buzzer-back{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px))}
 .buzzer-panel{width:min(100%,760px);padding:clamp(18px,4vw,34px);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow);text-align:center}
 .buzzer-panel h1{font-size:clamp(26px,5vw,38px)}
 .tool-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-direction:row-reverse}
@@ -325,6 +327,8 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .trivia-start{display:block;min-width:250px;margin:24px auto 0}
 .trivia-scoreboard{display:flex;align-items:stretch;justify-content:center;gap:12px;max-width:800px;margin:16px auto 22px}
 .trivia-score{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);text-align:center}
+.trivia-score.is-leading{border-color:color-mix(in srgb,var(--team-color,var(--cyan)) 65%,var(--line));background:linear-gradient(145deg,color-mix(in srgb,var(--team-color,var(--cyan)) 14%,var(--surface)),var(--surface));box-shadow:0 8px 24px color-mix(in srgb,var(--team-color,var(--cyan)) 12%,transparent)}
+.trivia-score.team-a{--team-color:var(--team-a)}.trivia-score.team-b{--team-color:var(--team-b)}
 .trivia-score span{font-weight:800}
 .trivia-score b{font-family:'Cairo',sans-serif;font-size:clamp(30px,5vw,46px);line-height:1.2}
 .trivia-score small{color:var(--text-dim)}
@@ -366,9 +370,30 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .qatara-answer-reveal{margin:14px 0;color:#ffe08a;font-family:'Cairo',sans-serif;font-size:clamp(24px,4vw,38px);font-weight:900}
 .qatara-status-title{margin:18px 0;font-size:clamp(23px,4vw,36px)}
 .qatara-countdown{display:grid;place-items:center;width:100px;height:100px;margin:18px auto;border:4px solid var(--amber);border-radius:50%;color:var(--amber);font-family:'Cairo',sans-serif;font-size:48px;font-weight:900}
-.qatara-leaderboard{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:30px auto 0}
-.qatara-score-chip{display:flex;align-items:center;gap:10px;padding:8px 15px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-weight:700}
-.qatara-score-chip b{color:var(--cyan);font-family:'Cairo',sans-serif;font-size:18px}
+.team-ranking-box{max-width:760px;border-color:rgba(160,172,255,.2);background:linear-gradient(145deg,rgba(19,25,52,.96),rgba(13,18,38,.94));text-align:right}
+.team-ranking-box>h3{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;font-family:'Cairo',sans-serif;font-size:16px}
+.team-ranking-box>h3 small{color:var(--text-dim);font:500 12px 'Tajawal',sans-serif}
+.team-ranking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.team-ranking-card{position:relative;display:flex;align-items:center;gap:11px;min-width:0;padding:13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.035);text-align:right}
+.team-ranking-card.team-a{--rank-color:var(--team-a)}.team-ranking-card.team-b{--rank-color:var(--team-b)}
+.team-ranking-card.is-leading{border-color:color-mix(in srgb,var(--rank-color) 55%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,var(--rank-color) 12%,transparent),rgba(255,255,255,.035))}
+.team-ranking-place{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:color-mix(in srgb,var(--rank-color) 16%,transparent);color:var(--rank-color);font-family:'Cairo',sans-serif;font-weight:900}
+.team-ranking-info{display:flex;flex:1;flex-direction:column;min-width:0}
+.team-ranking-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-ranking-info small{overflow:hidden;color:var(--text-dim);font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.team-ranking-score{display:flex;align-items:baseline;gap:4px;color:var(--rank-color)}
+.team-ranking-score b{font-family:'Cairo',sans-serif;font-size:26px;line-height:1}
+.team-ranking-score span{font-size:11px}
+.qatara-leaderboard{width:min(900px,100%);margin:28px auto 0;text-align:right}
+.qatara-leaderboard>h2{margin-bottom:10px;font-size:17px}
+.qatara-ranking-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.qatara-rank-card{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:8px;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:linear-gradient(145deg,rgba(25,31,62,.92),rgba(14,19,41,.94));text-align:right}
+.qatara-rank-card.is-leading{border-color:rgba(255,194,75,.55);background:linear-gradient(120deg,rgba(255,194,75,.12),rgba(25,31,62,.92))}
+.qatara-rank-number{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:rgba(139,123,255,.17);color:#d7d0ff;font-family:'Cairo',sans-serif;font-weight:900}
+.qatara-rank-card.is-leading .qatara-rank-number{background:rgba(255,194,75,.2);color:var(--amber)}
+.qatara-rank-card>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qatara-rank-score{display:flex;align-items:baseline;gap:3px;color:var(--cyan);font-family:'Cairo',sans-serif;font-size:20px;font-weight:900}
+.qatara-rank-score small{color:var(--text-dim);font:500 11px 'Tajawal',sans-serif}
 .qatara-phone{justify-content:center}
 .qatara-player-card{max-width:520px}
 .qatara-player-card h2{margin:18px 0}
@@ -398,8 +423,12 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
   .trivia-turn{font-size:10px}.trivia-turn b{font-size:12px}
   .qatara-header{align-items:flex-start;margin-bottom:32px}
   .qatara-header .btn{padding-inline:12px;font-size:13px}
-  .qatara-leaderboard{gap:6px}
-  .qatara-score-chip{padding:6px 10px;font-size:13px}
+  .team-ranking-grid{grid-template-columns:1fr}
+  .qatara-ranking-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .qatara-rank-card{grid-template-columns:28px 1fr auto;gap:6px;padding:9px}
+  .qatara-rank-number{width:26px;height:26px}
+  .qatara-rank-card>strong{font-size:12px}
+  .qatara-rank-score{font-size:17px}
   .qatara-buzz-button{width:min(78vw,330px);min-height:0}
   .team-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .team-picker{padding:13px}

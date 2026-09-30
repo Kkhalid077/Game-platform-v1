@@ -289,10 +289,19 @@ function setupSilentCanvas(code, team){
 }
 
 function silentDrawRankingHtml(sd, players){
-  const teamLabel = t => silentDrawTeamIds(sd,t).map(id => players[id]?.name || '').join(' و ');
+  const teamLabel = t => silentDrawTeamIds(sd,t).map(id => players[id]?.name || '').filter(Boolean).join(' و ');
   const teamName = t => escapeHtml(sd.teamNames?.[t] || `الفريق ${t}`);
-  const ranked = ['A','B'].sort((a,b) => sd.correctCount[b] - sd.correctCount[a]);
-  return ranked.map((t,i) => `<div class="chip team-${t}">${i+1}. ${teamName(t)} (${escapeHtml(teamLabel(t))}) — ${sd.correctCount[t]} نقطة</div>`).join('');
+  const ranked = ['A','B'].sort((a,b) => (Number(sd.correctCount?.[b])||0) - (Number(sd.correctCount?.[a])||0));
+  const topScore = Number(sd.correctCount?.[ranked[0]]) || 0;
+  return `<div class="team-ranking-grid">${ranked.map((t,i) => {
+    const score = Number(sd.correctCount?.[t]) || 0;
+    const rank = i > 0 && score === (Number(sd.correctCount?.[ranked[i-1]]) || 0) ? i : i+1;
+    return `<article class="team-ranking-card team-${t.toLowerCase()} ${score===topScore?'is-leading':''}">
+    <span class="team-ranking-place">${rank===1?'١':'٢'}</span>
+    <div class="team-ranking-info"><strong>${teamName(t)}</strong><small>${escapeHtml(teamLabel(t)||'بانتظار اللاعبين')}</small></div>
+    <div class="team-ranking-score"><b>${score}</b><span>نقاط</span></div>
+  </article>`;
+  }).join('')}</div>`;
 }
 
 function renderSilentDrawHost(code, room){
@@ -329,12 +338,10 @@ function renderSilentDrawHost(code, room){
   }
 
   document.getElementById('stage').innerHTML = `
-    <div style="margin-bottom:15px;">
-      <button class="btn btn-danger" onclick="resetToLobby('${code}')"> إنهاء اللعبة والعودة للوحة التحكم</button>
-    </div>
+    <button class="btn btn-danger activity-exit-control" onclick="resetToLobby('${code}')">إنهاء اللعبة</button>
     <h2 style="font-family:'Cairo'; color:var(--accent);">إشارة ورسمة</h2>
     <p class="narrator">${narrator}</p>
-    <div class="players-box"><h3 style="font-family:'Cairo'; font-size:14px; color:var(--text-dim);">الترتيب (الفوز عند 3 نقاط)</h3>${silentDrawRankingHtml(sd, players)}</div>
+    <section class="players-box team-ranking-box"><h3>الترتيب <small>الفوز عند ٣ نقاط</small></h3>${silentDrawRankingHtml(sd, players)}</section>
     ${boards}
     ${control}
   `;
