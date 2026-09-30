@@ -365,8 +365,9 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .trivia-aid-choice>.trivia-aid:hover{transform:translateY(-1px);border-color:rgba(169,172,208,.4)}
 .trivia-aid-choice.is-selected>.trivia-aid{border-color:rgba(255,194,75,.62);background:linear-gradient(125deg,rgba(255,194,75,.13),rgba(255,194,75,.035))}
 .trivia-aid-choice>.trivia-aid b{flex:1;font-size:12px;line-height:1.35}
-.trivia-aid-choice>.trivia-aid input{flex:none;width:16px;height:16px;accent-color:var(--amber)}
-.trivia-aid-choice>.trivia-aid input:disabled{opacity:.42}
+.trivia-aid-choice>.trivia-aid input{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap}
+.trivia-aid-choice>.trivia-aid:focus-within{outline:2px solid var(--amber);outline-offset:2px}
+.trivia-aid-choice>.trivia-aid input:disabled{cursor:not-allowed}
 .trivia-aid-icon{display:grid;flex:none;place-items:center;width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.055);font-size:16px}
 .trivia-aid-choice>.trivia-aid-help{grid-column:1/-1;grid-row:2;margin-inline-start:5px}
 .trivia-aid-help summary{transition:background .15s,border-color .15s}
