@@ -90,6 +90,7 @@ function startTriviaSetup(code,retainedTeams=null){
 }
 function renderTriviaHost(code,room){
   const t=room.trivia||{};
+  document.getElementById('stage')?.classList.toggle('trivia-landscape-stage',t.phase==='board'||t.phase==='question'||t.phase==='done');
   if(t.phase==='setup') return renderTriviaSetupHost(code,t);
   if(t.phase==='categories') return renderTriviaCategoriesHost(code,t);
   if(t.phase==='question') return renderTriviaQuestionHost(code,t);
@@ -99,10 +100,12 @@ function renderTriviaHost(code,room){
 function triviaExitControlsHtml(code,embedded=false){
   return `<div class="activity-exit-controls trivia-exit-controls${embedded?' is-embedded':''}">
     <button type="button" class="btn activity-return-detail" onclick="triviaFinishToCategories('${code}')">إنهاء اللعبة</button>
-    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
+    <button type="button" class="btn btn-danger" onclick="triviaRestorePortrait();resetToLobby('${code}')">خروج</button>
   </div>`;
 }
+window.triviaRestorePortrait=()=>document.getElementById('stage')?.classList.remove('trivia-landscape-stage');
 window.triviaFinishToCategories=async code=>{
+  triviaRestorePortrait();
   try{
     await db.ref(`rooms/${code}`).update({
       status:'trivia_setup',

@@ -46,6 +46,7 @@ function initHostRoom(code, isNew){
 
 function dispatchHostRender(code, room){
   if (!room) {
+    stopDrawBoardHost();
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
@@ -59,6 +60,15 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if(isDrawBoardLiveChangeOnly(previousRoom,room)){
+    lastHostRoom=room;
+    return;
+  }
+  if (!(room.status === 'in_tool' && room.activeTool === 'drawboard')) stopDrawBoardHost();
+  if (!(room.status === 'in_game' && room.activeGame === 'trivia' &&
+        ['board','question','done'].includes(room.trivia?.phase))) {
+    window.triviaRestorePortrait?.();
+  }
   if (isTriviaQuestionTurnOnlyChange(previousRoom, room)) {
     lastHostRoom = room;
     updateTriviaQuestionTurnDisplays(code, room);
@@ -92,6 +102,7 @@ function dispatchHostRender(code, room){
   const renderView = () => {
     if (room.status === 'voting') renderHostLobby(code, room);
     else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
+    else if (room.status === 'in_tool' && room.activeTool === 'drawboard') renderDrawBoardHost(code, room);
     else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
@@ -244,9 +255,12 @@ function renderHostLobby(code, room){
       <div class="vote-badge">${g.id === 'trivia' ? 'يعرضها المنظّم' : `الحد الأدنى ${g.minPlayers}`}</div>
     </div>`;
   }).join('');
-  const toolsHtml = `<section class="host-tools-section" aria-labelledby="host-tools-heading">
-    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span><h2 id="host-tools-heading">أدوات الجلسة</h2></div>
-    <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
+  const toolsHtml = `<section class="host-tools-section" aria-label="أدوات مساندة">
+    <div class="host-games-header"><span class="host-section-kicker">أدوات مساندة</span></div>
+    <div class="games-grid host-tools-grid">
+      <button type="button" class="game-card host-tool-card" onclick="startBuzzerTool('${code}')"><span class="game-icon-badge">${iconImageHtml('assets/icons/answer-buzzer.svg')}</span><span class="game-title">جرس الإجابة</span><span class="vote-badge">أسرع ضغطة</span></button>
+      <button type="button" class="game-card host-tool-card drawboard-tool-card" onclick="startDrawBoardTool('${code}')"><span class="game-icon-badge" aria-hidden="true">🖌️</span><span class="game-title">لوح الرسم المشترك</span><span class="vote-badge">ارسموا معًا مباشرة</span></button>
+    </div>
   </section>`;
   const dashboardContent = hostDashboardTab === 'tools'
     ? toolsHtml
@@ -261,7 +275,7 @@ function renderHostLobby(code, room){
             <article class="host-pricing-card"><span class="host-section-kicker">للمجموعات</span><h3>مميزة</h3><p class="host-pricing-amount">٤٩ <span>ر.س / شهر</span></p><p>للمجموعات والمنظمين ذوي الاستخدام المكثف.</p><span class="host-pricing-label">مقترح مبدئي</span></article>
           </div>
         </section>`
-      : `<section class="host-games-section" aria-labelledby="host-games-heading"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span><h2 id="host-games-heading">اختر لعبة</h2></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
+      : `<section class="host-games-section" aria-label="الألعاب المتاحة"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
   document.getElementById('stage').innerHTML = `
     <div class="host-shell">
@@ -308,8 +322,14 @@ window.startBuzzerTool = function(code){
   db.ref('rooms/'+code).update({ status:'in_tool', activeTool:'buzzer', players:{}, buzzerTransport:window.RTCPeerConnection?'rtc':'firebase', buzzerSession:session, buzzerRtc:null, buzzerFallback:null, buzzer:{ winner:null, pressedAt:null, presses:{}, locked:false, timer:null, round:0 } });
 };
 
-window.resetToLobby = function(code){
-  db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
+window.resetToLobby = async function(code){
+  stopDrawBoardHost?.();
+  try{
+    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null, drawingBoards:null });
+  }catch(error){
+    console.error('Could not leave the active room tool:',error);
+    alert('تعذر الخروج من الأداة. تحقق من الاتصال وحاول مرة أخرى.');
+  }
 };
 
 function activityExitControlsHtml(code,gameId){

@@ -34,6 +34,7 @@ a{color:var(--cyan)}
 #app[data-activity="trivia"]{--activity-nebula-a:rgba(38,79,154,.31);--activity-nebula-b:rgba(29,117,134,.2);--activity-symbol:"✦"}
 #app[data-activity="qatara"]{--activity-nebula-a:rgba(133,83,27,.29);--activity-nebula-b:rgba(103,42,81,.22);--activity-symbol:"?"}
 #app[data-activity="buzzer"]{--activity-nebula-a:rgba(145,65,21,.31);--activity-nebula-b:rgba(97,37,53,.22);--activity-symbol:"◉"}
+#app[data-activity="drawboard"]{--activity-nebula-a:rgba(21,66,100,.3);--activity-nebula-b:rgba(33,91,81,.2);--activity-symbol:"✎"}
 @keyframes activity-nebula-drift{from{background-position:0% 0%,100% 100%,50% 0%,center}to{background-position:12% 8%,88% 92%,46% 8%,center}}
 @keyframes activity-symbol-drift{from{transform:translate3d(-2%,1%,0) rotate(-8deg) scale(.96)}to{transform:translate3d(2%,-1%,0) rotate(8deg) scale(1.04)}}
 body.has-version-footer #app{padding-bottom:56px}
@@ -284,6 +285,45 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .color-row button{width:36px!important;height:36px!important;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .illustration-img{display:block;max-width:140px;max-height:140px;margin:12px auto;padding:8px;object-fit:contain;border-radius:var(--r-sm);background:rgba(255,255,255,.06)}
 .illustration-fallback{display:grid;place-items:center;width:140px;height:140px;margin:12px auto;border-radius:var(--r-sm);background:var(--surface-2);font-family:'Cairo',sans-serif;font-size:24px;font-weight:800}
+.drawboard-host-screen,.drawboard-player-screen{width:min(1500px,100%);margin:0 auto;text-align:right}
+.drawboard-heading,.drawboard-player-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:8px 0 16px}
+.drawboard-heading h1,.drawboard-player-heading h1{font-size:clamp(23px,4vw,34px)}
+.drawboard-heading p{margin:4px 0 0;color:var(--text-dim)}
+.drawboard-count{flex:none;padding:8px 14px;border:1px solid rgba(76,212,255,.3);border-radius:999px;background:rgba(76,212,255,.09);color:#c5f3ff}
+.drawboard-host-content{display:grid;grid-template-columns:minmax(220px,270px) minmax(0,1fr);align-items:start;gap:16px}
+.drawboard-host-content>.invite-card{position:sticky;top:12px;display:grid;grid-template-columns:1fr;justify-items:center;text-align:center}
+.drawboard-host-content .invite-body{width:100%}
+.drawboard-host-boards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px}
+.drawboard-host-card{min-width:0;padding:10px;border:1px solid rgba(133,166,218,.22);border-radius:var(--r-md);background:linear-gradient(155deg,rgba(18,32,58,.94),rgba(8,17,35,.95))}
+.drawboard-host-card>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.drawboard-host-card>header span{color:var(--text-dim);font-size:10px}
+.drawboard-host-card>header h2{max-width:100%;overflow:hidden;font-size:14px;text-overflow:ellipsis;white-space:nowrap}
+.drawboard-pointer-toggle,.drawboard-tool-button{min-height:36px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.045);color:var(--text);font:700 11px 'Cairo',sans-serif;white-space:nowrap;cursor:pointer}
+.drawboard-pointer-toggle.is-active{border-color:rgba(76,212,255,.6);background:rgba(76,212,255,.14);color:#c5f3ff}
+.drawboard-canvas-wrap,.drawboard-player-canvas-wrap{position:relative;overflow:hidden;border:1px solid rgba(14,30,51,.2);border-radius:10px;background:#fff}
+.drawboard-host-canvas,.drawboard-player-canvas-wrap canvas{display:block;width:100%;height:auto;aspect-ratio:640/420;background-color:#fff;touch-action:none}
+.drawboard-organizer-pointer{position:absolute;z-index:2;width:22px;height:22px;border:2px solid #fff;border-radius:50%;background:rgba(220,38,38,.78);box-shadow:0 1px 8px rgba(0,0,0,.75);transform:translate(-50%,-50%);pointer-events:none}
+.drawboard-organizer-pointer[hidden]{display:none!important}
+.drawboard-empty{grid-column:1/-1;margin:0;padding:24px;border:1px dashed rgba(133,166,218,.32);border-radius:var(--r-md);color:var(--text-dim);text-align:center}
+.drawboard-player-screen{width:min(1000px,100%);margin:auto}
+.drawboard-player-heading{margin:0 0 12px}
+.drawboard-player-heading .host-section-kicker{display:block}
+.drawboard-live{display:flex;align-items:center;gap:7px;color:#9bf0c8;font-size:12px}
+.drawboard-live i{width:8px;height:8px;border-radius:50%;background:#42d997;box-shadow:0 0 10px rgba(66,217,151,.6)}
+.drawboard-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px;padding:9px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(13,24,45,.9)}
+.drawboard-palette{display:flex;flex-wrap:wrap;gap:5px}
+.drawboard-color{width:27px;height:27px;padding:0;border:2px solid rgba(255,255,255,.22);border-radius:50%;background:var(--drawboard-color);cursor:pointer}
+.drawboard-color.is-selected{outline:2px solid var(--cyan);outline-offset:2px}
+.drawboard-custom-color{display:flex;align-items:center;gap:5px;color:var(--text-dim);font-size:11px}
+.drawboard-custom-color input{width:34px;height:34px;padding:2px;border:1px solid var(--line);border-radius:8px;background:transparent;cursor:pointer}
+.drawboard-size-control{display:flex;align-items:center;gap:6px;color:var(--text-dim);font-size:11px}
+.drawboard-size-control input{width:90px;accent-color:var(--cyan)}
+.drawboard-size-control output{min-width:16px;color:var(--text)}
+.drawboard-tool-button.is-active{border-color:var(--cyan);background:rgba(76,212,255,.14)}
+.drawboard-tool-button.is-danger{border-color:rgba(255,107,157,.28);color:#ffc2d4}
+.drawboard-player-status{margin:7px 0;color:var(--text-dim);font-size:12px}
+.drawboard-player-screen .drawboard-player-canvas-wrap{border:4px solid rgba(76,212,255,.4);box-shadow:0 10px 35px rgba(0,0,0,.22)}
+.drawboard-tool-card .game-icon-badge{font-size:27px}
 
 /* ---------- جرس الإجابة ---------- */
 .buzzer-stage{justify-content:center}
@@ -555,6 +595,115 @@ button.trivia-team-aid:hover{border-color:color-mix(in srgb,var(--aid-team-color
 .qatara-answer-form .btn{width:100%;margin:0}
 @media(max-width:760px){
   .stage{padding-inline:12px}
+  .drawboard-host-screen{padding-top:42px}
+  .drawboard-heading{align-items:flex-start;gap:8px}
+  .drawboard-heading p{max-width:42ch;font-size:12px}
+  .drawboard-heading h1{font-size:23px}
+  .drawboard-count{padding:5px 9px;font-size:12px}
+  .drawboard-host-content{grid-template-columns:1fr;gap:10px}
+  .drawboard-host-content>.invite-card{position:static;grid-template-columns:92px minmax(0,1fr);gap:10px;padding:10px;text-align:right}
+  .drawboard-host-content .invite-qr{width:88px;height:88px;padding:4px}
+  .drawboard-host-content .invite-qr canvas,.drawboard-host-content .invite-qr img{max-width:80px;max-height:80px}
+  .drawboard-host-content .invite-body{min-width:0}
+  .drawboard-host-content .invite-body h2{font-size:15px}
+  .drawboard-host-content .invite-body p{margin:2px 0;font-size:11px}
+  .drawboard-host-content .invite-link{max-width:100%;font-size:10px}
+  .drawboard-host-content .invite-actions{gap:4px}
+  .drawboard-host-content .invite-actions .btn{min-height:34px;margin:0;padding:5px 8px;font-size:11px}
+  .drawboard-host-boards{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .drawboard-host-card{padding:7px}
+  .drawboard-host-card>header{align-items:flex-start;flex-direction:column}
+  .drawboard-host-card>header h2{font-size:12px}
+  .drawboard-pointer-toggle{width:100%;min-height:32px;padding:4px;font-size:10px}
+  .drawboard-player-screen{padding-top:calc(42px + var(--safe-t))}
+  .drawboard-player-heading h1{font-size:22px}
+  .drawboard-toolbar{gap:7px;padding:7px}
+  .drawboard-palette{flex:1 1 100%;justify-content:space-between}
+  .drawboard-color{width:25px;height:25px}
+  .drawboard-size-control{flex:1}
+  .drawboard-size-control input{flex:1;width:auto}
+  .drawboard-tool-button{min-height:38px;padding:5px 8px}
+}
+@media(max-width:760px) and (orientation:portrait) and (pointer:coarse){
+  .stage.trivia-landscape-stage{
+    position:fixed;
+    z-index:20;
+    top:0;
+    left:100vw;
+    width:100dvh;
+    height:100vw;
+    min-height:0;
+    overflow:auto;
+    padding:8px 10px 10px;
+    transform:rotate(90deg);
+    transform-origin:top left;
+    animation:none;
+    overscroll-behavior:contain;
+  }
+  .trivia-landscape-stage .trivia-wrap,
+  .trivia-landscape-stage .trivia-board-screen{
+    width:100%;
+    max-width:none;
+    margin:0;
+  }
+  .trivia-landscape-stage .trivia-board-screen{padding:8px;border-radius:14px}
+  .trivia-landscape-stage .trivia-gamebar{
+    grid-template-columns:minmax(100px,auto) 36px minmax(0,1fr) auto;
+    gap:6px;
+    padding:6px;
+  }
+  .trivia-landscape-stage .trivia-gamebar .trivia-turn{min-width:0;padding:4px 8px}
+  .trivia-landscape-stage .trivia-gamebar .trivia-turn b{font-size:11px}
+  .trivia-landscape-stage .trivia-turn-switch{width:34px;height:34px}
+  .trivia-landscape-stage .trivia-gamebar h1{font-size:14px}
+  .trivia-landscape-stage .trivia-gamebar h1 small{display:none}
+  .trivia-landscape-stage .trivia-exit-controls.is-embedded{
+    grid-column:4;
+    grid-row:1;
+    flex-wrap:nowrap;
+    gap:4px;
+  }
+  .trivia-landscape-stage .trivia-exit-controls.is-embedded .btn{padding:5px 7px;font-size:10px}
+  .trivia-landscape-stage .trivia-board-frame{margin-top:7px;padding:5px}
+  .trivia-landscape-stage .trivia-board{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;overflow:visible}
+  .trivia-landscape-stage .trivia-column{grid-template-rows:38px repeat(6,minmax(30px,1fr));gap:4px}
+  .trivia-landscape-stage .trivia-column h3{align-items:center;justify-content:center;padding:4px;text-align:center}
+  .trivia-landscape-stage .trivia-column h3>span{font-size:15px}
+  .trivia-landscape-stage .trivia-column h3>b{font-size:9px}
+  .trivia-landscape-stage .trivia-cell{min-height:30px;border-inline-start-width:2px;font-size:14px}
+  .trivia-landscape-stage .trivia-footnote{margin:4px 0;font-size:10px}
+  .trivia-landscape-stage .trivia-standings{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:5px auto}
+  .trivia-landscape-stage .trivia-standings .trivia-score{padding:5px 7px}
+  .trivia-landscape-stage .trivia-standings .trivia-score>b{font-size:18px}
+  .trivia-landscape-stage:has(.trivia-question-card)>.activity-exit-controls{
+    top:7px;
+    left:7px;
+    gap:4px;
+  }
+  .trivia-landscape-stage:has(>.activity-exit-controls){padding-top:54px}
+  .trivia-landscape-stage:has(.trivia-question-card)>.activity-exit-controls .btn{padding:5px 7px;font-size:10px}
+  .trivia-landscape-stage .trivia-question-card{min-height:0;margin:0;padding:9px;border-radius:14px}
+  .trivia-landscape-stage .trivia-question-header{gap:5px;padding-bottom:6px}
+  .trivia-landscape-stage .trivia-question-points{min-width:34px;height:34px;padding:0 5px;font-size:12px}
+  .trivia-landscape-stage .trivia-question-category,
+  .trivia-landscape-stage .trivia-question-turn{font-size:9px}
+  .trivia-landscape-stage .trivia-question-turn{flex-direction:row;align-items:center;gap:5px}
+  .trivia-landscape-stage .trivia-question-turn-switch{padding:3px 5px;font-size:9px}
+  .trivia-landscape-stage .trivia-question-layout{grid-template-columns:180px minmax(0,1fr);gap:7px;margin-top:7px}
+  .trivia-landscape-stage .trivia-question-sidebar{display:flex;flex-direction:column;gap:5px}
+  .trivia-landscape-stage .trivia-team-aids{padding:6px}
+  .trivia-landscape-stage .trivia-team-aids>header{gap:4px;padding-bottom:4px}
+  .trivia-landscape-stage .trivia-team-aids>header h2{font-size:10px}
+  .trivia-landscape-stage .trivia-team-aid-list{gap:4px;padding-top:4px}
+  .trivia-landscape-stage .trivia-team-aid{min-height:27px;padding:3px 5px;font-size:9px}
+  .trivia-landscape-stage .trivia-team-aid>b{font-size:9px}
+  .trivia-landscape-stage .trivia-question-card h1{min-height:85px;margin:4px 0;font-size:clamp(19px,4vw,26px)}
+  .trivia-landscape-stage .trivia-actions{gap:4px;margin-top:6px}
+  .trivia-landscape-stage .trivia-actions .btn{min-height:34px;padding:5px 7px;font-size:9px}
+  .trivia-landscape-stage .trivia-final-actions{flex-direction:row;gap:6px;margin-top:8px}
+  .trivia-landscape-stage .trivia-final-actions .btn{width:auto;min-height:34px;padding:5px 7px;font-size:10px}
+}
+@media(max-width:760px){
   .stage:has(.host-dashboard){min-height:100dvh;padding:18px 12px max(20px,var(--safe-b))}
   .host-dashboard{min-height:calc(100dvh - 18px - max(20px,var(--safe-b)))}
   .host-games-section,.host-tools-section{padding:16px}

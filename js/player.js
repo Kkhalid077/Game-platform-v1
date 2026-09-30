@@ -45,6 +45,7 @@ function setGuestExitButton(visible){
 function showSessionEnded(){
   detachPlayerRoom();
   activeGuestInvite = null;
+  stopDrawBoardPlayer();
   setGuestExitButton(false);
   if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   app.innerHTML = `<div class="phone"><div class="card"><h2>انتهت الجلسة</h2><p class="muted">لم تعد هذه اللعبة متاحة. اطلب من المنظّم رابطًا جديدًا.</p></div></div>`;
@@ -69,9 +70,20 @@ function renderPlayer(code, invitedGameId){
     playerRoomRef = roomRef;
     let presenceWritePending = false;
     let lastRenderedRoom = null;
+    const restorePresence=()=>invitedGameId==='drawboard'
+      ? registerDrawBoardPlayer(roomRef,id,record)
+      : registerPlayerPresence(roomRef.child('players/' + id),record);
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room || !room.status) { showSessionEnded(); return; }
+      if (isDrawBoardLiveChangeOnly(lastRenderedRoom,room)) {
+        lastRenderedRoom=room;
+        return;
+      }
+      if (isDrawBoardRosterOnlyChange(lastRenderedRoom,room)) {
+        lastRenderedRoom=room;
+        return;
+      }
       if (isSilentDrawStrokesOnlyChange(lastRenderedRoom, room)) {
         lastRenderedRoom = room;
         return;
@@ -83,12 +95,12 @@ function renderPlayer(code, invitedGameId){
       }
       lastRenderedRoom = room;
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
-      const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
+      const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || room.activeTool === invitedGameId;
       if (invitedGameId) {
         const currentRecord = room.players?.[id];
         if (inviteOpen && !currentRecord && !presenceWritePending) {
           presenceWritePending = true;
-          registerPlayerPresence(roomRef.child('players/' + id), record).catch(error => {
+          restorePresence().catch(error => {
             console.error('Could not restore invited player presence:', error);
           }).finally(() => { presenceWritePending = false; });
         }
@@ -96,7 +108,7 @@ function renderPlayer(code, invitedGameId){
       } else if (!(room.players && room.players[id])) {
         if (!presenceWritePending) {
           presenceWritePending = true;
-          registerPlayerPresence(roomRef.child('players/' + id), record).catch(error => {
+          restorePresence().catch(error => {
             console.error('Could not restore player presence:', error);
           }).finally(() => { presenceWritePending = false; });
         }
@@ -113,7 +125,7 @@ function renderPlayer(code, invitedGameId){
       detachPlayerRoom();
       activeGuestInvite = null;
       setGuestExitButton(false);
-      const gameTitle = GAMES_LIST.find(game => game.id === invitedGameId)?.title || (invitedGameId === 'buzzer' ? 'جرس الإجابة' : 'اللعبة');
+      const gameTitle = GAMES_LIST.find(game => game.id === invitedGameId)?.title || (invitedGameId === 'buzzer' ? 'جرس الإجابة' : invitedGameId === 'drawboard' ? 'لوح الرسم المشترك' : 'اللعبة');
       app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">${escapeHtml(gameTitle)}</h2><p class="muted">اكتب اسمك للانضمام إلى اللعبة.</p><form id="guestJoinForm"><input type="text" id="guestNameInput" maxlength="30" minlength="2" placeholder="اسمك" autocomplete="nickname" autofocus required><button class="btn" type="submit" style="width:100%; margin-top:12px;">دخول اللعبة</button></form><p class="muted" id="guestJoinStatus" role="status"></p></div></div>`;
       document.getElementById('guestJoinForm').onsubmit = event => {
         event.preventDefault();
@@ -135,14 +147,17 @@ function renderPlayer(code, invitedGameId){
       const record = { name:savedName, gameId:invitedGameId, guest:true };
       activeGuestInvite = { code, gameId:invitedGameId, playerId:myId, nameKey:guestNameKey };
       const room = snap.val();
-      const inviteOpen = room.selectedGame === invitedGameId || room.activeGame === invitedGameId || (invitedGameId === 'buzzer' && room.activeTool === 'buzzer');
-      if (inviteOpen) await registerPlayerPresence(roomRef.child('players/' + myId), record);
+      const inviteOpen = room.selectedGame === invitedGameId || room.activeGame === invitedGameId || room.activeTool === invitedGameId;
+      if (inviteOpen) {
+        if(invitedGameId==='drawboard') await registerDrawBoardPlayer(roomRef,myId,record);
+        else await registerPlayerPresence(roomRef.child('players/' + myId), record);
+      }
       attach(myId, savedName, record);
     }).catch(error => {
       activeGuestInvite = null;
       setGuestExitButton(false);
       console.error('Could not join the invited game:', error);
-      app.innerHTML = `<div class="phone"><div class="card"><h2>تعذر الانضمام</h2><p class="muted">تحقق من الاتصال ثم أعد تحميل الصفحة للمحاولة مجددًا.</p></div></div>`;
+        app.innerHTML = `<div class="phone"><div class="card"><h2>تعذر الانضمام</h2><p class="muted">${escapeHtml(error.message||'تحقق من الاتصال ثم أعد تحميل الصفحة للمحاولة مجددًا.')}</p></div></div>`;
     });
     return;
   }
@@ -168,6 +183,7 @@ window.exitInvitedPlayer = async function(){
   detachPlayerRoom();
   if (window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (window.cleanupSilentCanvas) cleanupSilentCanvas();
+  if (window.stopDrawBoardPlayer) stopDrawBoardPlayer();
   if (window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   try {
     const playerRef = db.ref(`rooms/${invite.code}/players/${invite.playerId}`);
@@ -195,6 +211,7 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   lastPlayerRoom = room;
   setGuestExitButton(!!invitedGameId && !!activeGuestInvite);
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
+  if (!(room.status === 'in_tool' && room.activeTool === 'drawboard') && window.stopDrawBoardPlayer) stopDrawBoardPlayer();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw') && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraPlayerWatch) stopQataraPlayerWatch();
   const viewKey = invitedGameId
@@ -204,6 +221,7 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
       : `${room.status}:${room.activeTool || room.activeGame || ''}`;
   const renderView = () => {
     if (invitedGameId) renderInvitedGame(code, myId, name, room, invitedGameId);
+    else if (room.status === 'in_tool' && room.activeTool === 'drawboard') renderDrawBoardPlayer(code, myId, name, room);
     else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
     else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraPlayer(code, myId, name, room);
     else if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') renderPlayerGameNotice(code, myId, name, room);
@@ -227,6 +245,10 @@ function updatePlayerTeamSelector(code, myId, room, invitedGameId){
 }
 
 function renderInvitedGame(code, myId, name, room, gameId){
+  if(gameId==='drawboard'){
+    if(room.status==='in_tool'&&room.activeTool==='drawboard')return renderDrawBoardPlayer(code,myId,name,room);
+    return renderDrawBoardPlayerNotice();
+  }
   if (gameId === 'buzzer') {
     if (room.status === 'in_tool' && room.activeTool === 'buzzer') return renderBuzzerPlayer(code, myId, name, room);
     app.innerHTML = `<div class="phone"><div class="card"><h2 style="font-family:'Cairo';">جرس الإجابة</h2><p class="muted">بانتظار المنظّم لفتح أداة الجرس.</p></div></div>`;
