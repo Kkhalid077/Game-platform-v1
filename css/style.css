@@ -91,16 +91,16 @@ input[type=text]:focus{border-color:var(--accent)}
 .game-card:hover:not(.disabled){transform:translateY(-3px);border-color:var(--tile)}
 .game-card:active:not(.disabled){transform:scale(.97)}
 .game-card.disabled{opacity:.5;cursor:not-allowed}
-.game-icon-badge{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 10px;border-radius:20px;background:color-mix(in srgb,var(--tile) 18%,transparent)}
+.game-icon-badge{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 8px;border-radius:17px;background:color-mix(in srgb,var(--tile) 18%,transparent)}
 .game-icon-image{display:block;width:100%;height:100%;object-fit:contain}
-.game-icon-badge .game-icon-image{width:40px;height:40px}
+.game-icon-badge .game-icon-image{width:36px;height:36px}
 .game-title{font-family:'Cairo',sans-serif;font-size:16px;font-weight:800}
 .vote-badge{display:inline-block;margin-top:6px;padding:2px 12px;border-radius:999px;background:color-mix(in srgb,var(--tile) 22%,transparent);color:var(--text);font-size:12px;font-weight:700}
 .coming-soon{margin-top:6px;color:var(--accent-2);font-size:12px;font-weight:800}
 
 /* ---------- لوحة المنظّم ---------- */
 .stage:has(.host-dashboard){position:relative;isolation:isolate;align-items:stretch;min-height:100dvh;overflow:hidden;padding:clamp(20px,3.5vw,52px) clamp(16px,4vw,64px) max(28px,var(--safe-b));text-align:right}
-.stage:has(.host-dashboard)::before{position:absolute;z-index:-1;inset:-6%;background-image:linear-gradient(115deg,rgba(8,10,27,.91),rgba(9,13,31,.79) 52%,rgba(7,12,25,.89)),url('../assets/images/game-night.svg');background-position:center,50% 48%;background-size:cover,cover;content:"";animation:dashboard-backdrop-drift 48s ease-in-out infinite alternate}
+.stage:has(.host-dashboard)::before{position:absolute;z-index:-1;inset:-6%;background-image:linear-gradient(115deg,rgba(8,10,27,.93),rgba(9,13,31,.84) 52%,rgba(7,12,25,.91)),url('../assets/images/data-space.svg');background-position:center,50% 48%;background-size:cover,cover;content:"";animation:dashboard-backdrop-drift 48s ease-in-out infinite alternate}
 @keyframes dashboard-backdrop-drift{from{transform:scale(1);background-position:center,47% 46%}to{transform:scale(1.07);background-position:center,53% 54%}}
 .host-dashboard{display:flex;width:100%;max-width:none;min-height:calc(100dvh - clamp(20px,3.5vw,52px) - max(28px,var(--safe-b)));margin:0 auto;text-align:right}
 .host-games-main{display:flex;flex:1;flex-direction:column;gap:clamp(12px,2vh,24px);min-height:0;direction:rtl}
@@ -116,8 +116,10 @@ input[type=text]:focus{border-color:var(--accent)}
 .host-tool-card{--tile:var(--green);width:min(100%,220px);margin-top:14px;font:inherit}
 .host-games-section,.host-tools-section{flex:1;align-content:start;padding:clamp(18px,2.5vw,36px);border:1px solid rgba(185,191,255,.16);border-radius:var(--r-lg);background:rgba(14,17,39,.54);box-shadow:0 20px 70px rgba(3,5,18,.2);backdrop-filter:blur(12px)}
 .host-tools-section{margin-top:0}
-.host-games-grid .game-card{min-height:clamp(170px,22vh,240px);background:rgba(26,31,64,.87)}
-.host-tool-card{min-height:clamp(170px,22vh,240px)}
+.host-games-grid .game-card{min-height:clamp(142px,18vh,184px);padding:16px 12px 13px;background:rgba(26,31,64,.87)}
+.host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{width:48px;height:48px;margin-bottom:6px;border-radius:15px}
+.host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:30px;height:30px}
+.host-tool-card{min-height:clamp(142px,18vh,184px);padding:16px 12px 13px}
 
 .account-menu{position:relative;flex:none}
 .account-avatar-button{display:grid;place-items:center;width:48px;height:48px;padding:0;overflow:hidden;border:2px solid var(--cyan);border-radius:50%;background:var(--surface-2);color:#fff;font-family:'Cairo',sans-serif;font-size:18px;font-weight:900;cursor:pointer}
@@ -345,10 +347,12 @@ button.team-option.is-selected{border-color:var(--team-color);box-shadow:inset 0
   .stage:has(.host-dashboard){min-height:100dvh;padding:18px 12px max(20px,var(--safe-b))}
   .host-dashboard{min-height:calc(100dvh - 18px - max(20px,var(--safe-b)))}
   .host-games-section,.host-tools-section{padding:16px}
-  .host-games-grid .game-card{min-height:154px}
+  .host-games-grid .game-card,.host-tool-card{min-height:138px}
+  .host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{width:44px;height:44px}
+  .host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:28px;height:28px}
   .games-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .game-card{min-height:136px;padding:16px 8px 12px}
-  .game-icon-badge{width:56px;height:56px}
+  .game-icon-badge{width:50px;height:50px}
   .trivia-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .trivia-board{grid-template-columns:repeat(6,125px)}
   .trivia-wrap{width:calc(100% - 20px)}
