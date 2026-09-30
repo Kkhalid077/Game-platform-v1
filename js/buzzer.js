@@ -141,7 +141,7 @@ function renderBuzzerHost(code, room, directState){
   if(!document.getElementById('buzzerHostRoot')){
     const inviteUrl=joinGameUrl(code,'buzzer');
     app.innerHTML=`<div class="stage buzzer-stage" id="stage"><main class="buzzer-panel buzzer-host-panel" id="buzzerHostRoot">
-      <header class="tool-head"><button class="btn btn-ghost buzzer-back" onclick="resetToLobby('${code}')">→ العودة للألعاب</button><div><span class="host-section-kicker">أداة مساندة</span><h1>جرس الإجابة</h1></div></header>
+      <header class="tool-head"><button class="btn btn-danger buzzer-back" onclick="resetToLobby('${code}')">خروج</button><div><span class="host-section-kicker">أداة مساندة</span><h1>جرس الإجابة</h1></div></header>
       ${joinCardHtml('buzzerInvite',inviteUrl)}
       <section id="buzzerWinner" class="buzzer-winner-card"></section>
       <div id="buzzerTimerMount"></div>
