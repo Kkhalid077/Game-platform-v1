@@ -302,9 +302,8 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .drawboard-pointer-toggle.is-active{border-color:rgba(76,212,255,.6);background:rgba(76,212,255,.14);color:#c5f3ff}
 .drawboard-canvas-wrap,.drawboard-player-canvas-wrap{position:relative;overflow:hidden;border:1px solid rgba(14,30,51,.2);border-radius:10px;background:#fff}
 .drawboard-host-canvas,.drawboard-player-canvas-wrap canvas{display:block;width:100%;height:auto;aspect-ratio:640/420;background-color:#fff;touch-action:none}
-.drawboard-pointer{position:absolute;z-index:2;display:none;width:18px;height:18px;border:2px solid #fff;border-radius:50%;background:rgba(30,64,175,.72);box-shadow:0 1px 7px rgba(0,0,0,.8);transform:translate(-50%,-50%);pointer-events:none}
-.drawboard-pointer[hidden]{display:none!important}
-.drawboard-canvas-wrap:has(.drawboard-host-canvas.show-pointer) .drawboard-pointer{display:block}
+.drawboard-organizer-pointer{position:absolute;z-index:2;width:22px;height:22px;border:2px solid #fff;border-radius:50%;background:rgba(220,38,38,.78);box-shadow:0 1px 8px rgba(0,0,0,.75);transform:translate(-50%,-50%);pointer-events:none}
+.drawboard-organizer-pointer[hidden]{display:none!important}
 .drawboard-empty{grid-column:1/-1;margin:0;padding:24px;border:1px dashed rgba(133,166,218,.32);border-radius:var(--r-md);color:var(--text-dim);text-align:center}
 .drawboard-player-screen{width:min(1000px,100%);margin:auto}
 .drawboard-player-heading{margin:0 0 12px}

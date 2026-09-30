@@ -117,7 +117,7 @@ function isDrawBoardLiveChangeOnly(previousRoom,nextRoom){
   const {drawingBoards:nextBoards,...nextRoomData}=nextRoom;
   if(JSON.stringify(previousRoomData)!==JSON.stringify(nextRoomData))return false;
   const stripLiveData=boards=>Object.fromEntries(Object.entries(boards||{}).map(([id,board])=>{
-    const {strokes,cursor,...metadata}=board||{};
+    const {strokes,cursor,organizerCursor,...metadata}=board||{};
     return [id,metadata];
   }).filter(([,metadata])=>Object.keys(metadata).length));
   const previousMetadata=stripLiveData(previousBoards);
