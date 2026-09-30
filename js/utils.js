@@ -11,6 +11,27 @@ function iconImageHtml(src, className='game-icon-image'){
 function gameIconHtml(game, className='game-icon-image'){
   return iconImageHtml(game.icon, className);
 }
+function transitionAppView(update){
+  const appRoot = document.getElementById('app');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!appRoot || reduceMotion) {
+    update();
+    return;
+  }
+  if (typeof document.startViewTransition === 'function') {
+    appRoot.style.viewTransitionName = 'platform-page';
+    document.startViewTransition(update);
+    return;
+  }
+  update();
+  const nextView = appRoot.querySelector('.host-shell, .phone, .landing-page') || appRoot.firstElementChild;
+  if (nextView?.animate) {
+    nextView.animate(
+      [{opacity:0, transform:'translate3d(0,12px,0) scale(.99)'},{opacity:1, transform:'translate3d(0,0,0) scale(1)'}],
+      {duration:260, easing:'cubic-bezier(.2,.75,.25,1)'}
+    );
+  }
+}
 function platformBrandHtml(className=''){
   return `<a class="landing-brand ${className}" href="#" aria-label="لَمّة — الصفحة الرئيسية">
       <span class="landing-brand-name">لَمّة</span>

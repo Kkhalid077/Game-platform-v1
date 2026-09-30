@@ -6,6 +6,7 @@ let lastHostRoom = null;
 let hostDetailGameId = null;
 let hostRoomRef = null;
 let hostDashboardTab = 'games';
+let lastHostViewKey = null;
 function detachHostRoom(){ if (hostRoomRef){ hostRoomRef.off('value'); hostRoomRef = null; } }
 function allocateRoomCode(attempt = 0){
   const code = makeRoomCode();
@@ -29,6 +30,7 @@ function renderHost(){
 
 function initHostRoom(code, isNew){
   ACTIVE_HOST_CODE = code;
+  lastHostViewKey = null;
   localStorage.setItem('hostSessionCode', code);
   const roomRef = db.ref('rooms/' + code);
   if (isNew) roomRef.set({ status:'voting', players:{}, votes:{}, activeGame:null });
@@ -78,14 +80,23 @@ function dispatchHostRender(code, room){
   // لا نعيد رسم الردهة أثناء فتح نافذة الحساب حتى لا تُغلق أو يضيع ما كُتب فيها
   if (room.status === 'voting' && document.getElementById('accountModal')?.classList.contains('is-open')) return;
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcHost) closeBuzzerRtcHost();
-  if (room.status === 'voting') renderHostLobby(code, room);
-  else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
-  else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
-  else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
-  else renderHostGenericPlaceholder(code, room);
+  const viewKey = room.status === 'voting'
+    ? `voting:${hostDetailGameId || 'dashboard'}:${hostDetailGameId ? '' : hostDashboardTab}`
+    : `${room.status}:${room.activeTool || room.activeGame || ''}`;
+  const renderView = () => {
+    if (room.status === 'voting') renderHostLobby(code, room);
+    else if (room.status === 'trivia_setup' && room.activeGame === 'trivia') renderTriviaHost(code, room);
+    else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'trivia') renderTriviaHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
+    else renderHostGenericPlaceholder(code, room);
+  };
+  const shouldTransition = lastHostViewKey !== null && lastHostViewKey !== viewKey;
+  lastHostViewKey = viewKey;
+  if (shouldTransition) transitionAppView(renderView);
+  else renderView();
 }
 
 function updateHostGameDetailPlayers(code, room){
@@ -106,11 +117,16 @@ window.showHostGameDetail = function(gameId){
   hostDetailGameId = gameId;
   db.ref('rooms/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
-window.hideHostGameDetail = function(){ hostDetailGameId = null; if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom); };
+window.hideHostGameDetail = function(){
+  hostDetailGameId = null;
+  lastHostViewKey = `voting:dashboard:${hostDashboardTab}`;
+  if (lastHostRoom) transitionAppView(() => renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom));
+};
 window.setHostDashboardTab = function(tab){
   if (tab !== 'games' && tab !== 'tools' && tab !== 'pricing') return;
   hostDashboardTab = tab;
-  if (lastHostRoom) renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom);
+  lastHostViewKey = `voting:dashboard:${hostDashboardTab}`;
+  if (lastHostRoom) transitionAppView(() => renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom));
 };
 window.toggleAccountInfo = function(){ document.getElementById('accountModal')?.classList.toggle('is-open'); };
 window.signOut = function(){

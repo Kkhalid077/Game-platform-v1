@@ -10,6 +10,7 @@ let playerRoomRef = null;
 let playerInviteGameId = null;
 let activeGuestInvite = null;
 let landingCarouselTimers = [];
+let lastPlayerViewKey = null;
 function detachPlayerRoom(){ if (playerRoomRef){ playerRoomRef.off('value'); playerRoomRef = null; } }
 function stopLandingCarousels(){
   landingCarouselTimers.forEach(timer => clearInterval(timer));
@@ -60,6 +61,7 @@ function renderPlayer(code, invitedGameId){
     CURRENT_PLAYER_NAME = name;
     ACTIVE_ROOM_CODE = code;
     ACTIVE_PLAYER_ID = id;
+    lastPlayerViewKey = null;
     detachPlayerRoom();
     playerRoomRef = roomRef;
     let presenceWritePending = false;
@@ -192,23 +194,22 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
   if (!(room.status === 'in_tool' && room.activeTool === 'buzzer') && window.closeBuzzerRtcPlayer) closeBuzzerRtcPlayer();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw') && window.cleanupSilentCanvas) window.cleanupSilentCanvas();
   if (!(room.status === 'in_game' && room.activeGame === 'qatara') && window.stopQataraPlayerWatch) stopQataraPlayerWatch();
-  if (invitedGameId) {
-    renderInvitedGame(code, myId, name, room, invitedGameId);
-    return;
-  }
-  if (room.status === 'in_tool' && room.activeTool === 'buzzer') {
-    renderBuzzerPlayer(code, myId, name, room);
-    return;
-  }
-  if (room.status === 'in_game' && room.activeGame === 'qatara') {
-    renderQataraPlayer(code, myId, name, room);
-    return;
-  }
-  if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') {
-    renderPlayerGameNotice(code, myId, name, room);
-    return;
-  }
-  renderPlayerVoting(code, myId, name, room);
+  const viewKey = invitedGameId
+    ? `invited:${invitedGameId}:${room.status}:${room.activeGame || room.activeTool || ''}`
+    : room.status === 'voting'
+      ? `voting:${playerDetailGameId || 'list'}`
+      : `${room.status}:${room.activeTool || room.activeGame || ''}`;
+  const renderView = () => {
+    if (invitedGameId) renderInvitedGame(code, myId, name, room, invitedGameId);
+    else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') renderPlayerGameNotice(code, myId, name, room);
+    else renderPlayerVoting(code, myId, name, room);
+  };
+  const shouldTransition = lastPlayerViewKey !== null && lastPlayerViewKey !== viewKey;
+  lastPlayerViewKey = viewKey;
+  if (shouldTransition) transitionAppView(renderView);
+  else renderView();
 }
 
 function updatePlayerTeamSelector(code, myId, room, invitedGameId){
@@ -239,8 +240,16 @@ function renderInvitedGame(code, myId, name, room, gameId){
   app.innerHTML = `<div class="player-join-screen">${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
 
-window.showGameDetail = function(gameId){ playerDetailGameId = gameId; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
-window.hideGameDetail = function(){ playerDetailGameId = null; if (lastPlayerRoom) renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom); };
+window.showGameDetail = function(gameId){
+  playerDetailGameId = gameId;
+  lastPlayerViewKey = `voting:${gameId}`;
+  if (lastPlayerRoom) transitionAppView(() => renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom));
+};
+window.hideGameDetail = function(){
+  playerDetailGameId = null;
+  lastPlayerViewKey = 'voting:list';
+  if (lastPlayerRoom) transitionAppView(() => renderPlayerVoting(ACTIVE_ROOM_CODE, ACTIVE_PLAYER_ID, CURRENT_PLAYER_NAME, lastPlayerRoom));
+};
 
 function playerProfileHtml(code, myId, name){
   return `<section class="player-profile-panel" aria-labelledby="player-profile-heading">
@@ -559,7 +568,7 @@ function renderAdminNameEntry(){
   };
   document.getElementById('adminEnterBtn').onclick = enter;
   document.getElementById('adminNameInput').addEventListener('keydown', event => { if (event.key === 'Enter') enter(); });
-  document.getElementById('adminBackBtn').onclick = renderGoogleSignIn;
+  document.getElementById('adminBackBtn').onclick = () => transitionAppView(renderGoogleSignIn);
 }
 
 firebase.auth().onAuthStateChanged(user => {
