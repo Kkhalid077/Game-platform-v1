@@ -5,7 +5,7 @@ let drawBoardHostCleanup=null;
 let drawBoardPlayerCleanup=null;
 
 function drawBoardRef(code,playerId){
-  return db.ref(`drawBoards/${code}/${playerId}`);
+  return db.ref(`rooms/${code}/drawingBoards/${playerId}`);
 }
 function stopDrawBoardHost(){
   if(drawBoardHostCleanup){drawBoardHostCleanup();drawBoardHostCleanup=null;}
@@ -37,14 +37,13 @@ window.setDrawBoardEraser=button=>{
 window.startDrawBoardTool=async code=>{
   hostDetailGameId=null;
   try{
-    await db.ref(`drawBoards/${code}`).remove();
     await db.ref(`rooms/${code}`).update({
       status:'in_tool',activeGame:null,activeTool:'drawboard',players:{},
-      drawBoardSession:Date.now()
+      drawingBoards:null,drawBoardSession:Date.now()
     });
   }catch(error){
     console.error('Could not start shared drawing boards:',error);
-    alert('تعذر بدء لوح الرسم. تحقق من الاتصال وحاول مرة أخرى.');
+    alert(`تعذر بدء لوح الرسم: ${error.message||'تحقق من الاتصال والصلاحيات وحاول مرة أخرى.'}`);
   }
 };
 

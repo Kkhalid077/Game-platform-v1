@@ -110,6 +110,21 @@ function isSilentDrawStrokesOnlyChange(previousRoom, nextRoom){
   if (JSON.stringify(previousStrokes || null) === JSON.stringify(nextStrokes || null)) return false;
   return JSON.stringify(previousRoomData) === JSON.stringify(nextRoomData);
 }
+function isDrawBoardLiveChangeOnly(previousRoom,nextRoom){
+  if(!previousRoom||previousRoom.status!=='in_tool'||previousRoom.activeTool!=='drawboard'||
+     nextRoom?.status!=='in_tool'||nextRoom.activeTool!=='drawboard')return false;
+  const {drawingBoards:previousBoards,...previousRoomData}=previousRoom;
+  const {drawingBoards:nextBoards,...nextRoomData}=nextRoom;
+  if(JSON.stringify(previousRoomData)!==JSON.stringify(nextRoomData))return false;
+  const stripLiveData=boards=>Object.fromEntries(Object.entries(boards||{}).map(([id,board])=>{
+    const {strokes,cursor,...metadata}=board||{};
+    return [id,metadata];
+  }).filter(([,metadata])=>Object.keys(metadata).length));
+  const previousMetadata=stripLiveData(previousBoards);
+  const nextMetadata=stripLiveData(nextBoards);
+  return JSON.stringify(previousMetadata)===JSON.stringify(nextMetadata)&&
+    JSON.stringify(previousBoards||null)!==JSON.stringify(nextBoards||null);
+}
 function isDrawBoardRosterOnlyChange(previousRoom,nextRoom){
   if(!previousRoom||previousRoom.status!=='in_tool'||previousRoom.activeTool!=='drawboard'||
      nextRoom?.status!=='in_tool'||nextRoom.activeTool!=='drawboard')return false;

@@ -60,6 +60,10 @@ function dispatchHostRender(code, room){
       : room.activeGame;
   setActivityBackdrop(activityId);
   room = roomForGame(room, activityId);
+  if(isDrawBoardLiveChangeOnly(previousRoom,room)){
+    lastHostRoom=room;
+    return;
+  }
   if (!(room.status === 'in_tool' && room.activeTool === 'drawboard')) stopDrawBoardHost();
   if (!(room.status === 'in_game' && room.activeGame === 'trivia' &&
         ['board','question','done'].includes(room.trivia?.phase))) {
@@ -321,8 +325,7 @@ window.startBuzzerTool = function(code){
 window.resetToLobby = async function(code){
   stopDrawBoardHost?.();
   try{
-    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null });
-    await db.ref(`drawBoards/${code}`).remove();
+    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null, drawingBoards:null });
   }catch(error){
     console.error('Could not leave the active room tool:',error);
     alert('تعذر الخروج من الأداة. تحقق من الاتصال وحاول مرة أخرى.');

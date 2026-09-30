@@ -76,6 +76,10 @@ function renderPlayer(code, invitedGameId){
     roomRef.on('value', snap => {
       const room = snap.val();
       if (!room || !room.status) { showSessionEnded(); return; }
+      if (isDrawBoardLiveChangeOnly(lastRenderedRoom,room)) {
+        lastRenderedRoom=room;
+        return;
+      }
       if (isDrawBoardRosterOnlyChange(lastRenderedRoom,room)) {
         lastRenderedRoom=room;
         return;
