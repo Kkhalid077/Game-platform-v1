@@ -489,7 +489,7 @@ function renderGoogleSignIn(){
 
         <section class="landing-games" id="landing-games" aria-labelledby="landing-games-title">
           <div class="landing-section-heading landing-games-heading">
-            <div class="landing-games-title-group"><span class="landing-eyebrow">المحتوى</span><h2 id="landing-games-title">الألعاب المتاحة</h2></div>
+            <div class="landing-games-title-group"><span class="landing-eyebrow">الألعاب</span><h2 id="landing-games-title">ألعاب جماعية ضمن المنصة</h2></div>
             <span class="landing-games-note">ألعاب جماعية ضمن المنصة</span>
           </div>
           ${landingShowcaseMarkup('games','استعراض الألعاب',games,'game')}
@@ -499,7 +499,6 @@ function renderGoogleSignIn(){
           <div class="landing-section-heading landing-tools-heading">
             <span class="landing-eyebrow">أدوات المنصة</span>
             <h2 id="landing-tools-title">أدوات للألعاب الخارجية</h2>
-            <p>أدوات تفاعلية تدعم الألعاب التي تُمارس خارج المنصة، ويجري تطوير المزيد منها.</p>
           </div>
           ${landingShowcaseMarkup('tools','استعراض الأدوات',tools,'tool')}
         </section>
