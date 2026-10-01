@@ -115,6 +115,10 @@ function renderPlayer(code, invitedGameId){
       }
       const currentName = room.players?.[id]?.name || name;
       CURRENT_PLAYER_NAME = currentName;
+      if (room.status === 'in_game' && room.activeGame === 'xo' &&
+          room.xo?.mode === 'network' && room.xo.phase === 'waiting') {
+        window.ensureXoNetworkStarted?.(code);
+      }
       dispatchPlayerRender(code, id, currentName, room, invitedGameId);
     });
   }
