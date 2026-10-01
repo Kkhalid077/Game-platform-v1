@@ -227,7 +227,7 @@ function renderTriviaCategoriesHost(code,t){
   const groups=TRIVIA_CATEGORY_GROUPS.map(group=>{
     const isOpen=openTriviaCategoryGroups.has(group.id);
     const groupCategories=group.categories.map(id=>TRIVIA_BANK.find(category=>category.id===id)).filter(Boolean);
-    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><img class="trivia-category-sticker" src="${category.sticker}" alt="" aria-hidden="true"><b>${category.name}</b><span class="trivia-category-check" aria-hidden="true">✓</span></button>`).join('');
+    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><img class="trivia-category-sticker" src="${category.sticker}" alt="" aria-hidden="true"><b>${category.name}</b></button>`).join('');
     return `<section class="trivia-category-group ${isOpen?'is-open':''}">
       <header class="trivia-category-group-header">
         <button type="button" class="trivia-category-group-toggle" aria-expanded="${isOpen}" onclick="toggleTriviaCategoryGroup('${group.id}')"><span>${group.name}</span></button>
