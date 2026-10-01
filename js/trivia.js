@@ -165,11 +165,10 @@ function renderTriviaCategoriesHost(code,t){
   const groups=TRIVIA_CATEGORY_GROUPS.map(group=>{
     const isOpen=openTriviaCategoryGroups.has(group.id);
     const groupCategories=group.categories.map(id=>TRIVIA_BANK.find(category=>category.id===id)).filter(Boolean);
-    const groupSelected=groupCategories.filter(category=>selected.includes(category.id)).length;
-    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><img class="trivia-category-sticker" src="${escapeHtml(category.sticker)}" alt="" aria-hidden="true"><b>${category.name}</b><small>${selected.includes(category.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
+    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><img class="trivia-category-sticker" src="${escapeHtml(category.sticker)}" alt="" aria-hidden="true"><b>${category.name}</b><span class="trivia-category-check" aria-hidden="true">✓</span></button>`).join('');
     return `<section class="trivia-category-group ${isOpen?'is-open':''}">
       <header class="trivia-category-group-header">
-        <button type="button" class="trivia-category-group-toggle" aria-expanded="${isOpen}" onclick="toggleTriviaCategoryGroup('${group.id}')"><span>${group.name}</span><small>${groupSelected} مختارة</small><b aria-hidden="true">${isOpen?'−':'+'}</b></button>
+        <button type="button" class="trivia-category-group-toggle" aria-expanded="${isOpen}" onclick="toggleTriviaCategoryGroup('${group.id}')"><span>${group.name}</span></button>
       </header>
       <div class="trivia-category-grid" ${isOpen?'':'hidden'}>${cards}</div>
     </section>`;
