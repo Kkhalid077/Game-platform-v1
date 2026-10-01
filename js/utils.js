@@ -224,12 +224,14 @@ window.setPlayerTeam = function(code, myId, team){
 };
 
 let teamNamesSaveTimer = null;
+const DEFAULT_TEAM_NAMES = {A:'الفريق الأخضر',B:'الفريق البرتقالي'};
 function updateTeamNameDisplays(names){
   for (const team of ['A','B']) {
     const name = names?.[team];
     if (typeof name !== 'string') continue;
+    const displayName = name || DEFAULT_TEAM_NAMES[team];
     document.querySelectorAll(`[data-team-name="${team}"]`).forEach(display => {
-      display.textContent = name || (team === 'A' ? 'الفريق الأخضر' : 'الفريق البرتقالي');
+      display.textContent = displayName;
     });
     const input = document.getElementById(`teamName${team}`);
     if (input && document.activeElement !== input && input.value !== name) input.value = name;
@@ -241,8 +243,8 @@ window.queueTeamNamesSave = function(code, immediate=false){
   const nameA = document.getElementById('teamNameA')?.value.trim() || '';
   const nameB = document.getElementById('teamNameB')?.value.trim() || '';
   updateTeamNameDisplays({A:nameA,B:nameB});
-  if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
-    if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
+  if (nameA.length > 24 || nameB.length > 24) {
+    if (status) status.textContent = 'استخدم 24 حرفًا كحد أقصى لكل اسم.';
     return;
   }
   const names = {A:nameA,B:nameB};
@@ -259,15 +261,19 @@ window.queueTeamNamesSave = function(code, immediate=false){
 };
 
 window.saveTeamNames = async function(code, names=null){
-  const nameA = names?.A || document.getElementById('teamNameA')?.value.trim();
-  const nameB = names?.B || document.getElementById('teamNameB')?.value.trim();
+  const nameA = names?.A ?? document.getElementById('teamNameA')?.value.trim() ?? '';
+  const nameB = names?.B ?? document.getElementById('teamNameB')?.value.trim() ?? '';
   const status = document.getElementById('teamNamesStatus');
-  if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
-    if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
+  if (nameA.length > 24 || nameB.length > 24) {
+    if (status) status.textContent = 'استخدم 24 حرفًا كحد أقصى لكل اسم.';
     return;
   }
+  const savedNames = {
+    A:nameA || DEFAULT_TEAM_NAMES.A,
+    B:nameB || DEFAULT_TEAM_NAMES.B
+  };
   try {
-    await db.ref(`rooms/${code}/teamNames`).set({A:nameA, B:nameB});
+    await db.ref(`rooms/${code}/teamNames`).set(savedNames);
     if (status) status.textContent = 'تم الحفظ تلقائيًا.';
   } catch (error) {
     console.error('Could not save team names:', error);
