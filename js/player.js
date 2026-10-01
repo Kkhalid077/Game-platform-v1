@@ -505,9 +505,6 @@ function renderGoogleSignIn(){
             <span class="landing-eyebrow"><i></i> ألعاب جماعية وأدوات تفاعلية</span>
             <h1>منصة <span>لَمّة</span></h1>
             <p class="landing-lead">منصة لتنظيم الألعاب الجماعية واستخدام الأدوات المساندة، مع إدارة الجلسات ومشاركة الدعوات بسهولة.</p>
-            <div class="landing-hero-actions">
-              <button class="landing-primary-cta" type="button" data-auth-open>دخول <span aria-hidden="true">←</span></button>
-            </div>
             <p class="landing-auth-hint">اختر طريقة الدخول عبر Google أو Apple.</p>
             <p class="landing-auth-error" id="authError" role="status" aria-live="polite"></p>
           </div>
