@@ -85,6 +85,15 @@ const triviaExtraQuestionTemplates = [
   ['أي إجابة مرتبطة مباشرة بفئة «{name}»؟','{name}',['الطقس','{name}','المرور','الزراعة'],'الإجابة تطابق عنوان الفئة.']
 ];
 const existingTriviaNames = new Set(TRIVIA_BANK.map(category=>category.name));
+function triviaCategoryStickerData(category){
+  const seed=[...category.id].reduce((value,char)=>(value*31+char.charCodeAt(0))%360,0);
+  const hue=(seed+210)%360;
+  const accent=`hsl(${hue} 82% 68%)`;
+  const accentTwo=`hsl(${(hue+48)%360} 82% 62%)`;
+  const label=category.name.slice(0,2);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="${accent}"/><stop offset="1" stop-color="${accentTwo}"/></linearGradient></defs><rect width="128" height="128" rx="34" fill="#0b1935"/><circle cx="64" cy="58" r="38" fill="url(#g)" opacity=".92"><animate attributeName="r" values="36;40;36" dur="2.8s" repeatCount="indefinite"/></circle><path d="M31 92c14-14 52-14 66 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".75"><animate attributeName="stroke-dasharray" values="0 160;160 0;0 160" dur="3.2s" repeatCount="indefinite"/></path><text x="64" y="68" text-anchor="middle" fill="#071326" font-family="Arial,sans-serif" font-size="25" font-weight="800">${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 TRIVIA_NEW_GROUPS.forEach(group=>{
   group.categories=[];
   group.items.forEach(name=>{
@@ -95,6 +104,9 @@ TRIVIA_NEW_GROUPS.forEach(group=>{
     TRIVIA_BANK.push({id,name,sticker:TRIVIA_EXTRA_STICKERS[group.id],qs:questions});
     group.categories.push(id);
   });
+});
+TRIVIA_BANK.forEach(category=>{
+  category.sticker=triviaCategoryStickerData(category);
 });
 TRIVIA_CATEGORY_GROUPS.push(...TRIVIA_NEW_GROUPS);
 const openTriviaCategoryGroups = new Set(TRIVIA_CATEGORY_GROUPS.map(group=>group.id));
@@ -198,7 +210,7 @@ function renderTriviaCategoriesHost(code,t){
   const groups=TRIVIA_CATEGORY_GROUPS.map(group=>{
     const isOpen=openTriviaCategoryGroups.has(group.id);
     const groupCategories=group.categories.map(id=>TRIVIA_BANK.find(category=>category.id===id)).filter(Boolean);
-    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><img class="trivia-category-sticker" src="${escapeHtml(category.sticker)}" alt="" aria-hidden="true"><b>${category.name}</b><span class="trivia-category-check" aria-hidden="true">✓</span></button>`).join('');
+    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><img class="trivia-category-sticker" src="${category.sticker}" alt="" aria-hidden="true"><b>${category.name}</b><span class="trivia-category-check" aria-hidden="true">✓</span></button>`).join('');
     return `<section class="trivia-category-group ${isOpen?'is-open':''}">
       <header class="trivia-category-group-header">
         <button type="button" class="trivia-category-group-toggle" aria-expanded="${isOpen}" onclick="toggleTriviaCategoryGroup('${group.id}')"><span>${group.name}</span></button>
