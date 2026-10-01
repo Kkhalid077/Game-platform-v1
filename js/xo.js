@@ -3,6 +3,26 @@ const XO_WINNING_LINES = [
   [0,3,6],[1,4,7],[2,5,8],
   [0,4,8],[2,4,6]
 ];
+let xoNetworkPlayerWatchRef=null;
+let xoNetworkPlayerWatchCode=null;
+function stopXoNetworkPlayerWatch(){
+  if(xoNetworkPlayerWatchRef)xoNetworkPlayerWatchRef.off('value',xoNetworkPlayerWatch);
+  xoNetworkPlayerWatchRef=null;
+  xoNetworkPlayerWatchCode=null;
+}
+window.stopXoNetworkPlayerWatch=stopXoNetworkPlayerWatch;
+function xoNetworkPlayerWatch(){
+  if(xoNetworkPlayerWatchCode)window.ensureXoNetworkStarted?.(xoNetworkPlayerWatchCode);
+}
+function watchXoNetworkPlayers(code){
+  if(xoNetworkPlayerWatchCode===code)return;
+  stopXoNetworkPlayerWatch();
+  xoNetworkPlayerWatchCode=code;
+  xoNetworkPlayerWatchRef=db.ref(`rooms/${code}/players`);
+  xoNetworkPlayerWatchRef.on('value',xoNetworkPlayerWatch,error=>{
+    console.error('Could not watch network X O player joins:',error);
+  });
+}
 
 window.toggleXoNetworkInvite=function(){
   const invite=document.getElementById('xoNetworkInvite');
@@ -48,13 +68,17 @@ window.startXoGame = function(code,mode='network'){
 window.ensureXoNetworkStarted = function(code){
   return db.ref(`rooms/${code}`).transaction(room=>{
     if(!room||room.status!=='in_game'||room.activeGame!=='xo'||room.xo?.mode!=='network'||room.xo.phase!=='waiting')return;
-    const allPlayers=Object.entries(roomPlayersForGame(room,'xo'))
-      .map(([id,player])=>({id,name:player.name||'لاعب'}));
-    const host=allPlayers.find(player=>player.id===room.xo.hostPlayerId);
-    const guest=allPlayers.find(player=>player.id!==room.xo.hostPlayerId);
-    const players=[host,guest].filter(Boolean);
-    if(players.length<2)return;
-    room.xo={...room.xo,phase:'playing',players:players.map((player,index)=>({...player,mark:index===0?'X':'O'})),board:Array(9).fill(''),turn:'X',startingMark:'X'};
+    const hostId=room.xo.hostPlayerId;
+    const hostRecord=room.players?.[hostId];
+    const guestEntry=Object.entries(room.players||{}).find(([id,player])=>
+      id!==hostId&&player.guest&&player.gameId==='xo'
+    );
+    if(!hostRecord||!guestEntry)return;
+    const players=[
+      {id:hostId,name:hostRecord.name||'المنظّم',mark:'X'},
+      {id:guestEntry[0],name:guestEntry[1].name||'لاعب',mark:'O'}
+    ];
+    room.xo={...room.xo,phase:'playing',players,board:Array(9).fill(''),turn:'X',startingMark:'X'};
     return room;
   }).catch(error=>console.error('Could not start network X O automatically:',error));
 };
@@ -187,6 +211,7 @@ window.xoStartNextRound=function(code){
 function renderXoHost(code,room){
   const game=room.xo||null;
   if(game?.phase==='waiting'){
+    watchXoNetworkPlayers(code);
     const inviteUrl=joinGameUrl(code,'xo');
     document.getElementById('stage').innerHTML=`
       ${activityExitControlsHtml(code,'xo')}
@@ -197,6 +222,7 @@ function renderXoHost(code,room){
     initJoinCard('xoNetworkLobbyInvite',inviteUrl);
     return;
   }
+  stopXoNetworkPlayerWatch();
   const participants=game?.players||[];
   const hostPlayerId=game?.players?.find(player=>player.id===game.hostPlayerId)?.id||game?.hostPlayerId;
   const spectators=game?.mode==='network'

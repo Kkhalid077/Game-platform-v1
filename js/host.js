@@ -46,6 +46,7 @@ function initHostRoom(code, isNew){
 
 function dispatchHostRender(code, room){
   if (!room) {
+    window.stopXoNetworkPlayerWatch?.();
     stopDrawBoardHost();
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
@@ -53,7 +54,7 @@ function dispatchHostRender(code, room){
   if (room.status === 'in_game' && room.activeGame === 'xo' &&
       room.xo?.mode === 'network' && room.xo.phase === 'waiting') {
     window.ensureXoNetworkStarted?.(code);
-  }
+  } else window.stopXoNetworkPlayerWatch?.();
   const isDashboard = room.status === 'voting' && !hostDetailGameId;
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(isDashboard, isDashboard);
   const previousRoom = lastHostRoom;
