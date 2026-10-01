@@ -379,7 +379,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
-      ${triviaGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
+      ${triviaGame || xoGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
       ${xoGame ? '' : inviteHtml}
       ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
       ${hostControlledTrivia || hostControlledXo ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}

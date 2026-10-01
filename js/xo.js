@@ -18,10 +18,15 @@ window.startXoGame = function(code,mode='network'){
     const players=Object.entries(roomPlayersForGame(room||{},'xo'))
       .map(([id,player])=>({id,name:player.name||'لاعب'}));
     if(mode==='network') {
+      const hostId=`host-${code}`;
+      const user=firebase.auth().currentUser;
+      const hostName=user?.displayName||localStorage.getItem('adminGuestName')||'المنظّم';
+      const roomPlayers={...(room.players||{}),[hostId]:{name:hostName,gameId:'xo',host:true}};
       return roomRef.update({
         status:'in_game',
         activeGame:'xo',
-        xo:{mode,phase:'waiting',players:[],board:Array(9).fill(''),turn:'X',startingMark:'X'}
+        players:roomPlayers,
+        xo:{mode,phase:'waiting',hostPlayerId:hostId,players:[],board:Array(9).fill(''),turn:'X',startingMark:'X'}
       });
     }
     const participants=mode==='network'
@@ -43,8 +48,11 @@ window.startXoGame = function(code,mode='network'){
 window.ensureXoNetworkStarted = function(code){
   return db.ref(`rooms/${code}`).transaction(room=>{
     if(!room||room.status!=='in_game'||room.activeGame!=='xo'||room.xo?.mode!=='network'||room.xo.phase!=='waiting')return;
-    const players=Object.entries(roomPlayersForGame(room,'xo'))
-      .map(([id,player])=>({id,name:player.name||'لاعب'})).slice(0,2);
+    const allPlayers=Object.entries(roomPlayersForGame(room,'xo'))
+      .map(([id,player])=>({id,name:player.name||'لاعب'}));
+    const host=allPlayers.find(player=>player.id===room.xo.hostPlayerId);
+    const guest=allPlayers.find(player=>player.id!==room.xo.hostPlayerId);
+    const players=[host,guest].filter(Boolean);
     if(players.length<2)return;
     room.xo={...room.xo,phase:'playing',players:players.map((player,index)=>({...player,mark:index===0?'X':'O'})),board:Array(9).fill(''),turn:'X',startingMark:'X'};
     return room;
@@ -190,6 +198,7 @@ function renderXoHost(code,room){
     return;
   }
   const participants=game?.players||[];
+  const hostPlayerId=game?.players?.find(player=>player.id===game.hostPlayerId)?.id||game?.hostPlayerId;
   const spectators=game?.mode==='network'
     ? Object.entries(room.players||{}).filter(([id])=>!participants.some(player=>player.id===id))
     : [];
@@ -201,7 +210,7 @@ function renderXoHost(code,room){
       <header class="xo-heading"><span class="host-section-kicker">${modeTitle}</span><h1>إكس أو</h1><p>${escapeHtml(xoStatus(game))}</p></header>
       <div class="xo-scoreboard">${participants.map(player=>`<div class="xo-player ${game?.turn===player.mark&&game?.phase==='playing'?'is-turn':''}"><span class="xo-mark ${player.mark==='X'?'is-x':'is-o'}">${player.mark}</span><strong>${escapeHtml(player.name)}</strong></div>`).join('')}</div>
       ${game?.winner?winnerCelebrationHtml():''}
-      ${xoBoardMarkup(game,null,code,game?.mode!=='network')}
+      ${xoBoardMarkup(game,hostPlayerId,code,true)}
       ${result?`<button type="button" class="btn xo-next-round" onclick="xoStartNextRound('${code}')">جولة جديدة</button>`:''}
       ${spectators.length?`<p class="xo-spectators">المشاهدون: ${spectators.map(([,player])=>escapeHtml(player.name||'لاعب')).join('، ')}</p>`:''}
     </main>`;
