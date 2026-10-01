@@ -345,11 +345,15 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .xo-next-round{margin:18px auto 0}
 .xo-player-badge{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 12px;color:var(--text-dim)}
 .xo-spectators,.xo-round-result{margin:14px 0 0;color:var(--text-dim);font-size:13px}
+.xo-mode-picker{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:16px auto}
+.xo-mode-picker .btn{min-width:min(100%,190px)}
 @media(max-width:560px){
   .xo-screen{padding:12px}
   .xo-scoreboard{gap:7px}
   .xo-player{gap:6px;padding:7px 9px;font-size:13px}
   .xo-mark{width:32px;height:32px;font-size:21px}
+  .xo-mode-picker{flex-direction:column}
+  .xo-mode-picker .btn{width:100%}
 }
 
 /* ---------- جرس الإجابة ---------- */

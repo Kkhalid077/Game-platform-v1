@@ -356,6 +356,14 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const playerCards = Object.values(players).map(player => playerAvatarCardHtml(player)).join('');
   const triviaGame = game.id === 'trivia';
   const hostControlledTrivia = isHost && triviaGame;
+  const xoGame = game.id === 'xo';
+  const hostXoModes = xoGame && isHost
+    ? `<div class="xo-mode-picker" aria-label="اختر طريقة اللعب">
+        <button type="button" class="btn" onclick="startXoGame('${code}','local')">اللعب على جهازي</button>
+        <button type="button" class="btn" ${totalPlayers < 2 ? 'disabled' : ''} onclick="startXoGame('${code}','network')">اللعب عن طريق الشبكة</button>
+        <button type="button" class="btn" onclick="startXoGame('${code}','computer')">اللعب مع الكمبيوتر</button>
+      </div>`
+    : '';
 
   return `
     <div class="game-detail">
@@ -369,10 +377,11 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
       ${hostControlledTrivia ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
-        ${isHost
+        ${isHost && !xoGame
           ? `<button class="btn" ${!hostControlledTrivia && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`
           : ''}
       </div>
+      ${hostXoModes}
     </div>
   `;
 }
