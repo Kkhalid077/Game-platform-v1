@@ -369,8 +369,11 @@ function renderPlayerGameNotice(code, myId, name, room){
 
 function setVersionFooterVisibility(visible, dashboard = false){
   const footer = document.querySelector('.site-footer');
-  if (footer) footer.classList.add('is-entry-visible');
-  document.body.classList.add('has-version-footer');
+  if (footer) {
+    footer.hidden = !visible;
+    footer.classList.toggle('is-entry-visible', visible);
+  }
+  document.body.classList.toggle('has-version-footer', visible);
   document.body.classList.toggle('has-dashboard-footer', dashboard);
 }
 

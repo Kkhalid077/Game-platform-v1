@@ -236,7 +236,7 @@ function accountInfoHtml(){
 }
 
 function renderHostLobby(code, room){
-  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(!hostDetailGameId, !hostDetailGameId);
   const selectedGame = hostDetailGameId ? GAMES_LIST.find(g => g.id === hostDetailGameId) : null;
   const selectedInviteUrl = selectedGame?.id === 'trivia' ? null : selectedGame ? joinGameUrl(code, selectedGame.id) : null;
   const selectedInviteId = selectedGame?.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
