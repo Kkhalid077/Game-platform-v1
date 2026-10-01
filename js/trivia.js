@@ -64,6 +64,45 @@ const TRIVIA_CATEGORY_GROUPS = [
   {id:'sports',name:'رياضة',categories:['sports']},
   {id:'food',name:'أكل وشرب',categories:['food']}
 ];
+const TRIVIA_NEW_GROUPS = [
+  {id:'food-drink',name:'أكل وشرب',items:['مطاعم','حلى وقهوة','المطبخ العالمي','المطبخ العربي']},
+  {id:'anime',name:'أنمي',items:['جوجتسو كايزن','ون بيس','تقييمات أنمي','بوسترات أنمي','دراغون بول','ناروتو','هنتر × هنتر','هجوم العمالقة']},
+  {id:'culture',name:'ثقافة',items:['تاريخ','الرياضيات','لغة الضاد','معلومات عامة','شخصيات','كيمياء','جغرافيا','فضاء وفلك']},
+  {id:'islamic',name:'إسلاميات',items:['صحابة','أنبياء ورسل','السيرة النبوية','قرآن كريم']},
+  {id:'saudi',name:'السعودية',items:['منوعات سعودية','رؤية السعودية','لهجات سعودية','شخصيات سعودية']},
+  {id:'new',name:'مضاف حديثاً',items:['حقيقي ولا AI','أعلام الدول','شعارات أندية','دراما كورية','خمن الكلمة','شخصيات AI','شعارات','أغاني سبيستون']},
+  {id:'thinking',name:'تحتاج تفكير',items:['كلمات متتالية','صح ولا كذب']}
+];
+const TRIVIA_EXTRA_STICKERS = {
+  'food-drink':'assets/icons/category-food.svg',
+  anime:'assets/icons/category-literature.svg',
+  culture:'assets/icons/category-history.svg',
+  islamic:'assets/icons/category-literature.svg',
+  saudi:'assets/icons/category-geo.svg',
+  new:'assets/icons/category-tech.svg',
+  thinking:'assets/icons/category-science.svg'
+};
+const triviaExtraQuestionTemplates = [
+  ['ما المجال الذي تركز عليه فئة «{name}»؟','{name}',['{name}','الرياضة','الطقس','الموسيقى'],'اختر الاسم المطابق للفئة.'],
+  ['أي خيار يعبّر عن موضوع «{name}»؟','{name}',['{name}','الخرائط فقط','الحسابات البنكية','الزراعة'],'الفئة تحمل الاسم نفسه.'],
+  ['لأي نوع من الأسئلة تناسب فئة «{name}»؟','{name}',['{name}','المرور','الطقس','الملابس'],'ابحث عن الخيار الذي يطابق اسم الفئة.'],
+  ['اختر التصنيف الصحيح لموضوع «{name}».','{name}',['الاقتصاد','{name}','الهندسة','الطقس'],'التصنيف الصحيح هو اسم الفئة.'],
+  ['ما الكلمة المفتاحية لهذه الجولة؟','{name}',['الرياضة','السينما','{name}','السفر'],'تظهر الكلمة في عنوان الفئة.'],
+  ['أي إجابة مرتبطة مباشرة بفئة «{name}»؟','{name}',['الطقس','{name}','المرور','الزراعة'],'الإجابة تطابق عنوان الفئة.']
+];
+const existingTriviaNames = new Set(TRIVIA_BANK.map(category=>category.name));
+TRIVIA_NEW_GROUPS.forEach(group=>{
+  group.categories=[];
+  group.items.forEach(name=>{
+    if(existingTriviaNames.has(name)) return;
+    existingTriviaNames.add(name);
+    const id=`extra-${group.id}-${group.categories.length}`;
+    const questions=triviaExtraQuestionTemplates.map(template=>template.map(value=>typeof value==='string' ? value.replaceAll('{name}',name) : value.map(item=>item.replaceAll('{name}',name))));
+    TRIVIA_BANK.push({id,name,sticker:TRIVIA_EXTRA_STICKERS[group.id],qs:questions});
+    group.categories.push(id);
+  });
+});
+TRIVIA_CATEGORY_GROUPS.push(...TRIVIA_NEW_GROUPS);
 const openTriviaCategoryGroups = new Set(TRIVIA_CATEGORY_GROUPS.map(group=>group.id));
 let currentTriviaCategoriesCode=null;
 let currentTriviaCategoriesState=null;
