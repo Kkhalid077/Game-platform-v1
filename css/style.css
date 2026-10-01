@@ -215,8 +215,14 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .team-card-action{align-self:center;padding:4px 13px;border:1px solid color-mix(in srgb,var(--team-color) 36%,var(--line));border-radius:999px;color:var(--team-color);font-weight:800}
 .team-name-display{display:flex;align-items:center;justify-content:center;gap:8px;min-height:30px}
 @media(min-width:761px){
-  .game-detail-shell{position:fixed;z-index:80;inset:0;display:grid;place-items:center;padding:32px;background:rgba(2,8,22,.76);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
-  .game-detail-shell>.game-detail{max-height:calc(100vh - 64px);overflow:auto;padding:28px;border:1px solid rgba(133,190,218,.24);border-radius:24px;background:linear-gradient(155deg,rgba(17,34,61,.98),rgba(5,14,31,.99));box-shadow:0 28px 90px rgba(0,0,0,.55)}
+  .game-detail-shell{position:fixed;z-index:80;inset:0;display:grid;place-items:center;padding:32px;background:rgba(2,8,22,.48);backdrop-filter:blur(12px) saturate(125%);-webkit-backdrop-filter:blur(12px) saturate(125%);animation:game-detail-backdrop-in .2s ease-out both}
+  .game-detail-shell::before{position:absolute;inset:8% 20%;border:1px solid rgba(116,230,255,.12);border-radius:50%;box-shadow:0 0 100px rgba(76,212,255,.1);content:"";pointer-events:none}
+  .game-detail-shell>.game-detail{position:relative;max-height:calc(100vh - 64px);overflow:auto;padding:30px;border:1px solid rgba(190,232,255,.3);border-radius:28px;background:linear-gradient(145deg,rgba(35,70,103,.62),rgba(7,20,40,.72));box-shadow:0 28px 90px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.18);backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%);animation:game-detail-window-in .28s cubic-bezier(.2,.8,.25,1) both}
+  .game-detail-shell>.game-detail::before{position:absolute;top:0;right:12%;left:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(190,242,255,.75),transparent);content:""}
+  .game-detail-shell .game-detail h2{color:#f3fbff;text-shadow:0 2px 16px rgba(76,212,255,.2)}
+  .game-detail-shell .game-detail .narrator{color:#d5e9f2}
+  @keyframes game-detail-backdrop-in{from{opacity:0}to{opacity:1}}
+  @keyframes game-detail-window-in{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 }
 .team-name-edit{padding:4px 9px;border:1px solid color-mix(in srgb,var(--team-color) 34%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--team-color) 7%,transparent);color:var(--team-color);font:700 11px 'Cairo',sans-serif;cursor:pointer}
 .team-name-edit:hover{background:color-mix(in srgb,var(--team-color) 15%,transparent)}
