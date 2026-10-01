@@ -325,6 +325,33 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .drawboard-player-screen .drawboard-player-canvas-wrap{border:4px solid rgba(76,212,255,.4);box-shadow:0 10px 35px rgba(0,0,0,.22)}
 .drawboard-tool-card .game-icon-badge{font-size:27px}
 
+.xo-screen{width:min(760px,100%);margin:0 auto;padding:18px;text-align:center}
+.xo-host-screen{width:min(900px,100%)}
+.xo-heading{margin:8px 0 18px}
+.xo-heading h1{margin:4px 0;font-family:'Cairo',sans-serif;font-size:clamp(27px,5vw,42px)}
+.xo-heading p{margin:0;color:var(--text-dim);font-size:clamp(14px,2vw,18px)}
+.xo-scoreboard{display:flex;justify-content:center;gap:12px;margin:0 auto 14px}
+.xo-player{display:flex;align-items:center;gap:8px;min-width:0;padding:9px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
+.xo-player.is-turn{border-color:var(--cyan);box-shadow:0 0 18px rgba(76,212,255,.18)}
+.xo-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:24px;font-weight:900}
+.xo-mark.is-x,.xo-cell.is-x{color:#74e6ff}
+.xo-mark.is-o,.xo-cell.is-o{color:#ffad70}
+.xo-mark.is-x{background:rgba(76,212,255,.13)}
+.xo-mark.is-o{background:rgba(255,156,74,.13)}
+.xo-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(6px,1.4vw,12px);width:min(100%,540px);aspect-ratio:1;margin:0 auto;padding:clamp(8px,1.8vw,15px);border:1px solid rgba(76,212,255,.22);border-radius:var(--r-lg);background:linear-gradient(145deg,rgba(19,35,64,.96),rgba(7,16,34,.98));box-shadow:0 18px 45px rgba(0,0,0,.25)}
+.xo-cell{display:grid;place-items:center;min-width:0;padding:0;border:1px solid rgba(133,166,218,.2);border-radius:var(--r-md);background:rgba(255,255,255,.045);color:var(--text);font-family:'Cairo',sans-serif;font-size:clamp(42px,12vw,100px);font-weight:900;line-height:1;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.xo-cell:not(:disabled):hover{transform:scale(1.025);border-color:var(--cyan);background:rgba(76,212,255,.1)}
+.xo-cell:disabled{cursor:default}
+.xo-next-round{margin:18px auto 0}
+.xo-player-badge{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 12px;color:var(--text-dim)}
+.xo-spectators,.xo-round-result{margin:14px 0 0;color:var(--text-dim);font-size:13px}
+@media(max-width:560px){
+  .xo-screen{padding:12px}
+  .xo-scoreboard{gap:7px}
+  .xo-player{gap:6px;padding:7px 9px;font-size:13px}
+  .xo-mark{width:32px;height:32px;font-size:21px}
+}
+
 /* ---------- جرس الإجابة ---------- */
 .buzzer-stage{justify-content:center}
 .buzzer-back{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px))}

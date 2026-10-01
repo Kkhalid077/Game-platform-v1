@@ -224,6 +224,7 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
     else if (room.status === 'in_tool' && room.activeTool === 'drawboard') renderDrawBoardPlayer(code, myId, name, room);
     else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
     else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' && room.activeGame === 'xo') renderXoPlayer(code, myId, name, room);
     else if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') renderPlayerGameNotice(code, myId, name, room);
     else renderPlayerVoting(code, myId, name, room);
   };
@@ -261,6 +262,7 @@ function renderInvitedGame(code, myId, name, room, gameId){
     if (gameId === 'silentdraw') return renderSilentDrawPlayer(code, myId, name, room);
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
     if (gameId === 'qatara') return renderQataraPlayer(code, myId, name, room);
+    if (gameId === 'xo') return renderXoPlayer(code, myId, name, room);
   }
   app.innerHTML = `<div class="player-join-screen">${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
