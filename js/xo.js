@@ -66,21 +66,28 @@ window.startXoGame = function(code,mode='network'){
 };
 
 window.ensureXoNetworkStarted = function(code){
-  return db.ref(`rooms/${code}`).transaction(room=>{
-    if(!room||room.status!=='in_game'||room.activeGame!=='xo'||room.xo?.mode!=='network'||room.xo.phase!=='waiting')return;
+  const roomRef=db.ref(`rooms/${code}`);
+  return roomRef.once('value').then(snapshot=>{
+    const room=snapshot.val();
+    if(!room||room.status!=='in_game'||room.activeGame!=='xo'||room.xo?.mode!=='network'||room.xo.phase!=='waiting')return null;
     const hostId=room.xo.hostPlayerId;
     const hostRecord=room.players?.[hostId];
     const guestEntry=Object.entries(room.players||{}).find(([id,player])=>
       id!==hostId&&player.guest&&player.gameId==='xo'
     );
-    if(!hostRecord||!guestEntry)return;
+    if(!hostRecord||!guestEntry)return null;
     const players=[
       {id:hostId,name:hostRecord.name||'المنظّم',mark:'X'},
       {id:guestEntry[0],name:guestEntry[1].name||'لاعب',mark:'O'}
     ];
-    room.xo={...room.xo,phase:'playing',players,board:Array(9).fill(''),turn:'X',startingMark:'X'};
-    return room;
-  }).catch(error=>console.error('Could not start network X O automatically:',error));
+    return roomRef.child('xo').transaction(game=>{
+      if(!game||game.mode!=='network'||game.phase!=='waiting')return;
+      return {...game,phase:'playing',players,board:Array(9).fill(''),turn:'X',startingMark:'X'};
+    });
+  }).catch(error=>{
+    console.error('Could not start network X O automatically:',error);
+    return null;
+  });
 };
 
 function xoWinner(board){
@@ -247,7 +254,11 @@ function renderXoPlayer(code,playerId,name,room){
   const player=game?.players?.find(item=>item.id===playerId);
   const canPlayNetwork=game?.mode==='network';
   if(game?.phase==='waiting'){
-    app.innerHTML=`<main class="xo-screen xo-player-screen"><header class="xo-heading"><span class="host-section-kicker">اللعب عن طريق الشبكة</span><h1>إكس أو</h1><p>تم انضمامك يا ${escapeHtml(name)}. بانتظار اللاعب الثاني لبدء اللعبة تلقائيًا.</p></header></main>`;
+    const host=room.players?.[game.hostPlayerId];
+    const joiningPlayer={id:playerId,name,mark:'O'};
+    const previewGame={...game,players:[{id:game.hostPlayerId,name:host?.name||'المنظّم',mark:'X'},joiningPlayer]};
+    app.innerHTML=`<main class="xo-screen xo-player-screen"><header class="xo-heading"><span class="host-section-kicker">اللعب عن طريق الشبكة</span><h1>إكس أو</h1><p>تم انضمامك يا ${escapeHtml(name)}. جارٍ تجهيز اللعبة…</p></header><div class="xo-scoreboard">${previewGame.players.map(player=>`<div class="xo-player"><span class="xo-mark ${player.mark==='X'?'is-x':'is-o'}">${player.mark}</span><strong>${escapeHtml(player.name)}</strong></div>`).join('')}</div>${xoBoardMarkup(previewGame,playerId,code)}</main>`;
+    window.ensureXoNetworkStarted?.(code);
     return;
   }
   app.innerHTML=`

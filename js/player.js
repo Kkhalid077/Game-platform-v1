@@ -157,6 +157,10 @@ function renderPlayer(code, invitedGameId){
         if(invitedGameId==='drawboard') await registerDrawBoardPlayer(roomRef,myId,record);
         else await registerPlayerPresence(roomRef.child('players/' + myId), record);
       }
+      if (inviteOpen && invitedGameId==='xo' && room.status==='in_game' &&
+          room.activeGame==='xo' && room.xo?.mode==='network' && room.xo.phase==='waiting') {
+        window.ensureXoNetworkStarted?.(code);
+      }
       attach(myId, savedName, record);
     }).catch(error => {
       activeGuestInvite = null;
