@@ -54,9 +54,6 @@ function dispatchHostRender(code, room){
       room.xo?.mode === 'network' && room.xo.phase === 'waiting') {
     window.ensureXoNetworkStarted?.(code);
   }
-  if (room.status === 'voting' && !hostDetailGameId && GAMES_LIST.some(game => game.id === room.selectedGame)) {
-    hostDetailGameId = room.selectedGame;
-  }
   const isDashboard = room.status === 'voting' && !hostDetailGameId;
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(isDashboard, isDashboard);
   const previousRoom = lastHostRoom;
