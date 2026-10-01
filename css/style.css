@@ -1033,8 +1033,8 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
 }
 .game-card{min-height:176px}
 .game-icon-badge{
-  width:82px;
-  height:82px;
+  width:96px;
+  height:96px;
   margin-bottom:11px;
   border:1px solid color-mix(in srgb,var(--tile) 28%,transparent);
   border-radius:25px;
@@ -1042,26 +1042,35 @@ body[data-platform-font="thmanyah"]>.guest-exit-button{
   box-shadow:0 9px 24px rgba(0,4,15,.28),inset 0 1px rgba(255,255,255,.08);
 }
 .game-icon-badge .game-icon-image{
-  width:64px;
-  height:64px;
+  width:76px;
+  height:76px;
   filter:drop-shadow(0 4px 8px rgba(0,0,0,.25));
+  animation:game-sticker-float 3.4s ease-in-out infinite;
   transition:transform .2s ease;
 }
-.game-card:hover:not(.disabled) .game-icon-badge .game-icon-image{transform:translateY(-2px) scale(1.08)}
+.game-card:nth-child(2n) .game-icon-badge .game-icon-image{animation-delay:-1.1s}
+.game-card:nth-child(3n) .game-icon-badge .game-icon-image{animation-delay:-2.2s}
+.game-card:hover:not(.disabled) .game-icon-badge .game-icon-image{animation-play-state:paused;transform:translateY(-2px) scale(1.08)}
 .host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{
-  width:72px;
-  height:72px;
+  width:84px;
+  height:84px;
   margin-bottom:9px;
   border-radius:22px;
 }
-.host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:56px;height:56px}
+.host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:68px;height:68px}
+.drawboard-tool-card .game-icon-badge{animation:game-sticker-float 3.4s ease-in-out infinite}
 .detail-icon-image{width:112px;height:112px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.28))}
+@keyframes game-sticker-float{
+  0%,100%{transform:translateY(0) rotate(-1deg) scale(1)}
+  50%{transform:translateY(-7px) rotate(1deg) scale(1.04)}
+}
+.landing-showcase-image{animation:game-sticker-float 4.2s ease-in-out infinite}
 @media(max-width:760px){
   .game-card{min-height:164px}
-  .game-icon-badge{width:72px;height:72px;border-radius:22px}
-  .game-icon-badge .game-icon-image{width:56px;height:56px}
-  .host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{width:64px;height:64px}
-  .host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:50px;height:50px}
+  .game-icon-badge{width:84px;height:84px;border-radius:22px}
+  .game-icon-badge .game-icon-image{width:68px;height:68px}
+  .host-games-grid .game-icon-badge,.host-tool-card .game-icon-badge{width:74px;height:74px}
+  .host-games-grid .game-icon-badge .game-icon-image,.host-tool-card .game-icon-badge .game-icon-image{width:60px;height:60px}
   .detail-icon-image{width:96px;height:96px}
 }
 
