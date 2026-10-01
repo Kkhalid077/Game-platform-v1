@@ -236,17 +236,12 @@ function accountInfoHtml(){
 }
 
 function renderHostLobby(code, room){
-  if (hostDetailGameId) {
-    if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
-    const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
-    const inviteUrl = game.id === 'trivia' ? null : joinGameUrl(code, game.id);
-    const inviteId = game.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
-    const invite = inviteUrl && game.minPlayers > 1 ? joinCardHtml(inviteId, inviteUrl) : '';
-    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true, invite);
-    if (invite) initJoinCard(inviteId, inviteUrl);
-    return;
-  }
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
+  const selectedGame = hostDetailGameId ? GAMES_LIST.find(g => g.id === hostDetailGameId) : null;
+  const selectedInviteUrl = selectedGame?.id === 'trivia' ? null : selectedGame ? joinGameUrl(code, selectedGame.id) : null;
+  const selectedInviteId = selectedGame?.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
+  const selectedInvite = selectedInviteUrl && selectedGame.minPlayers > 1 ? joinCardHtml(selectedInviteId, selectedInviteUrl) : '';
+  const detailModal = selectedGame ? gameDetailHtml(selectedGame, room, code, null, true, selectedInvite) : '';
 
   const players = room.players || {};
 
@@ -302,7 +297,9 @@ function renderHostLobby(code, room){
         </main>
       </div>
     </div>
+    ${detailModal}
   `;
+  if (selectedInvite) initJoinCard(selectedInviteId, selectedInviteUrl);
 }
 
 function renderHostGenericPlaceholder(code, room){
