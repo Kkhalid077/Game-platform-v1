@@ -264,7 +264,7 @@ function renderHostLobby(code, room){
     return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div>
       <div class="game-title">${g.title}</div>
-      <div class="vote-badge">${g.id === 'trivia' ? 'يعرضها المنظّم' : `الحد الأدنى ${g.minPlayers}`}</div>
+      ${g.id === 'xo' ? '' : `<div class="vote-badge">${g.id === 'trivia' ? 'يعرضها المنظّم' : `الحد الأدنى ${g.minPlayers}`}</div>`}
     </div>`;
   }).join('');
   const toolsHtml = `<section class="host-tools-section" aria-label="أدوات مساندة">
