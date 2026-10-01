@@ -60,11 +60,12 @@ body.has-version-footer #app{padding-bottom:0}
 .btn:hover:not(:disabled){filter:brightness(1.1)}
 .btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #4a3fb0}
 .btn:disabled{background:#33385f;color:#7d82ad;box-shadow:0 4px 0 #262a4c;cursor:not-allowed}
-.btn-ghost{background:transparent;box-shadow:none;border:2px solid var(--line);color:var(--text);font-size:14px;padding:8px 18px}
+.btn-ghost{background:rgba(18,28,53,.42);box-shadow:none;border:1px solid rgba(177,197,228,.28);color:var(--text);font-size:14px;padding:9px 18px;min-height:44px}
 .btn-ghost:hover:not(:disabled){background:rgba(255,255,255,.06)}
 .btn-ghost:active:not(:disabled){transform:scale(.97);box-shadow:none}
-.btn-danger{background:var(--accent-2);box-shadow:0 4px 0 #a72f52}
-.btn-danger:active:not(:disabled){box-shadow:0 1px 0 #a72f52}
+.btn-danger{background:rgba(185,49,86,.62);border:1px solid rgba(255,170,190,.42);box-shadow:0 6px 20px rgba(0,0,0,.24);color:#fff0f4}
+.btn-danger:hover:not(:disabled){background:rgba(205,61,98,.72)}
+.btn-danger:active:not(:disabled){box-shadow:0 2px 10px rgba(0,0,0,.24)}
 .btn.is-done{background:var(--green);color:#052e22;box-shadow:0 4px 0 #128a63}
 
 .btn-team{min-height:44px;padding:8px 18px;margin:4px;border-radius:var(--r-sm);border:2px solid var(--line);background:var(--bg);color:var(--text-dim);font-family:'Cairo',sans-serif;font-size:14px;cursor:pointer;transition:.15s}
@@ -81,10 +82,10 @@ input[type=text]:focus{border-color:var(--accent)}
 /* ---------- هياكل عامة ---------- */
 .stage{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 40px;text-align:center}
 .phone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
-.activity-exit-control{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));margin:0;padding:8px 15px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.38)}
-.activity-exit-controls{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:row;direction:ltr;gap:7px}
-.activity-exit-controls .btn{margin:0;padding:8px 13px;font-size:13px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.38)}
-.activity-exit-controls .activity-return-detail{border:1px solid rgba(177,197,228,.25);background:linear-gradient(145deg,#243452,#17243b);color:#edf4ff}
+.activity-exit-control{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));margin:0}
+.activity-exit-controls{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:row;direction:ltr;gap:8px}
+.activity-exit-controls .btn,.activity-exit-control{min-width:112px;margin:0;padding:9px 16px;font-size:13px;line-height:1.35;white-space:nowrap}
+.activity-exit-controls .activity-return-detail{background:rgba(25,43,72,.52);border-color:rgba(177,197,228,.3);color:#edf4ff}
 .winner-celebration{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:74px;margin:0 auto 8px;overflow:hidden}
 .winner-trophy{position:relative;z-index:1;display:block;font-size:48px;filter:drop-shadow(0 5px 12px rgba(255,194,75,.35));animation:winner-trophy-pop .65s cubic-bezier(.2,1.6,.4,1) both}
 .winner-celebration i{position:absolute;color:var(--amber);font-size:19px;font-style:normal;animation:winner-sparkle 1.8s ease-in-out infinite alternate}
@@ -245,8 +246,8 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .team-name-save .btn{margin:0}
 .team-name-save .team-picker-note{margin:0}
 
-.guest-exit-button{position:fixed;z-index:120;top:calc(10px + var(--safe-t));inset-inline-end:12px;min-height:42px;padding:8px 13px;border:1px solid rgba(255,107,139,.5);border-radius:999px;background:rgba(26,31,64,.98);box-shadow:0 6px 20px rgba(3,4,20,.3);color:#ffb3c3;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;cursor:pointer}
-.guest-exit-button:hover:not(:disabled){border-color:var(--accent-2);background:var(--surface-2)}
+.guest-exit-button{position:fixed;z-index:120;top:calc(10px + var(--safe-t));inset-inline-end:12px;min-width:154px;min-height:44px;padding:9px 16px;border:1px solid rgba(255,170,190,.42);border-radius:var(--r-md);background:rgba(185,49,86,.54);box-shadow:0 6px 20px rgba(3,4,20,.24);color:#fff0f4;font-family:'Cairo',sans-serif;font-size:13px;line-height:1.35;font-weight:800;cursor:pointer}
+.guest-exit-button:hover:not(:disabled){border-color:rgba(255,190,205,.72);background:rgba(205,61,98,.68)}
 .guest-exit-button:disabled{opacity:.7;cursor:wait}
 
 .player-join-screen{width:min(100%,640px);margin:auto}
@@ -378,7 +379,7 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 
 /* ---------- جرس الإجابة ---------- */
 .buzzer-stage{justify-content:center}
-.buzzer-back{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px))}
+.buzzer-back{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));min-width:112px;padding:9px 16px;font-size:13px;line-height:1.35}
 .buzzer-panel{width:min(100%,760px);padding:clamp(18px,4vw,34px);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow);text-align:center}
 .buzzer-panel h1{font-size:clamp(26px,5vw,38px)}
 .tool-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-direction:row-reverse}
