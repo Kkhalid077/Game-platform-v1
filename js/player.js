@@ -340,7 +340,6 @@ function renderPlayerVoting(code, myId, name, room){
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     return `<div class="game-card" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div>
-      <div class="vote-badge">${g.id==='trivia'?'على شاشة المنظّم':g.needsTeams?'انضم إلى فريق':'التفاصيل'}</div>
     </div>`;
   }).join('');
 
