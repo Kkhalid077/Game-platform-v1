@@ -1,55 +1,55 @@
 /* أسئلة وتحديات: اختيار الفئات، وسائل المساعدة، ولوحة فريقين */
 const TRIVIA_BANK = [
-  {id:'geo',name:'حول العالم',icon:'🌍',qs:[
+  {id:'geo',name:'حول العالم',qs:[
     ['ما عاصمة المملكة العربية السعودية؟','الرياض',['الرياض','جدة','مكة','الدمام'],'تقع في وسط المملكة.'],
     ['ما أكبر قارة في العالم؟','آسيا',['آسيا','أفريقيا','أوروبا','أمريكا الجنوبية'],'تضم الصين والهند.'],
     ['ما النهر الذي يمر في مصر؟','النيل',['النيل','الأمازون','الفرات','الدانوب'],'من أطول أنهار العالم.'],
     ['ما عاصمة اليابان؟','طوكيو',['طوكيو','أوساكا','كيوتو','سيول'],'مدينة يابانية ضخمة تبدأ بحرف ط.'],
     ['ما أكبر محيط على الأرض؟','المحيط الهادئ',['المحيط الهادئ','الأطلسي','الهندي','المتجمد الشمالي'],'يقع بين آسيا وأمريكا.'],
     ['ما عاصمة إيطاليا؟','روما',['روما','ميلانو','البندقية','فلورنسا'],'مدينة تاريخية يمر فيها نهر التيبر.']]},
-  {id:'science',name:'علوم',icon:'🔬',qs:[
+  {id:'science',name:'علوم',qs:[
     ['ما الكوكب المعروف بالكوكب الأحمر؟','المريخ',['المريخ','الزهرة','المشتري','عطارد'],'لونه ناتج عن أكاسيد الحديد.'],
     ['ما الغاز الذي تمتصه النباتات؟','ثاني أكسيد الكربون',['ثاني أكسيد الكربون','الأكسجين','النيتروجين','الهيدروجين'],'تستخدمه في البناء الضوئي.'],
     ['كم عدد عظام جسم الإنسان البالغ تقريبًا؟','206',['206','150','300','412'],'أكثر من مئتي عظمة بقليل.'],
     ['ما أقرب نجم إلى الأرض؟','الشمس',['الشمس','الشعرى اليمانية','سيريوس','النجم القطبي'],'نراه نهارًا.'],
     ['ما وحدة قياس شدة التيار الكهربائي؟','الأمبير',['الأمبير','الفولت','الواط','الأوم'],'سميت نسبة إلى عالم فرنسي.'],
     ['ما الجزء الذي يحمل البذور في النبات؟','الثمرة',['الثمرة','الجذر','الساق','الورقة'],'يتكون غالبًا بعد تحوّل الزهرة.']]},
-  {id:'history',name:'تاريخ وحضارة',icon:'🏛️',qs:[
+  {id:'history',name:'تاريخ وحضارة',qs:[
     ['في أي دولة تقع أهرامات الجيزة؟','مصر',['مصر','السودان','العراق','الأردن'],'على ضفاف النيل.'],
     ['ما المدينة التي كانت عاصمة الدولة العباسية؟','بغداد',['بغداد','دمشق','القاهرة','قرطبة'],'أسسها أبو جعفر المنصور.'],
     ['من الرحالة المغربي الشهير الذي جاب بلادًا كثيرة؟','ابن بطوطة',['ابن بطوطة','ابن خلدون','الإدريسي','المسعودي'],'ولد في طنجة.'],
     ['ما الحضارة التي اشتهرت بالكتابة المسمارية؟','السومرية',['السومرية','الرومانية','الإغريقية','الفينيقية'],'نشأت في بلاد الرافدين.'],
     ['في أي عام انتهت الحرب العالمية الثانية؟','1945',['1945','1939','1918','1950'],'بعد ست سنوات من بدايتها.'],
     ['ما اسم المدينة الأثرية المنحوتة في الصخر جنوب الأردن؟','البتراء',['البتراء','جرش','تدمر','أريحا'],'تُعرف بالمدينة الوردية.']]},
-  {id:'sports',name:'رياضة',icon:'⚽',qs:[
+  {id:'sports',name:'رياضة',qs:[
     ['كم لاعبًا في فريق كرة القدم داخل الملعب؟','11',['11','9','10','12'],'حارس المرمى ضمن العدد.'],
     ['كم حلقة في شعار الألعاب الأولمبية؟','5',['5','4','6','7'],'ترمز إلى القارات.'],
     ['ما الرياضة التي يستخدم فيها المضرب والريشة؟','الريشة الطائرة',['الريشة الطائرة','التنس','الإسكواش','تنس الطاولة'],'تُلعب غالبًا في صالة.'],
     ['كم دقيقة مدة مباراة كرة القدم الأصلية؟','90',['90','80','100','60'],'شوطان متساويان.'],
     ['ما الدولة صاحبة أكبر عدد من ألقاب كأس العالم للرجال حتى 2022؟','البرازيل',['البرازيل','ألمانيا','إيطاليا','الأرجنتين'],'فازت باللقب خمس مرات.'],
     ['كم عدد لاعبي فريق كرة السلة داخل الملعب؟','5',['5','6','7','8'],'يتكون الفريق من خمسة لاعبين في الملعب.']]},
-  {id:'literature',name:'لغة وأدب',icon:'📚',qs:[
+  {id:'literature',name:'لغة وأدب',qs:[
     ['ما جمع كلمة كتاب؟','كتب',['كتب','كتابات','كتابان','كتبة'],'جمع تكسير من ثلاثة أحرف.'],
     ['من مؤلف مسرحية روميو وجولييت؟','وليام شكسبير',['وليام شكسبير','تشارلز ديكنز','جورج أورويل','دانتي'],'كاتب مسرحي إنجليزي.'],
     ['ما ضد كلمة شجاع؟','جبان',['جبان','قوي','كريم','صبور'],'صفة من يخاف المواجهة.'],
     ['كم عدد حروف اللغة العربية؟','28',['28','26','29','30'],'من الألف إلى الياء.'],
     ['من صاحب معلقة قفا نبك؟','امرؤ القيس',['امرؤ القيس','عنترة بن شداد','زهير بن أبي سلمى','طرفة بن العبد'],'شاعر جاهلي اشتهر بالغزل.'],
     ['ما نوع كلمة «يكتب»؟','فعل مضارع',['فعل مضارع','اسم','فعل ماضٍ','حرف'],'يدل على حدث يقع الآن أو يتجدد.']]},
-  {id:'food',name:'طعام ومطبخ',icon:'🍽️',qs:[
+  {id:'food',name:'طعام ومطبخ',qs:[
     ['ما المكون الأساسي للحمص؟','الحمص',['الحمص','العدس','الفول','الفاصولياء'],'بقول معروف اسمه هو اسم الطبق.'],
     ['من أي فاكهة يُصنع الزبيب؟','العنب',['العنب','التين','التمر','التفاح'],'تُجفف حباته.'],
     ['ما البهار الذي يعطي الكركم لونه الأصفر؟','الكركم',['الكركم','القرفة','الكمون','الفلفل الأسود'],'يُستخدم أيضًا في الكاري.'],
     ['أي دولة تشتهر بالسوشي؟','اليابان',['اليابان','تايلاند','الصين','كوريا'], 'طبق أرز ياباني مشهور.'],
     ['ما العنصر الذي يجعل العجين ينتفخ؟','الخميرة',['الخميرة','الملح','السكر','الزيت'],'كائنات دقيقة تنتج غازًا.'],
     ['ما المكوّن الأساسي في طبق التبولة؟','البقدونس',['البقدونس','الأرز','البطاطس','الذرة'],'يُفرم ناعمًا ويخلط بالخضار والبرغل.']]},
-  {id:'tech',name:'تقنية واختراعات',icon:'💡',qs:[
+  {id:'tech',name:'تقنية واختراعات',qs:[
     ['ما الجهاز المستخدم لإدخال النص إلى الحاسوب؟','لوحة المفاتيح',['لوحة المفاتيح','الشاشة','السماعة','الطابعة'],'تحتوي على أزرار الحروف.'],
     ['ماذا تعني الأحرف WWW؟','الشبكة العنكبوتية العالمية',['الشبكة العنكبوتية العالمية','نظام تشغيل عالمي','اتصال لاسلكي','ذاكرة حاسوب'],'تظهر غالبًا في عناوين المواقع.'],
     ['من مخترع الهاتف الذي نُسب إليه أول براءة اختراع؟','ألكسندر غراهام بيل',['ألكسندر غراهام بيل','توماس إديسون','نيكولا تسلا','جيمس واط'],'عالم اسكتلندي أمريكي.'],
     ['ما لغة التنسيق الشائعة لتصميم صفحات الويب؟','CSS',['CSS','HTML','SQL','Python'],'تتحكم بالألوان والتخطيط.'],
     ['ما اسم أول قمر صناعي أُطلق إلى الفضاء؟','سبوتنيك 1',['سبوتنيك 1','أبولو 11','فوستوك 1','إكسبلورر 1'],'أطلقه الاتحاد السوفيتي عام 1957.'],
     ['ما التقنية التي تحول ضوء الشمس إلى كهرباء؟','الخلايا الشمسية',['الخلايا الشمسية','المحرك البخاري','التوربين المائي','المولد اليدوي'],'تُعرف أيضًا بالخلايا الكهروضوئية.']]},
-  {id:'nature',name:'طبيعة وحيوانات',icon:'🐾',qs:[
+  {id:'nature',name:'طبيعة وحيوانات',qs:[
     ['ما أسرع حيوان بري؟','الفهد',['الفهد','الأسد','الحصان','الغزال'],'يُعرف أيضًا بالشيتا.'],
     ['ما الحيوان الملقب بسفينة الصحراء؟','الجمل',['الجمل','الحصان','اللاما','الفيل'],'يتحمل العطش والحرارة.'],
     ['كم ساقًا للعنكبوت؟','8',['8','6','10','12'],'أكثر من الحشرات بزوج أرجل.'],
@@ -58,13 +58,16 @@ const TRIVIA_BANK = [
     ['ما الحيوان الذي يُعرف بملك الغابة؟','الأسد',['الأسد','النمر','الفهد','الذئب'],'يعيش في جماعات تسمى الزمر.']]}
 ];
 const TRIVIA_AIDS=[
-  {id:'throw',name:'رمي السؤال',icon:'↗️',help:'يمرّر السؤال إلى الفريق الخصم؛ وإذا لم يجب تُخصم منه نقاط السؤال.'},
-  {id:'hint',name:'تلميح',icon:'💡',help:'يعرض تلميحًا يساعد الفريق على الوصول إلى الإجابة.'},
-  {id:'double',name:'مضاعفة النقاط',icon:'×2',help:'يضاعف نقاط السؤال الحالي عند الإجابة الصحيحة.'},
-  {id:'steal',name:'سرقة النقاط',icon:'↗️',help:'إذا أخفق الفريق في الإجابة، تُتاح للفريق الآخر فرصة كسب نقاط السؤال.'},
-  {id:'skip',name:'تجاوز السؤال',icon:'⏭️',help:'ينهي السؤال الحالي دون نقاط وينتقل الدور إلى الفريق الآخر.'},
-  {id:'wheel',name:'عجلة الحظ',icon:'🎡',help:'تدير عجلة عشوائية بنتائج ومفاجآت مختلفة.'}
+  {id:'throw',name:'رمي السؤال',help:'يمرّر السؤال إلى الفريق الخصم؛ وإذا لم يجب تُخصم منه نقاط السؤال.'},
+  {id:'hint',name:'تلميح',help:'يعرض تلميحًا يساعد الفريق على الوصول إلى الإجابة.'},
+  {id:'double',name:'مضاعفة النقاط',help:'يضاعف نقاط السؤال الحالي عند الإجابة الصحيحة.'},
+  {id:'steal',name:'سرقة النقاط',help:'إذا أخفق الفريق في الإجابة، تُتاح للفريق الآخر فرصة كسب نقاط السؤال.'},
+  {id:'skip',name:'تجاوز السؤال',help:'ينهي السؤال الحالي دون نقاط وينتقل الدور إلى الفريق الآخر.'},
+  {id:'wheel',name:'عجلة الحظ',help:'تدير عجلة عشوائية بنتائج ومفاجآت مختلفة.'}
 ];
+function triviaStickerHtml(className='trivia-floating-sticker'){
+  return iconImageHtml('assets/icons/knowledge-challenge.svg',className);
+}
 const TRIVIA_QUESTION_POINTS=[200,200,200,400,400,600];
 function triviaPointsForIndex(index){return TRIVIA_QUESTION_POINTS[index]||TRIVIA_QUESTION_POINTS[0];}
 function triviaQuestionLimit(trivia){return (trivia.categories||[]).length*TRIVIA_QUESTION_POINTS.length;}
@@ -124,7 +127,7 @@ function renderTriviaSetupHost(code,t){
   const teamCards=['A','B'].map(team=>{
     const selected=t.aidsByTeam?.[team]||[];
     const aidChoices=TRIVIA_AIDS.map(aid=>`<div class="trivia-aid-choice ${selected.includes(aid.id)?'is-selected':''}">
-      <label class="trivia-aid"><input type="checkbox" data-trivia-aid="${team}-${aid.id}" ${selected.includes(aid.id)?'checked':''} ${selected.length>=3&&!selected.includes(aid.id)?'disabled':''} onchange="triviaToggleAid('${code}','${team}','${aid.id}',this.checked)"><span class="trivia-aid-icon">${aid.icon}</span><b>${aid.name}</b></label>
+      <label class="trivia-aid"><input type="checkbox" data-trivia-aid="${team}-${aid.id}" ${selected.includes(aid.id)?'checked':''} ${selected.length>=3&&!selected.includes(aid.id)?'disabled':''} onchange="triviaToggleAid('${code}','${team}','${aid.id}',this.checked)"><span class="trivia-aid-icon">${triviaStickerHtml()}</span><b>${aid.name}</b></label>
       <details class="trivia-aid-help"><summary aria-label="شرح ${aid.name}">؟</summary><p>${aid.help}</p></details>
     </div>`).join('');
     const teamName=t.teams?.[team]|| (team==='A'?'الفريق الأول':'الفريق الثاني');
@@ -147,7 +150,7 @@ function renderTriviaSetupHost(code,t){
 }
 function renderTriviaCategoriesHost(code,t){
   const selected=t.categories||[];
-  const cards=TRIVIA_BANK.map(c=>`<button class="trivia-category ${selected.includes(c.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${c.id}')"><span>${c.icon}</span><b>${c.name}</b><small>${selected.includes(c.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
+  const cards=TRIVIA_BANK.map(c=>`<button class="trivia-category ${selected.includes(c.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${c.id}')"><span>${triviaStickerHtml()}</span><b>${c.name}</b><small>${selected.includes(c.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
   document.getElementById('stage').innerHTML=`<div class="trivia-wrap">
     <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>تحديد الفئات</h1><p>اختاروا 6 فئات للوحة اللعب (${selected.length}/6).</p></div><button class="btn btn-ghost" onclick="triviaBackToTeams('${code}')">العودة للفريقين</button></header>
     <div class="trivia-category-grid">${cards}</div>
@@ -253,7 +256,7 @@ window.triviaBegin=async code=>{
 };
 function renderTriviaBoard(code,t){
   const categories=(t.categories||[]).map(id=>TRIVIA_BANK.find(c=>c.id===id)).filter(Boolean);
-  const cells=categories.map(c=>`<section class="trivia-column"><h3><span>${c.icon}</span><b>${c.name}</b></h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${triviaPointsForIndex(i)}</button>`}).join('')}</section>`).join('');
+  const cells=categories.map(c=>`<section class="trivia-column"><h3><span>${triviaStickerHtml()}</span><b>${c.name}</b></h3>${c.qs.map((_,index)=>c.qs.length-1-index).map(i=>{const key=c.id+'_'+i;return `<button class="trivia-cell ${t.used?.[key]?'is-used':''}" ${t.used?.[key]?'disabled':''} onclick="triviaOpenQuestion('${code}','${key}')">${triviaPointsForIndex(i)}</button>`}).join('')}</section>`).join('');
   const scores=t.scores||{A:0,B:0};
   const rankedTeams=['A','B'].sort((left,right)=>(scores[right]||0)-(scores[left]||0));
   const scoreCards=rankedTeams.map((team,index)=>`<div class="trivia-score team-${team.toLowerCase()} ${index===0&&scores.A!==scores.B?'is-leading':''}">
@@ -300,12 +303,12 @@ function renderTriviaTeamAidCards(code,t,current){
       if(!aid)return '';
       const isUsed=!!teamUsed[id];
       if(isActive&&id==='wheel'&&!isUsed){
-        return `<button type="button" class="trivia-team-aid trivia-wheel-open" onclick="triviaOpenWheel()"><span>${aid.icon}</span><b>${aid.name}</b></button>`;
+        return `<button type="button" class="trivia-team-aid trivia-wheel-open" onclick="triviaOpenWheel()"><span>${triviaStickerHtml()}</span><b>${aid.name}</b></button>`;
       }
       if(isActive&&!isUsed){
-        return `<button type="button" class="trivia-team-aid" onclick="triviaUseAid('${code}','${id}')"><span>${aid.icon}</span><b>${aid.name}</b></button>`;
+        return `<button type="button" class="trivia-team-aid" onclick="triviaUseAid('${code}','${id}')"><span>${triviaStickerHtml()}</span><b>${aid.name}</b></button>`;
       }
-      return `<span class="trivia-team-aid ${isUsed?'is-used':'is-inactive'}"><span>${aid.icon}</span><b>${aid.name}</b></span>`;
+      return `<span class="trivia-team-aid ${isUsed?'is-used':'is-inactive'}"><span>${triviaStickerHtml()}</span><b>${aid.name}</b></span>`;
     }).join('');
     return `<section class="trivia-team-aids team-${aidTeam.toLowerCase()} ${isActive?'is-active':''}">
       <header><span class="trivia-team-aids-indicator" aria-hidden="true"></span><h2>${escapeHtml(t.teams?.[aidTeam]||(aidTeam==='A'?'الفريق الأول':'الفريق الثاني'))}</h2>${isActive?'<small>دور الفريق</small>':''}</header>
@@ -330,14 +333,14 @@ function renderTriviaQuestionHost(code,t){
        <button class="btn btn-ghost" onclick="triviaSkip('${code}')">لا نقاط</button>`
     : `<button class="btn" onclick="triviaReveal('${code}')">إظهار الإجابة</button>`;
   document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap"><div class="trivia-question-card">
-    <header class="trivia-question-header"><span class="trivia-question-points">${points}</span><span class="trivia-question-category">${category.icon} ${category.name}</span><div class="trivia-question-turn"><span>دور ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</span><button type="button" class="trivia-question-turn-switch" onclick="triviaSetQuestionTurn('${code}','${team==='A'?'B':'A'}')">تبديل الدور ↔</button></div></header>
+    <header class="trivia-question-header"><span class="trivia-question-points">${points}</span><span class="trivia-question-category">${triviaStickerHtml('trivia-question-sticker')} ${category.name}</span><div class="trivia-question-turn"><span>دور ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}</span><button type="button" class="trivia-question-turn-switch" onclick="triviaSetQuestionTurn('${code}','${team==='A'?'B':'A'}')">تبديل الدور</button></div></header>
     <div class="trivia-question-layout">
       <aside class="trivia-question-sidebar" aria-label="وسائل مساعدة الفريقين">${teamAidCards}</aside>
       <main class="trivia-question-main">
         ${current.challengeTeam?`<p class="trivia-challenge-notice">تحدي فردي: يلتزم أحد لاعبي ${escapeHtml(t.teams?.[current.challengeTeam]||'الفريق الآخر')} بالصمت وعدم الإجابة في هذا السؤال.</p>`:''}
         ${current.thrownByTeam?`<p class="trivia-challenge-notice">مرّر ${escapeHtml(t.teams?.[current.thrownByTeam]||'الفريق الآخر')} السؤال إلى ${escapeHtml(t.teams?.[team]||'الفريق صاحب الدور')}.</p>`:''}
         <h1>${escapeHtml(question[0])}</h1>
-        ${current.hint?`<div class="trivia-hint">💡 ${escapeHtml(question[3])}</div>`:''}
+        ${current.hint?`<div class="trivia-hint">${triviaStickerHtml('trivia-hint-sticker')} ${escapeHtml(question[3])}</div>`:''}
         ${current.letterHint?`<div class="trivia-hint">حرف من الإجابة: <strong>${escapeHtml(current.letterHint)}</strong></div>`:''}
         ${current.revealed?`<div class="trivia-answer">الإجابة الصحيحة: <strong>${escapeHtml(question[1])}</strong></div>`:''}
         ${current.wheelResult?`<p class="trivia-wheel-result" role="status">${escapeHtml(current.wheelResult)}</p>`:''}
@@ -499,7 +502,7 @@ window.triviaBack=async code=>{
 function renderTriviaDone(code,t){
   const a=t.scores?.A||0,b=t.scores?.B||0;
   const winner=a===b?'تعادل!':a>b?(t.teams?.A||'الفريق الأول'):(t.teams?.B||'الفريق الثاني');
-  document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap trivia-final"><div class="trivia-question-card">${a!==b?winnerCelebrationHtml():''}<span class="host-section-kicker">نهاية الجولة</span><h1>${a===b?'تعادل رائع!':'🏆 '+escapeHtml(winner)+' يفوز!'}</h1><div class="trivia-scoreboard"><div class="trivia-score team-a"><span>${escapeHtml(t.teams?.A||'الفريق الأول')}</span><b>${a}</b></div><div class="trivia-score team-b"><span>${escapeHtml(t.teams?.B||'الفريق الثاني')}</span><b>${b}</b></div></div><div class="trivia-final-actions"><button class="btn" onclick="triviaReplay('${code}')">إعادة اللعبة بالأسماء نفسها</button></div></div></div>`;
+  document.getElementById('stage').innerHTML=`${triviaExitControlsHtml(code)}<div class="trivia-wrap trivia-final"><div class="trivia-question-card">${a!==b?winnerCelebrationHtml():''}<span class="host-section-kicker">نهاية الجولة</span><h1>${a===b?'تعادل رائع!':`${triviaStickerHtml('trivia-winner-sticker')} ${escapeHtml(winner)} يفوز!`}</h1><div class="trivia-scoreboard"><div class="trivia-score team-a"><span>${escapeHtml(t.teams?.A||'الفريق الأول')}</span><b>${a}</b></div><div class="trivia-score team-b"><span>${escapeHtml(t.teams?.B||'الفريق الثاني')}</span><b>${b}</b></div></div><div class="trivia-final-actions"><button class="btn" onclick="triviaReplay('${code}')">إعادة اللعبة بالأسماء نفسها</button></div></div></div>`;
 }
 window.triviaReplay=async code=>{
   const teams=lastHostRoom?.trivia?.teams;

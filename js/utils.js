@@ -426,7 +426,7 @@ function setActivityBackdrop(activityId){
 }
 
 function winnerCelebrationHtml(){
-  return `<div class="winner-celebration" aria-hidden="true"><span class="winner-trophy">🏆</span><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>`;
+  return `<div class="winner-celebration" aria-hidden="true"><span class="winner-trophy">${iconImageHtml('assets/icons/knowledge-challenge.svg','winner-trophy-sticker')}</span><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>`;
 }
 window.toggleReady = function(code, myId, gameId){
   const ref = db.ref('rooms/'+code+'/votes/'+myId);
