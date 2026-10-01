@@ -28,7 +28,7 @@ function transitionAppView(update){
   if (nextView?.animate) {
     nextView.animate(
       [{opacity:0, transform:'translate3d(0,12px,0) scale(.99)'},{opacity:1, transform:'translate3d(0,0,0) scale(1)'}],
-      {duration:260, easing:'cubic-bezier(.2,.75,.25,1)'}
+      {duration:160, easing:'cubic-bezier(.2,.75,.25,1)'}
     );
   }
 }
@@ -373,7 +373,8 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
     : '';
 
   return `
-    <div class="game-detail">
+    <div class="game-detail-shell">
+      <div class="game-detail">
       ${isHost ? '<button class="btn btn-ghost back-btn" onclick="hideHostGameDetail()">→ رجوع</button>' : ''}
       <div class="detail-icon">${gameIconHtml(game, 'detail-icon-image')}</div>
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
@@ -389,6 +390,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
           : ''}
       </div>
       ${hostXoModes}
+      </div>
     </div>
   `;
 }

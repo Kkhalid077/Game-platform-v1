@@ -93,6 +93,7 @@ function renderPlayer(code, invitedGameId){
         updatePlayerTeamSelector(code, id, room, invitedGameId);
         return;
       }
+      if (lastRenderedRoom && JSON.stringify(lastRenderedRoom) === JSON.stringify(room)) return;
       lastRenderedRoom = room;
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || room.activeTool === invitedGameId;
