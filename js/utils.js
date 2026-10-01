@@ -373,7 +373,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
     : '';
 
   return `
-    <div class="game-detail-shell">
+    <div class="game-detail-shell" data-activity="${escapeHtml(game.id)}">
       <div class="game-detail">
       ${isHost ? '<button class="btn btn-ghost back-btn" onclick="hideHostGameDetail()">→ رجوع</button>' : ''}
       <div class="detail-icon">${gameIconHtml(game, 'detail-icon-image')}</div>
