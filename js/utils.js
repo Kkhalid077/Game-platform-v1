@@ -28,7 +28,7 @@ function transitionAppView(update){
   if (nextView?.animate) {
     nextView.animate(
       [{opacity:0, transform:'translate3d(0,12px,0) scale(.99)'},{opacity:1, transform:'translate3d(0,0,0) scale(1)'}],
-      {duration:260, easing:'cubic-bezier(.2,.75,.25,1)'}
+      {duration:160, easing:'cubic-bezier(.2,.75,.25,1)'}
     );
   }
 }
@@ -224,12 +224,14 @@ window.setPlayerTeam = function(code, myId, team){
 };
 
 let teamNamesSaveTimer = null;
+const DEFAULT_TEAM_NAMES = {A:'الفريق الأخضر',B:'الفريق البرتقالي'};
 function updateTeamNameDisplays(names){
   for (const team of ['A','B']) {
     const name = names?.[team];
     if (typeof name !== 'string') continue;
+    const displayName = name || DEFAULT_TEAM_NAMES[team];
     document.querySelectorAll(`[data-team-name="${team}"]`).forEach(display => {
-      display.textContent = name || (team === 'A' ? 'الفريق الأخضر' : 'الفريق البرتقالي');
+      display.textContent = displayName;
     });
     const input = document.getElementById(`teamName${team}`);
     if (input && document.activeElement !== input && input.value !== name) input.value = name;
@@ -241,8 +243,8 @@ window.queueTeamNamesSave = function(code, immediate=false){
   const nameA = document.getElementById('teamNameA')?.value.trim() || '';
   const nameB = document.getElementById('teamNameB')?.value.trim() || '';
   updateTeamNameDisplays({A:nameA,B:nameB});
-  if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
-    if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
+  if (nameA.length > 24 || nameB.length > 24) {
+    if (status) status.textContent = 'استخدم 24 حرفًا كحد أقصى لكل اسم.';
     return;
   }
   const names = {A:nameA,B:nameB};
@@ -259,15 +261,19 @@ window.queueTeamNamesSave = function(code, immediate=false){
 };
 
 window.saveTeamNames = async function(code, names=null){
-  const nameA = names?.A || document.getElementById('teamNameA')?.value.trim();
-  const nameB = names?.B || document.getElementById('teamNameB')?.value.trim();
+  const nameA = names?.A ?? document.getElementById('teamNameA')?.value.trim() ?? '';
+  const nameB = names?.B ?? document.getElementById('teamNameB')?.value.trim() ?? '';
   const status = document.getElementById('teamNamesStatus');
-  if (!nameA || !nameB || nameA.length > 24 || nameB.length > 24) {
-    if (status) status.textContent = 'أكمل اسمي الفريقين (24 حرفًا كحد أقصى).';
+  if (nameA.length > 24 || nameB.length > 24) {
+    if (status) status.textContent = 'استخدم 24 حرفًا كحد أقصى لكل اسم.';
     return;
   }
+  const savedNames = {
+    A:nameA || DEFAULT_TEAM_NAMES.A,
+    B:nameB || DEFAULT_TEAM_NAMES.B
+  };
   try {
-    await db.ref(`rooms/${code}/teamNames`).set({A:nameA, B:nameB});
+    await db.ref(`rooms/${code}/teamNames`).set(savedNames);
     if (status) status.textContent = 'تم الحفظ تلقائيًا.';
   } catch (error) {
     console.error('Could not save team names:', error);
@@ -356,22 +362,34 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const playerCards = Object.values(players).map(player => playerAvatarCardHtml(player)).join('');
   const triviaGame = game.id === 'trivia';
   const hostControlledTrivia = isHost && triviaGame;
+  const xoGame = game.id === 'xo';
+  const hostControlledXo = isHost && xoGame;
+  const hostXoModes = xoGame && isHost
+    ? `<div class="xo-mode-picker" aria-label="اختر طريقة اللعب">
+        <button type="button" class="btn" onclick="startXoGame('${code}','local')">اللعب على جهازي</button>
+        <button type="button" class="btn" onclick="startXoGame('${code}','network')">اللعب عن طريق الشبكة</button>
+        <button type="button" class="btn" onclick="startXoGame('${code}','computer')">اللعب مع الكمبيوتر</button>
+      </div>`
+    : '';
 
   return `
-    <div class="game-detail">
+    <div class="game-detail-shell" data-activity="${escapeHtml(game.id)}">
+      <div class="game-detail">
       ${isHost ? '<button class="btn btn-ghost back-btn" onclick="hideHostGameDetail()">→ رجوع</button>' : ''}
       <div class="detail-icon">${gameIconHtml(game, 'detail-icon-image')}</div>
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
-      ${triviaGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
-      ${inviteHtml}
+      ${triviaGame || xoGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
+      ${xoGame ? '' : inviteHtml}
       ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
-      ${hostControlledTrivia ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${hostControlledTrivia || hostControlledXo ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
-        ${isHost
+        ${isHost && !xoGame
           ? `<button class="btn" ${!hostControlledTrivia && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`
           : ''}
+      </div>
+      ${hostXoModes}
       </div>
     </div>
   `;
@@ -408,7 +426,7 @@ function setActivityBackdrop(activityId){
 }
 
 function winnerCelebrationHtml(){
-  return `<div class="winner-celebration" aria-hidden="true"><span class="winner-trophy">🏆</span><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>`;
+  return `<div class="winner-celebration" aria-hidden="true"><span class="winner-trophy">${iconImageHtml('assets/icons/winner-trophy.svg','winner-trophy-sticker')}</span><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>`;
 }
 window.toggleReady = function(code, myId, gameId){
   const ref = db.ref('rooms/'+code+'/votes/'+myId);

@@ -46,10 +46,15 @@ function initHostRoom(code, isNew){
 
 function dispatchHostRender(code, room){
   if (!room) {
+    window.stopXoNetworkPlayerWatch?.();
     stopDrawBoardHost();
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  if (room.status === 'in_game' && room.activeGame === 'xo' &&
+      room.xo?.mode === 'network' && room.xo.phase === 'waiting') {
+    window.ensureXoNetworkStarted?.(code);
+  } else window.stopXoNetworkPlayerWatch?.();
   const isDashboard = room.status === 'voting' && !hostDetailGameId;
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(isDashboard, isDashboard);
   const previousRoom = lastHostRoom;
@@ -108,6 +113,7 @@ function dispatchHostRender(code, room){
     else if (room.status === 'in_game' && room.activeGame === 'mafia') renderMafiaHost(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'xo') renderXoHost(code, room);
     else renderHostGenericPlaceholder(code, room);
   };
   const shouldTransition = lastHostViewKey !== null && lastHostViewKey !== viewKey;
@@ -159,6 +165,9 @@ function updateHostGameDetailPlayers(code, room){
 
 window.showHostGameDetail = function(gameId){
   hostDetailGameId = gameId;
+  if (lastHostRoom && document.getElementById('stage')) {
+    transitionAppView(() => renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom));
+  }
   db.ref('rooms/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
 window.hideHostGameDetail = function(){
@@ -228,16 +237,12 @@ function accountInfoHtml(){
 }
 
 function renderHostLobby(code, room){
-  if (hostDetailGameId) {
-    if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
-    const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
-    const inviteUrl = game.id === 'trivia' ? null : joinGameUrl(code, game.id);
-    const invite = inviteUrl && game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
-    document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true, invite);
-    if (invite) initJoinCard('gameInvite', inviteUrl);
-    return;
-  }
-  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
+  if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(!hostDetailGameId, !hostDetailGameId);
+  const selectedGame = hostDetailGameId ? GAMES_LIST.find(g => g.id === hostDetailGameId) : null;
+  const selectedInviteUrl = selectedGame?.id === 'trivia' ? null : selectedGame ? joinGameUrl(code, selectedGame.id) : null;
+  const selectedInviteId = selectedGame?.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
+  const selectedInvite = selectedInviteUrl && selectedGame.minPlayers > 1 ? joinCardHtml(selectedInviteId, selectedInviteUrl) : '';
+  const detailModal = selectedGame ? gameDetailHtml(selectedGame, room, code, null, true, selectedInvite) : '';
 
   const players = room.players || {};
 
@@ -252,7 +257,6 @@ function renderHostLobby(code, room){
     return `<div class="game-card" onclick="showHostGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div>
       <div class="game-title">${g.title}</div>
-      <div class="vote-badge">${g.id === 'trivia' ? 'يعرضها المنظّم' : `الحد الأدنى ${g.minPlayers}`}</div>
     </div>`;
   }).join('');
   const toolsHtml = `<section class="host-tools-section" aria-label="أدوات مساندة">
@@ -294,7 +298,9 @@ function renderHostLobby(code, room){
         </main>
       </div>
     </div>
+    ${detailModal}
   `;
+  if (selectedInvite) initJoinCard(selectedInviteId, selectedInviteUrl);
 }
 
 function renderHostGenericPlaceholder(code, room){
@@ -312,6 +318,7 @@ window.startGame = function(gameId, code){
   if (gameId === 'silentdraw') { startSilentDrawGame(code); return; }
   if (gameId === 'trivia') { startTriviaSetup(code); return; }
   if (gameId === 'qatara') { startQataraGame(code); return; }
+  if (gameId === 'xo') { startXoGame(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
@@ -325,7 +332,7 @@ window.startBuzzerTool = function(code){
 window.resetToLobby = async function(code){
   stopDrawBoardHost?.();
   try{
-    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, buzzer:null, drawingBoards:null });
+    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, qatara:null, xo:null, buzzer:null, drawingBoards:null });
   }catch(error){
     console.error('Could not leave the active room tool:',error);
     alert('تعذر الخروج من الأداة. تحقق من الاتصال وحاول مرة أخرى.');
@@ -334,7 +341,7 @@ window.resetToLobby = async function(code){
 
 function activityExitControlsHtml(code,gameId){
   return `<div class="activity-exit-controls">
-    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
+    ${gameId === 'xo' ? '' : `<button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>`}
     <button type="button" class="btn activity-return-detail" onclick="returnToGameDetail('${code}','${gameId}')">إنهاء اللعبة</button>
   </div>`;
 }
@@ -349,7 +356,7 @@ window.returnToGameDetail = async function(code,gameId){
     await db.ref('rooms/'+code).update({
       status:'voting',activeGame:null,activeTool:null,buzzerTransport:null,
       buzzerSession:null,buzzerRtc:null,buzzerFallback:null,selectedGame:gameId,
-      votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,buzzer:null
+      votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,xo:null,buzzer:null
     });
   }catch(error){
     hostDetailGameId = null;

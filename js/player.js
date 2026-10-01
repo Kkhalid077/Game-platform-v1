@@ -93,6 +93,7 @@ function renderPlayer(code, invitedGameId){
         updatePlayerTeamSelector(code, id, room, invitedGameId);
         return;
       }
+      if (lastRenderedRoom && JSON.stringify(lastRenderedRoom) === JSON.stringify(room)) return;
       lastRenderedRoom = room;
       // إن مسح المنظّم قائمة اللاعبين (فتح لعبة/أداة جديدة) نعيد تسجيل اللاعب تلقائيًا
       const inviteOpen = !invitedGameId || room.selectedGame === invitedGameId || room.activeGame === invitedGameId || room.activeTool === invitedGameId;
@@ -115,6 +116,10 @@ function renderPlayer(code, invitedGameId){
       }
       const currentName = room.players?.[id]?.name || name;
       CURRENT_PLAYER_NAME = currentName;
+      if (room.status === 'in_game' && room.activeGame === 'xo' &&
+          room.xo?.mode === 'network' && room.xo.phase === 'waiting') {
+        window.ensureXoNetworkStarted?.(code);
+      }
       dispatchPlayerRender(code, id, currentName, room, invitedGameId);
     });
   }
@@ -151,6 +156,10 @@ function renderPlayer(code, invitedGameId){
       if (inviteOpen) {
         if(invitedGameId==='drawboard') await registerDrawBoardPlayer(roomRef,myId,record);
         else await registerPlayerPresence(roomRef.child('players/' + myId), record);
+      }
+      if (inviteOpen && invitedGameId==='xo' && room.status==='in_game' &&
+          room.activeGame==='xo' && room.xo?.mode==='network' && room.xo.phase==='waiting') {
+        window.ensureXoNetworkStarted?.(code);
       }
       attach(myId, savedName, record);
     }).catch(error => {
@@ -224,6 +233,7 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
     else if (room.status === 'in_tool' && room.activeTool === 'drawboard') renderDrawBoardPlayer(code, myId, name, room);
     else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
     else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' && room.activeGame === 'xo') renderXoPlayer(code, myId, name, room);
     else if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') renderPlayerGameNotice(code, myId, name, room);
     else renderPlayerVoting(code, myId, name, room);
   };
@@ -261,6 +271,7 @@ function renderInvitedGame(code, myId, name, room, gameId){
     if (gameId === 'silentdraw') return renderSilentDrawPlayer(code, myId, name, room);
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
     if (gameId === 'qatara') return renderQataraPlayer(code, myId, name, room);
+    if (gameId === 'xo') return renderXoPlayer(code, myId, name, room);
   }
   app.innerHTML = `<div class="player-join-screen">${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
@@ -333,7 +344,6 @@ function renderPlayerVoting(code, myId, name, room){
     if (!g.available) return `<div class="game-card disabled"><div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div><div class="coming-soon">قريبًا</div></div>`;
     return `<div class="game-card" onclick="showGameDetail('${g.id}')">
       <div class="game-icon-badge">${gameIconHtml(g)}</div><div class="game-title">${g.title}</div>
-      <div class="vote-badge">${g.id==='trivia'?'على شاشة المنظّم':g.needsTeams?'انضم إلى فريق':'التفاصيل'}</div>
     </div>`;
   }).join('');
 
@@ -363,9 +373,12 @@ function renderPlayerGameNotice(code, myId, name, room){
 
 function setVersionFooterVisibility(visible, dashboard = false){
   const footer = document.querySelector('.site-footer');
-  if (footer) footer.classList.toggle('is-entry-visible', visible);
+  if (footer) {
+    footer.hidden = !visible;
+    footer.classList.toggle('is-entry-visible', visible);
+  }
   document.body.classList.toggle('has-version-footer', visible);
-  document.body.classList.toggle('has-dashboard-footer', visible && dashboard);
+  document.body.classList.toggle('has-dashboard-footer', dashboard);
 }
 
 function landingShowcaseMarkup(id, label, items, type){
@@ -499,10 +512,6 @@ function renderGoogleSignIn(){
             <span class="landing-eyebrow"><i></i> ألعاب جماعية وأدوات تفاعلية</span>
             <h1>منصة <span>لَمّة</span></h1>
             <p class="landing-lead">منصة لتنظيم الألعاب الجماعية واستخدام الأدوات المساندة، مع إدارة الجلسات ومشاركة الدعوات بسهولة.</p>
-            <div class="landing-hero-actions">
-              <button class="landing-primary-cta" type="button" data-auth-open>دخول <span aria-hidden="true">←</span></button>
-            </div>
-            <p class="landing-auth-hint">اختر طريقة الدخول عبر Google أو Apple.</p>
             <p class="landing-auth-error" id="authError" role="status" aria-live="polite"></p>
           </div>
 
