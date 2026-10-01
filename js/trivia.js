@@ -57,6 +57,16 @@ const TRIVIA_BANK = [
     ['ما اسم صغير الضفدع قبل اكتمال نموه؟','شرغوف',['شرغوف','يرقة','فرخ','جرو'],'يعيش في الماء وله ذيل.'],
     ['ما الحيوان الذي يُعرف بملك الغابة؟','الأسد',['الأسد','النمر','الفهد','الذئب'],'يعيش في جماعات تسمى الزمر.']]}
 ];
+const TRIVIA_CATEGORY_GROUPS = [
+  {id:'knowledge',name:'معرفة وثقافة',categories:['geo','history','literature']},
+  {id:'science',name:'علوم وتقنية',categories:['science','tech']},
+  {id:'life',name:'حياة وطبيعة',categories:['nature']},
+  {id:'sports',name:'رياضة',categories:['sports']},
+  {id:'food',name:'أكل وشرب',categories:['food']}
+];
+const openTriviaCategoryGroups = new Set(TRIVIA_CATEGORY_GROUPS.map(group=>group.id));
+let currentTriviaCategoriesCode=null;
+let currentTriviaCategoriesState=null;
 const TRIVIA_AIDS=[
   {id:'throw',name:'رمي السؤال',sticker:'assets/icons/aid-throw.svg',help:'يمرّر السؤال إلى الفريق الخصم؛ وإذا لم يجب تُخصم منه نقاط السؤال.'},
   {id:'hint',name:'تلميح',sticker:'assets/icons/aid-hint.svg',help:'يعرض تلميحًا يساعد الفريق على الوصول إلى الإجابة.'},
@@ -149,17 +159,35 @@ function renderTriviaSetupHost(code,t){
   </div>`;
 }
 function renderTriviaCategoriesHost(code,t){
+  currentTriviaCategoriesCode=code;
+  currentTriviaCategoriesState=t;
   const selected=t.categories||[];
-  const cards=TRIVIA_BANK.map(c=>`<button class="trivia-category ${selected.includes(c.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${c.id}')"><b>${c.name}</b><small>${selected.includes(c.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
+  const groups=TRIVIA_CATEGORY_GROUPS.map(group=>{
+    const isOpen=openTriviaCategoryGroups.has(group.id);
+    const groupCategories=group.categories.map(id=>TRIVIA_BANK.find(category=>category.id===id)).filter(Boolean);
+    const groupSelected=groupCategories.filter(category=>selected.includes(category.id)).length;
+    const cards=groupCategories.map(category=>`<button type="button" class="trivia-category ${selected.includes(category.id)?'is-selected':''}" onclick="triviaToggleCategory('${code}','${category.id}')"><b>${category.name}</b><small>${selected.includes(category.id)?'تم الاختيار':'اختر الفئة'}</small></button>`).join('');
+    return `<section class="trivia-category-group ${isOpen?'is-open':''}">
+      <header class="trivia-category-group-header">
+        <button type="button" class="trivia-category-group-toggle" aria-expanded="${isOpen}" onclick="toggleTriviaCategoryGroup('${group.id}')"><span>${group.name}</span><small>${groupSelected} مختارة</small><b aria-hidden="true">${isOpen?'−':'+'}</b></button>
+      </header>
+      <div class="trivia-category-grid" ${isOpen?'':'hidden'}>${cards}</div>
+    </section>`;
+  }).join('');
   document.getElementById('stage').innerHTML=`<div class="trivia-wrap">
     <header class="trivia-head"><div><span class="host-section-kicker">تحدي الفئات</span><h1>تحديد الفئات</h1><p>اختاروا 6 فئات للوحة اللعب (${selected.length}/6).</p></div><button class="btn btn-ghost" onclick="triviaBackToTeams('${code}')">العودة للفريقين</button></header>
-    <div class="trivia-category-grid">${cards}</div>
+    <div class="trivia-category-groups">${groups}</div>
     <div class="trivia-setup-actions trivia-category-actions">
       <button class="btn btn-ghost" onclick="triviaRandomizeCategories('${code}')">اختيار عشوائي للفئات</button>
       <button class="btn trivia-start" ${selected.length!==6?'disabled':''} onclick="triviaBegin('${code}')">ابدأ اللعبة</button>
     </div>
   </div>`;
 }
+window.toggleTriviaCategoryGroup=function(groupId){
+  if(openTriviaCategoryGroups.has(groupId)) openTriviaCategoryGroups.delete(groupId);
+  else openTriviaCategoryGroups.add(groupId);
+  if(currentTriviaCategoriesCode&&currentTriviaCategoriesState) renderTriviaCategoriesHost(currentTriviaCategoriesCode,currentTriviaCategoriesState);
+};
 window.triviaToggleTeamEdit=team=>{
   const input=document.querySelector(`[data-trivia-team-input="${team}"]`);
   const button=document.querySelector(`[data-trivia-team-toggle="${team}"]`);
