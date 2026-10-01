@@ -4,6 +4,12 @@ const XO_WINNING_LINES = [
   [0,4,8],[2,4,6]
 ];
 
+window.toggleXoNetworkInvite=function(){
+  const invite=document.getElementById('xoNetworkInvite');
+  if(!invite)return;
+  invite.hidden=!invite.hidden;
+};
+
 window.startXoGame = function(code,mode='network'){
   if(!['local','network','computer'].includes(mode))return;
   const roomRef=db.ref(`rooms/${code}`);

@@ -50,6 +50,9 @@ function dispatchHostRender(code, room){
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  if (room.status === 'voting' && !hostDetailGameId && GAMES_LIST.some(game => game.id === room.selectedGame)) {
+    hostDetailGameId = room.selectedGame;
+  }
   const isDashboard = room.status === 'voting' && !hostDetailGameId;
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(isDashboard, isDashboard);
   const previousRoom = lastHostRoom;
@@ -160,6 +163,9 @@ function updateHostGameDetailPlayers(code, room){
 
 window.showHostGameDetail = function(gameId){
   hostDetailGameId = gameId;
+  if (lastHostRoom && document.getElementById('stage')) {
+    transitionAppView(() => renderHostLobby(ACTIVE_HOST_CODE, lastHostRoom));
+  }
   db.ref('rooms/' + ACTIVE_HOST_CODE).update({ selectedGame:gameId, players:{}, votes:{} });
 };
 window.hideHostGameDetail = function(){
@@ -233,9 +239,10 @@ function renderHostLobby(code, room){
     if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(false);
     const game = GAMES_LIST.find(g => g.id === hostDetailGameId);
     const inviteUrl = game.id === 'trivia' ? null : joinGameUrl(code, game.id);
-    const invite = inviteUrl && game.minPlayers > 1 ? joinCardHtml('gameInvite', inviteUrl) : '';
+    const inviteId = game.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
+    const invite = inviteUrl && game.minPlayers > 1 ? joinCardHtml(inviteId, inviteUrl) : '';
     document.getElementById('stage').innerHTML = gameDetailHtml(game, room, code, null, true, invite);
-    if (invite) initJoinCard('gameInvite', inviteUrl);
+    if (invite) initJoinCard(inviteId, inviteUrl);
     return;
   }
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(true, true);
@@ -336,7 +343,7 @@ window.resetToLobby = async function(code){
 
 function activityExitControlsHtml(code,gameId){
   return `<div class="activity-exit-controls">
-    <button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>
+    ${gameId === 'xo' ? '' : `<button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>`}
     <button type="button" class="btn activity-return-detail" onclick="returnToGameDetail('${code}','${gameId}')">إنهاء اللعبة</button>
   </div>`;
 }

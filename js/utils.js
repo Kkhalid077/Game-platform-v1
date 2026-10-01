@@ -357,10 +357,12 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const triviaGame = game.id === 'trivia';
   const hostControlledTrivia = isHost && triviaGame;
   const xoGame = game.id === 'xo';
+  const hostControlledXo = isHost && xoGame;
   const hostXoModes = xoGame && isHost
     ? `<div class="xo-mode-picker" aria-label="اختر طريقة اللعب">
         <button type="button" class="btn" onclick="startXoGame('${code}','local')">اللعب على جهازي</button>
-        <button type="button" class="btn" ${totalPlayers < 2 ? 'disabled' : ''} onclick="startXoGame('${code}','network')">اللعب عن طريق الشبكة</button>
+        <button type="button" class="btn" onclick="toggleXoNetworkInvite()">اللعب عن طريق الشبكة</button>
+        <div id="xoNetworkInvite" class="xo-network-invite" hidden>${inviteHtml}<button type="button" class="btn xo-network-start" onclick="startXoGame('${code}','network')">ابدأ اللعب عبر الشبكة</button></div>
         <button type="button" class="btn" onclick="startXoGame('${code}','computer')">اللعب مع الكمبيوتر</button>
       </div>`
     : '';
@@ -373,9 +375,9 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
       ${triviaGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
-      ${inviteHtml}
+      ${xoGame ? '' : inviteHtml}
       ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
-      ${hostControlledTrivia ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${hostControlledTrivia || hostControlledXo ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost && !xoGame
           ? `<button class="btn" ${!hostControlledTrivia && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`

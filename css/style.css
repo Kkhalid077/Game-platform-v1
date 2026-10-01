@@ -83,7 +83,7 @@ input[type=text]:focus{border-color:var(--accent)}
 .stage{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 40px;text-align:center}
 .phone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
 .activity-exit-control{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));margin:0;padding:8px 15px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.38)}
-.activity-exit-controls{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));display:flex;gap:7px}
+.activity-exit-controls{position:fixed;z-index:90;top:calc(12px + var(--safe-t));left:max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:row;direction:ltr;gap:7px}
 .activity-exit-controls .btn{margin:0;padding:8px 13px;font-size:13px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.38)}
 .activity-exit-controls .activity-return-detail{border:1px solid rgba(177,197,228,.25);background:linear-gradient(145deg,#243452,#17243b);color:#edf4ff}
 .winner-celebration{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:74px;margin:0 auto 8px;overflow:hidden}
@@ -347,6 +347,9 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
 .xo-spectators,.xo-round-result{margin:14px 0 0;color:var(--text-dim);font-size:13px}
 .xo-mode-picker{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:16px auto}
 .xo-mode-picker .btn{min-width:min(100%,190px)}
+.xo-network-invite{flex:1 1 100%;width:min(100%,520px);margin-top:4px}
+.xo-network-invite[hidden]{display:none}
+.xo-network-start{margin-top:10px}
 @media(max-width:560px){
   .xo-screen{padding:12px}
   .xo-scoreboard{gap:7px}
