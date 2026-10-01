@@ -57,13 +57,7 @@ const TRIVIA_BANK = [
     ['ما اسم صغير الضفدع قبل اكتمال نموه؟','شرغوف',['شرغوف','يرقة','فرخ','جرو'],'يعيش في الماء وله ذيل.'],
     ['ما الحيوان الذي يُعرف بملك الغابة؟','الأسد',['الأسد','النمر','الفهد','الذئب'],'يعيش في جماعات تسمى الزمر.']]}
 ];
-const TRIVIA_CATEGORY_GROUPS = [
-  {id:'knowledge',name:'معرفة وثقافة',categories:['geo','history','literature']},
-  {id:'science',name:'علوم وتقنية',categories:['science','tech']},
-  {id:'life',name:'حياة وطبيعة',categories:['nature']},
-  {id:'sports',name:'رياضة',categories:['sports']},
-  {id:'food',name:'أكل وشرب',categories:['food']}
-];
+const TRIVIA_CATEGORY_GROUPS = [];
 const TRIVIA_NEW_GROUPS = [
   {id:'food-drink',name:'أكل وشرب',items:['مطاعم','حلى وقهوة','المطبخ العالمي','المطبخ العربي']},
   {id:'anime',name:'أنمي',items:['جوجتسو كايزن','ون بيس','تقييمات أنمي','بوسترات أنمي','دراغون بول','ناروتو','هنتر × هنتر','هجوم العمالقة']},
