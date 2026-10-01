@@ -17,9 +17,12 @@ window.startXoGame = function(code,mode='network'){
     const room=snapshot.val();
     const players=Object.entries(roomPlayersForGame(room||{},'xo'))
       .map(([id,player])=>({id,name:player.name||'لاعب'}));
-    if(mode==='network'&&players.length<2){
-      alert('تحتاج لعبة إكس أو إلى لاعبين اثنين على الأقل.');
-      return;
+    if(mode==='network') {
+      return roomRef.update({
+        status:'in_game',
+        activeGame:'xo',
+        xo:{mode,phase:'waiting',players:[],board:Array(9).fill(''),turn:'X',startingMark:'X'}
+      });
     }
     const participants=mode==='network'
       ? players.slice(0,2).map((player,index)=>({...player,mark:index===0?'X':'O'}))
@@ -35,6 +38,17 @@ window.startXoGame = function(code,mode='network'){
     console.error('Could not start X O:',error);
     alert('تعذر بدء اللعبة. تحقق من الاتصال ثم حاول مرة أخرى.');
   });
+};
+
+window.ensureXoNetworkStarted = function(code){
+  return db.ref(`rooms/${code}`).transaction(room=>{
+    if(!room||room.status!=='in_game'||room.activeGame!=='xo'||room.xo?.mode!=='network'||room.xo.phase!=='waiting')return;
+    const players=Object.entries(roomPlayersForGame(room,'xo'))
+      .map(([id,player])=>({id,name:player.name||'لاعب'})).slice(0,2);
+    if(players.length<2)return;
+    room.xo={...room.xo,phase:'playing',players:players.map((player,index)=>({...player,mark:index===0?'X':'O'})),board:Array(9).fill(''),turn:'X',startingMark:'X'};
+    return room;
+  }).catch(error=>console.error('Could not start network X O automatically:',error));
 };
 
 function xoWinner(board){
@@ -60,6 +74,7 @@ function xoBoardMarkup(game,playerId=null,code='',hostInteraction=false){
 
 function xoStatus(game,playerId=null){
   if(!game)return 'بانتظار المنظّم لبدء اللعبة.';
+  if(game.phase==='waiting')return 'بانتظار انضمام اللاعب الثاني لبدء اللعبة تلقائيًا.';
   const winningMark=game.winner||xoWinner(game.board||[]);
   if(winningMark){
     const winner=game.players?.find(player=>player.mark===winningMark);
@@ -163,6 +178,17 @@ window.xoStartNextRound=function(code){
 
 function renderXoHost(code,room){
   const game=room.xo||null;
+  if(game?.phase==='waiting'){
+    const inviteUrl=joinGameUrl(code,'xo');
+    document.getElementById('stage').innerHTML=`
+      ${activityExitControlsHtml(code,'xo')}
+      <main class="xo-screen xo-host-screen">
+        <header class="xo-heading"><span class="host-section-kicker">اللعب عن طريق الشبكة</span><h1>إكس أو</h1><p>أرسل الدعوة وانتظر انضمام اللاعب الثاني؛ تبدأ اللعبة تلقائيًا.</p></header>
+        ${joinCardHtml('xoNetworkLobbyInvite',inviteUrl)}
+      </main>`;
+    initJoinCard('xoNetworkLobbyInvite',inviteUrl);
+    return;
+  }
   const participants=game?.players||[];
   const spectators=game?.mode==='network'
     ? Object.entries(room.players||{}).filter(([id])=>!participants.some(player=>player.id===id))
@@ -174,6 +200,7 @@ function renderXoHost(code,room){
     <main class="xo-screen xo-host-screen">
       <header class="xo-heading"><span class="host-section-kicker">${modeTitle}</span><h1>إكس أو</h1><p>${escapeHtml(xoStatus(game))}</p></header>
       <div class="xo-scoreboard">${participants.map(player=>`<div class="xo-player ${game?.turn===player.mark&&game?.phase==='playing'?'is-turn':''}"><span class="xo-mark ${player.mark==='X'?'is-x':'is-o'}">${player.mark}</span><strong>${escapeHtml(player.name)}</strong></div>`).join('')}</div>
+      ${game?.winner?winnerCelebrationHtml():''}
       ${xoBoardMarkup(game,null,code,game?.mode!=='network')}
       ${result?`<button type="button" class="btn xo-next-round" onclick="xoStartNextRound('${code}')">جولة جديدة</button>`:''}
       ${spectators.length?`<p class="xo-spectators">المشاهدون: ${spectators.map(([,player])=>escapeHtml(player.name||'لاعب')).join('، ')}</p>`:''}
@@ -184,10 +211,15 @@ function renderXoPlayer(code,playerId,name,room){
   const game=room.xo||null;
   const player=game?.players?.find(item=>item.id===playerId);
   const canPlayNetwork=game?.mode==='network';
+  if(game?.phase==='waiting'){
+    app.innerHTML=`<main class="xo-screen xo-player-screen"><header class="xo-heading"><span class="host-section-kicker">اللعب عن طريق الشبكة</span><h1>إكس أو</h1><p>تم انضمامك يا ${escapeHtml(name)}. بانتظار اللاعب الثاني لبدء اللعبة تلقائيًا.</p></header></main>`;
+    return;
+  }
   app.innerHTML=`
     <main class="xo-screen xo-player-screen">
       <header class="xo-heading"><span class="host-section-kicker">${game?.mode==='network'?'اللعب عن طريق الشبكة':game?.mode==='computer'?'اللعب مع الكمبيوتر':'اللعب على جهاز المنظّم'}</span><h1>إكس أو</h1><p>أهلًا ${escapeHtml(name)} · ${escapeHtml(xoStatus(game,playerId))}</p></header>
       ${player?`<div class="xo-player-badge">رمزك <strong class="xo-mark ${player.mark==='X'?'is-x':'is-o'}">${player.mark}</strong></div>`:''}
+      ${game?.winner?winnerCelebrationHtml():''}
       ${xoBoardMarkup(game,canPlayNetwork?playerId:null,code)}
       ${game?.phase==='won'||game?.phase==='draw'?'<p class="xo-round-result">انتهت الجولة، ينتظر الجميع بدء جولة جديدة.</p>':''}
     </main>`;

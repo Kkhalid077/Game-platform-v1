@@ -50,6 +50,10 @@ function dispatchHostRender(code, room){
     if (window.stopQataraHostWatch) stopQataraHostWatch();
     return;
   }
+  if (room.status === 'in_game' && room.activeGame === 'xo' &&
+      room.xo?.mode === 'network' && room.xo.phase === 'waiting') {
+    window.ensureXoNetworkStarted?.(code);
+  }
   if (room.status === 'voting' && !hostDetailGameId && GAMES_LIST.some(game => game.id === room.selectedGame)) {
     hostDetailGameId = room.selectedGame;
   }

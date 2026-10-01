@@ -361,8 +361,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const hostXoModes = xoGame && isHost
     ? `<div class="xo-mode-picker" aria-label="اختر طريقة اللعب">
         <button type="button" class="btn" onclick="startXoGame('${code}','local')">اللعب على جهازي</button>
-        <button type="button" class="btn" onclick="toggleXoNetworkInvite()">اللعب عن طريق الشبكة</button>
-        <div id="xoNetworkInvite" class="xo-network-invite" hidden>${inviteHtml}<button type="button" class="btn xo-network-start" onclick="startXoGame('${code}','network')">ابدأ اللعب عبر الشبكة</button></div>
+        <button type="button" class="btn" onclick="startXoGame('${code}','network')">اللعب عن طريق الشبكة</button>
         <button type="button" class="btn" onclick="startXoGame('${code}','computer')">اللعب مع الكمبيوتر</button>
       </div>`
     : '';
