@@ -221,7 +221,8 @@ button.team-card:disabled{opacity:.75;border-color:color-mix(in srgb,var(--team-
   .game-detail-shell[data-activity="qatara"]{--detail-nebula-a:rgba(133,83,27,.29);--detail-nebula-b:rgba(103,42,81,.22)}
   .game-detail-shell[data-activity="xo"]{--detail-nebula-a:rgba(139,123,255,.3);--detail-nebula-b:rgba(76,212,255,.24)}
   @keyframes game-detail-nebula-drift{from{background-position:0% 0%,100% 100%,center,center,center}to{background-position:12% 8%,88% 92%,12% 8%,88% 92%,center}}
-  .game-detail-shell>.game-detail{position:relative;max-height:calc(100vh - 64px);overflow:auto;padding:30px;border:1px solid rgba(190,232,255,.38);border-radius:28px;background:linear-gradient(145deg,rgba(35,70,103,.38),rgba(7,20,40,.46));box-shadow:0 28px 90px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.24);backdrop-filter:blur(30px) saturate(145%);-webkit-backdrop-filter:blur(30px) saturate(145%);animation:game-detail-window-in .28s cubic-bezier(.2,.8,.25,1) both}
+  .game-detail-shell>.game-detail{position:relative;max-height:calc(100vh - 64px);overflow:auto;scrollbar-width:none;padding:30px;border:1px solid rgba(190,232,255,.38);border-radius:28px;background:linear-gradient(145deg,rgba(35,70,103,.38),rgba(7,20,40,.46));box-shadow:0 28px 90px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.24);backdrop-filter:blur(30px) saturate(145%);-webkit-backdrop-filter:blur(30px) saturate(145%);animation:game-detail-window-in .28s cubic-bezier(.2,.8,.25,1) both}
+  .game-detail-shell>.game-detail::-webkit-scrollbar{display:none}
   .game-detail-shell>.game-detail::before{position:absolute;top:0;right:12%;left:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(190,242,255,.75),transparent);content:""}
   .game-detail-shell .game-detail h2{color:#f3fbff;text-shadow:0 2px 16px rgba(76,212,255,.2)}
   .game-detail-shell .game-detail .narrator{color:#d5e9f2}
