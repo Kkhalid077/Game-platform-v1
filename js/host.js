@@ -240,7 +240,7 @@ function accountInfoHtml(){
 function renderHostLobby(code, room){
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(!hostDetailGameId, !hostDetailGameId);
   const selectedGame = hostDetailGameId ? GAMES_LIST.find(g => g.id === hostDetailGameId) : null;
-  const selectedInviteUrl = selectedGame?.id === 'trivia' ? null : selectedGame ? joinGameUrl(code, selectedGame.id) : null;
+  const selectedInviteUrl = selectedGame?.id === 'trivia' || selectedGame?.id === 'letter-cell' ? null : selectedGame ? joinGameUrl(code, selectedGame.id) : null;
   const selectedInviteId = selectedGame?.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
   const selectedInvite = selectedInviteUrl && selectedGame.minPlayers > 1 ? joinCardHtml(selectedInviteId, selectedInviteUrl) : '';
   const detailModal = selectedGame ? gameDetailHtml(selectedGame, room, code, null, true, selectedInvite) : '';
