@@ -311,11 +311,7 @@ function letterCellDisplayUrl(code){
 
 window.startLetterCellGame=function(code){
   letterCellLoadQuestions().then(()=>db.ref(`rooms/${code}`).once('value')).then(snapshot=>{
-    const room=snapshot.val();
-    if(Object.keys(room?.players||{}).length<2){
-      alert('تحتاج إلى لاعبين اثنين على الأقل لبدء خلية الحروف.');
-      return;
-    }
+    if(!snapshot.exists())throw new Error('لم يتم العثور على الجلسة.');
     letterCellClearHostQuestions(code);
     return db.ref(`rooms/${code}`).update({
       status:'in_game',
