@@ -190,6 +190,7 @@ function letterCellBuzzerStatus(room,game){
 function renderLetterCellHost(code,room){
   const game=room.letterCell;
   if(!game){renderHostGenericPlaceholder(code,room);return;}
+  const inviteUrl=joinGameUrl(code,'letter-cell');
   const settings=letterCellSettings(game);
   const scores=letterCellScore(game);
   const selected=Array.isArray(game.cells)?game.cells.find(cell=>cell.id===game.selectedCell):null;
@@ -210,7 +211,8 @@ function renderLetterCellHost(code,room){
             <button class="btn btn-ghost" type="button" onclick="letterCellToggleBuzzer('${escapeHtml(code)}')">${room.buzzer?.locked?'فتح الجرس':'قفل الجرس'}</button>
             <button class="btn btn-ghost" type="button" onclick="letterCellClearBuzzer('${escapeHtml(code)}')">إعادة ضبط الجرس</button>
           </div>
-          <p class="muted">على اللاعبين فتح اللعبة من هواتفهم واختيار فريق قبل الضغط.</p>
+          ${joinCardHtml('letterCellInvite',inviteUrl)}
+          <p class="muted">يفتح اللاعبون الرابط من هواتفهم، ثم يختارون فريقًا قبل الضغط على الجرس.</p>
         </section>
         <section class="letter-cell-panel letter-cell-settings-panel">
           <span class="host-section-kicker">٢ — إعدادات اللعبة</span><h2>الإعدادات</h2>
@@ -246,6 +248,7 @@ function renderLetterCellHost(code,room){
       </section>
     </main>
   </div>`;
+  initJoinCard('letterCellInvite',inviteUrl);
 }
 
 function renderLetterCellPlayer(code,playerId,name,room){
