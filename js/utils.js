@@ -418,7 +418,7 @@ function roomForGame(room, gameId){
 function setActivityBackdrop(activityId){
   const appRoot = document.getElementById('app');
   if (!appRoot) return;
-  if (['mafia','silentdraw','trivia','qatara','buzzer','drawboard'].includes(activityId)) {
+  if (['mafia','silentdraw','trivia','qatara','buzzer','drawboard','letter-cell'].includes(activityId)) {
     appRoot.dataset.activity = activityId;
   } else {
     delete appRoot.dataset.activity;

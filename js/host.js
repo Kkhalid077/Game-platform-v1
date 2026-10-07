@@ -114,6 +114,7 @@ function dispatchHostRender(code, room){
     else if (room.status === 'in_game' && room.activeGame === 'silentdraw') renderSilentDrawHost(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraHost(code, room);
     else if (room.status === 'in_game' && room.activeGame === 'xo') renderXoHost(code, room);
+    else if (room.status === 'in_game' && room.activeGame === 'letter-cell') renderLetterCellHost(code, room);
     else renderHostGenericPlaceholder(code, room);
   };
   const shouldTransition = lastHostViewKey !== null && lastHostViewKey !== viewKey;
@@ -319,6 +320,7 @@ window.startGame = function(gameId, code){
   if (gameId === 'trivia') { startTriviaSetup(code); return; }
   if (gameId === 'qatara') { startQataraGame(code); return; }
   if (gameId === 'xo') { startXoGame(code); return; }
+  if (gameId === 'letter-cell') { startLetterCellGame(code); return; }
   db.ref('rooms/'+code).update({ status:'in_game', activeGame: gameId });
 };
 
@@ -332,7 +334,7 @@ window.startBuzzerTool = function(code){
 window.resetToLobby = async function(code){
   stopDrawBoardHost?.();
   try{
-    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, qatara:null, xo:null, buzzer:null, drawingBoards:null });
+    await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, qatara:null, xo:null, letterCell:null, buzzer:null, drawingBoards:null });
   }catch(error){
     console.error('Could not leave the active room tool:',error);
     alert('تعذر الخروج من الأداة. تحقق من الاتصال وحاول مرة أخرى.');
@@ -356,7 +358,7 @@ window.returnToGameDetail = async function(code,gameId){
     await db.ref('rooms/'+code).update({
       status:'voting',activeGame:null,activeTool:null,buzzerTransport:null,
       buzzerSession:null,buzzerRtc:null,buzzerFallback:null,selectedGame:gameId,
-      votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,xo:null,buzzer:null
+      votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,xo:null,letterCell:null,buzzer:null
     });
   }catch(error){
     hostDetailGameId = null;
