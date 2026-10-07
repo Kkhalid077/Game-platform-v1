@@ -1,9 +1,9 @@
 const LETTER_CELL_ALPHABET = Array.from('ابتثجحخدذرزسشصضطظعغفقكلمنهوي');
 const LETTER_CELL_DEFAULT_SETTINGS = {
-  rounds:5,
+  rounds:2,
   cellCount:25,
   teamNames:{A:'الفريق الأخضر',B:'الفريق البرتقالي'},
-  teamColors:{A:'#2ee6a6',B:'#ff6b8b'}
+  teamColors:{A:'#35b51d',B:'#ff783b'}
 };
 let LETTER_CELL_QUESTIONS = null;
 let letterCellQuestionLoad = null;
@@ -100,7 +100,11 @@ function letterCellInitialState(){
     settings:JSON.parse(JSON.stringify(LETTER_CELL_DEFAULT_SETTINGS)),
     cells:letterCellMakeBoard(LETTER_CELL_DEFAULT_SETTINGS.cellCount),
     roundsCompleted:0,
-    selectedCell:null
+    selectedCell:null,
+    roundWins:{A:0,B:0},
+    roundComplete:false,
+    tieBreak:false,
+    tieBreakStarted:false
   };
 }
 
@@ -121,6 +125,7 @@ function letterCellSettings(game){
 }
 
 function letterCellScore(game){
+  if(game?.roundWins)return {A:Number(game.roundWins.A)||0,B:Number(game.roundWins.B)||0};
   const score={A:0,B:0};
   (game?.cells||[]).forEach(cell=>{if(cell.owner==='A'||cell.owner==='B')score[cell.owner]++;});
   return score;
@@ -129,6 +134,60 @@ function letterCellScore(game){
 function letterCellWinner(game){
   const scores=letterCellScore(game);
   return scores.A===scores.B?null:scores.A>scores.B?'A':'B';
+}
+
+function letterCellCompleteRound(game,roundWinner){
+  game.roundComplete=true;
+  game.roundWinner=roundWinner||null;
+  if(!game.tieBreak)game.roundsCompleted=(Number(game.roundsCompleted)||0)+1;
+  game.roundWins=game.roundWins||{A:0,B:0};
+  if(roundWinner)game.roundWins[roundWinner]=(Number(game.roundWins[roundWinner])||0)+1;
+  if(game.tieBreak&&roundWinner){
+    game.phase='ended';
+    game.winner=roundWinner;
+    return;
+  }
+  if(!game.tieBreak&&game.roundsCompleted>=letterCellSettings(game).rounds){
+    const winner=letterCellWinner(game);
+    if(winner){
+      game.phase='ended';
+      game.winner=winner;
+    }else{
+      game.tieBreak=true;
+    }
+  }
+}
+
+function letterCellConnectedTeam(game,team){
+  const cells=Array.isArray(game.cells)?game.cells:[];
+  const rowCount=Math.ceil(cells.length/5);
+  const starts=[];
+  for(let index=0;index<cells.length;index++){
+    const row=Math.floor(index/5),column=index%5;
+    if(team==='A'?column===0:row===0)starts.push(index);
+  }
+  const visited=new Set();
+  const queue=starts.filter(index=>cells[index]?.owner===team);
+  queue.forEach(index=>visited.add(index));
+  for(let head=0;head<queue.length;head++){
+    const index=queue[head],row=Math.floor(index/5),column=index%5;
+    if(team==='A'?column===4:row===rowCount-1)return true;
+    const neighbors=[index-1,index+1];
+    const adjacentColumns=row%2===0?[column-1,column]:[column,column+1];
+    for(const adjacentRow of [row-1,row+1]){
+      for(const adjacentColumn of adjacentColumns){
+        if(adjacentRow>=0&&adjacentRow<rowCount&&adjacentColumn>=0&&adjacentColumn<5){
+          neighbors.push(adjacentRow*5+adjacentColumn);
+        }
+      }
+    }
+    for(const neighbor of neighbors){
+      if(neighbor<0||neighbor>=cells.length||visited.has(neighbor)||cells[neighbor]?.owner!==team)continue;
+      visited.add(neighbor);
+      queue.push(neighbor);
+    }
+  }
+  return false;
 }
 
 function letterCellTeamHtml(team,settings,score){
@@ -142,18 +201,24 @@ function letterCellBoardHtml(game,interactive){
   const settings=letterCellSettings(game);
   const rows=[];
   for(let index=0;index<cells.length;index+=5)rows.push(cells.slice(index,index+5));
-  return `<div class="letter-cell-board" role="group" aria-label="لوحة خلية الحروف">${rows.map((row,rowIndex)=>`
-    <div class="letter-cell-board-row ${rowIndex%2?'is-offset':''}">${row.map(cell=>{
-      const owner=cell.owner==='A'||cell.owner==='B'?cell.owner:null;
-      const color=owner?settings.teamColors[owner]:'';
-      const selected=game.selectedCell===cell.id;
-      const classes=`letter-cell-tile ${selected?'is-selected':''} ${owner?'is-owned':''}`;
-      const style=color?`--letter-team-color:${color}`:'';
-      const content=`<span>${escapeHtml(cell.letter)}</span>`;
-      if(!interactive)return `<div class="${classes}" style="${style}" aria-label="خلية حرف ${escapeHtml(cell.letter)}${selected?'، مختارة':''}">${content}</div>`;
-      const disabled=game.phase!=='playing'||!!game.selectedCell||!!owner||game.roundsCompleted>=settings.rounds;
-      return `<button type="button" class="${classes}" style="${style}" ${disabled?'disabled':''} onclick="letterCellSelectCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')" aria-label="اختيار الخلية ${escapeHtml(cell.letter)}">${content}</button>`;
-    }).join('')}</div>`).join('')}</div>`;
+  return `<div class="letter-cell-board-wrap">
+    <span class="letter-cell-edge letter-cell-edge-top" style="--edge-team-color:${settings.teamColors.B}" aria-label="حد ${escapeHtml(settings.teamNames.B)}"></span>
+    <span class="letter-cell-edge letter-cell-edge-bottom" style="--edge-team-color:${settings.teamColors.B}" aria-hidden="true"></span>
+    <span class="letter-cell-edge letter-cell-edge-left" style="--edge-team-color:${settings.teamColors.A}" aria-label="حد ${escapeHtml(settings.teamNames.A)}"></span>
+    <span class="letter-cell-edge letter-cell-edge-right" style="--edge-team-color:${settings.teamColors.A}" aria-hidden="true"></span>
+    <div class="letter-cell-board" role="group" aria-label="لوحة خلية الحروف">${rows.map((row,rowIndex)=>`
+      <div class="letter-cell-board-row ${rowIndex%2?'is-offset':''}">${row.map(cell=>{
+        const owner=cell.owner==='A'||cell.owner==='B'?cell.owner:null;
+        const color=owner?settings.teamColors[owner]:'';
+        const selected=game.selectedCell===cell.id;
+        const classes=`letter-cell-tile ${selected?'is-selected':''} ${owner?'is-owned':''} ${cell.skipped?'is-skipped':''}`;
+        const style=color?`--letter-team-color:${color}`:'';
+        const content=`<span class="letter-cell-tile-face">${escapeHtml(cell.letter)}</span>`;
+        if(!interactive)return `<div class="${classes}" style="${style}" aria-label="خلية حرف ${escapeHtml(cell.letter)}${selected?'، مختارة':''}">${content}</div>`;
+        const disabled=game.phase!=='playing'||game.roundComplete||!!game.selectedCell||!!owner||!!cell.skipped;
+        return `<button type="button" class="${classes}" style="${style}" ${disabled?'disabled':''} onclick="letterCellSelectCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')" aria-label="اختيار الخلية ${escapeHtml(cell.letter)}">${content}</button>`;
+      }).join('')}</div>`).join('')}</div>
+  </div>`;
 }
 
 function letterCellSettingsForm(game,code){
@@ -209,24 +274,11 @@ function renderLetterCellHost(code,room){
         <div><span class="host-section-kicker">لعبة جماعية</span><h1>خلية الحروف</h1></div>
         <div class="letter-cell-counters">
           <div class="letter-cell-scoreboard">${letterCellTeamHtml('A',settings,scores)}${letterCellTeamHtml('B',settings,scores)}</div>
-          <div class="letter-cell-round-counter"><span>الجولة</span><strong>${Math.min(game.roundsCompleted+1,settings.rounds)}<i>/</i>${settings.rounds}</strong></div>
+          <div class="letter-cell-round-counter"><span>الجولة</span><strong>${game.tieBreak?'فاصلة':game.roundComplete?`${game.roundsCompleted} — انتهت`:`${Math.min(game.roundsCompleted+1,settings.rounds)} / ${settings.rounds}`}</strong></div>
         </div>
       </header>
       <div class="letter-cell-layout">
         <div class="letter-cell-primary-column">
-          <section class="letter-cell-panel letter-cell-board-panel">
-            <div class="letter-cell-board-heading"><div><span class="host-section-kicker">لوحة اللعب</span><h2>اختر خلية</h2></div>
-              <span class="letter-cell-round-count">الجولات المنتهية: ${game.roundsCompleted} / ${settings.rounds}</span>
-            </div>
-            <p class="letter-cell-hint">${game.phase==='setup'?'اضبط الإعدادات ثم اضغط «بدء الخلايا».':selected?'اقرأ السؤال للاعبين، ثم احتسب نتيجة الإجابة.':'اختر خلية لعرض سؤالها للمنظّم.'}</p>
-            ${letterCellBoardHtml(game,true)}
-            ${selected&&game.phase==='playing'?`<div class="letter-cell-round-controls">
-              <button class="btn letter-cell-correct-button" type="button" ${room.buzzer?.winner&&room.players?.[room.buzzer.winner]?.team?'':'disabled'} onclick="letterCellFinishRound('${escapeHtml(code)}',true)">الإجابة صحيحة — احتساب الخلية</button>
-              <button class="btn btn-ghost" type="button" onclick="letterCellFinishRound('${escapeHtml(code)}',false)">إجابة خاطئة / تجاوز</button>
-            </div>`:''}
-            ${finished?`<div class="letter-cell-result"><strong>${game.winner?`الفائز: ${escapeHtml(settings.teamNames[game.winner])}`:'انتهت اللعبة بالتعادل'}</strong>
-              <button class="btn" type="button" onclick="letterCellRestart('${escapeHtml(code)}')">لعبة جديدة بالإعدادات نفسها</button></div>`:''}
-          </section>
           <section class="letter-cell-panel letter-cell-question-panel" aria-label="سؤال الخلية للمنظّم">
             <span class="host-section-kicker">سؤال المنظّم فقط</span><h2>${selected?`سؤال حرف ${escapeHtml(selected.letter)}`:'السؤال'}</h2>
             ${selected&&question?`<p class="letter-cell-question-text">${escapeHtml(question.question)}</p>
@@ -234,6 +286,23 @@ function renderLetterCellHost(code,room){
               ${question.contributor?`<small class="letter-cell-question-credit">المساهم: ${escapeHtml(question.contributor)}</small>`:''}
               <button class="btn btn-ghost letter-cell-replace-question" type="button" onclick="letterCellReplaceQuestion('${escapeHtml(code)}','${escapeHtml(selected.id)}')">استبدال السؤال</button>`
               :`<p class="letter-cell-question-empty">${selected?'لا يوجد سؤال متاح لهذا الحرف.':'اختر خلية لعرض سؤالها هنا.'}</p>`}
+            ${selected&&game.phase==='playing'&&!game.roundComplete?`<div class="letter-cell-award-controls">
+              <span>احتساب الخلية للفريق</span>
+              ${['A','B'].map(team=>`<button class="btn letter-cell-award-button" style="--letter-team-color:${settings.teamColors[team]}" type="button" onclick="letterCellAwardCell('${escapeHtml(code)}','${team}')">${escapeHtml(settings.teamNames[team])}</button>`).join('')}
+              <button class="btn btn-ghost letter-cell-skip-button" type="button" onclick="letterCellSkipCell('${escapeHtml(code)}')">تجاوز السؤال بدون نقاط</button>
+            </div>`:''}
+          </section>
+          <section class="letter-cell-panel letter-cell-board-panel">
+            <div class="letter-cell-board-heading"><div><span class="host-section-kicker">لوحة اللعب</span><h2>اختر خلية</h2></div>
+              <span class="letter-cell-round-count">${game.tieBreak?'جولة فاصلة':game.roundComplete?`انتهت الجولة ${game.roundsCompleted}`:`الجولة ${Math.min(game.roundsCompleted+1,settings.rounds)} من ${settings.rounds}`}</span>
+            </div>
+            <p class="letter-cell-hint">${game.phase==='setup'?'اضبط الإعدادات ثم اضغط «بدء الخلايا».':game.roundComplete?'حُسمت الجولة؛ ابدأ الجولة التالية من أزرار المنظّم.':selected?'اقرأ السؤال، ثم اختر الفريق الذي أجاب إجابة صحيحة.':'اضغط الخلايا لإظهار الأسئلة والتحكم باحتسابها.'}</p>
+            ${letterCellBoardHtml(game,true)}
+            ${game.roundComplete&&game.phase==='playing'?`<div class="letter-cell-round-controls">
+              <button class="btn letter-cell-start-button" type="button" onclick="letterCellNextRound('${escapeHtml(code)}')">${game.tieBreak?(game.tieBreakStarted?'إعادة الجولة الفاصلة':'بدء الجولة الفاصلة'):'بدء الجولة التالية'}</button>
+            </div>`:''}
+            ${finished?`<div class="letter-cell-result"><strong>${game.winner?`الفائز: ${escapeHtml(settings.teamNames[game.winner])}`:'انتهت اللعبة بالتعادل'}</strong>
+              <button class="btn" type="button" onclick="letterCellRestart('${escapeHtml(code)}')">لعبة جديدة بالإعدادات نفسها</button></div>`:''}
           </section>
         </div>
         <aside class="letter-cell-sidebar">
@@ -300,11 +369,18 @@ function renderLetterCellDisplay(code){
     const scores=letterCellScore(game);
     const finished=game.phase==='ended';
     app.innerHTML=`<main class="letter-cell-display">
-      <header><div><span>لعبة جماعية</span><h1>خلية الحروف</h1></div><strong>${finished?'النتيجة النهائية':game.phase==='setup'?'استعدوا للعب':`الجولة ${Math.min(game.roundsCompleted+1,settings.rounds)} / ${settings.rounds}`}</strong></header>
-      <div class="letter-cell-scoreboard">${letterCellTeamHtml('A',settings,scores)}${letterCellTeamHtml('B',settings,scores)}</div>
-      ${game.selectedCell?`<p class="letter-cell-display-selected">حرف السؤال: <strong>${escapeHtml(game.cells?.find(cell=>cell.id===game.selectedCell)?.letter||'')}</strong></p>`:''}
-      ${letterCellBoardHtml(game,false)}
-      ${finished?`<p class="letter-cell-display-result">${game.winner?`الفائز: ${escapeHtml(settings.teamNames[game.winner])}`:'تعادل'}</p>`:''}
+      <section class="letter-cell-tv-board-area" aria-label="لوحة خلايا اللعبة">
+        ${letterCellBoardHtml(game,false)}
+      </section>
+      <aside class="letter-cell-display-sidebar">
+        <header><span>لعبة جماعية</span><h1><b>خلية</b><b>الحروف</b></h1>
+          <strong>${finished?'النتيجة النهائية':game.phase==='setup'?'استعدوا للعب':game.tieBreak?(game.roundComplete?'تعادل — الجولة الفاصلة':'الجولة الفاصلة'):game.roundComplete?`انتهت الجولة ${game.roundsCompleted}`:`الجولة ${Math.min(game.roundsCompleted+1,settings.rounds)} / ${settings.rounds}`}</strong></header>
+        <div class="letter-cell-tv-scores">${['A','B'].map(team=>`<div class="letter-cell-tv-team" style="--letter-team-color:${settings.teamColors[team]}">
+          <span class="letter-cell-tv-check" aria-hidden="true">✓</span><strong>${escapeHtml(settings.teamNames[team])}</strong><span class="letter-cell-tv-score">${scores[team]}</span>
+        </div>`).join('')}</div>
+        ${game.selectedCell?`<p class="letter-cell-display-selected">حرف السؤال: <strong>${escapeHtml(game.cells?.find(cell=>cell.id===game.selectedCell)?.letter||'')}</strong></p>`:''}
+        ${finished?`<p class="letter-cell-display-result">${game.winner?`الفائز: ${escapeHtml(settings.teamNames[game.winner])}`:'تعادل'}</p>`:''}
+      </aside>
     </main>`;
   },error=>{
     console.error('Could not load the Letter Cell TV display:',error);
@@ -477,37 +553,62 @@ window.letterCellClearBuzzer=function(code){
   });
 };
 
-window.letterCellFinishRound=function(code,correct){
-  const room=lastHostRoom;
-  const game=room?.letterCell;
-  const buzzer=room?.buzzer||{};
-  const winner=room?.players?.[buzzer.winner];
-  const team=winner?.team;
-  if(correct&&(!game?.selectedCell||!team)){
-    alert('لا يوجد لاعب ضاغط اختار فريقًا لاحتساب الخلية.');
-    return;
-  }
+window.letterCellAwardCell=function(code,team){
+  if(team!=='A'&&team!=='B')return;
   db.ref(`rooms/${code}/letterCell`).transaction(current=>{
-    if(!current||current.phase!=='playing'||!current.selectedCell)return;
+    if(!current||current.phase!=='playing'||current.roundComplete||!current.selectedCell)return;
     const cell=current.cells?.find(item=>item.id===current.selectedCell);
-    if(!cell)return;
-    if(correct){
-      if(cell.owner||!team)return;
-      cell.owner=team;
-    }
-    current.roundsCompleted=(Number(current.roundsCompleted)||0)+1;
+    if(!cell||cell.owner||cell.skipped)return;
+    cell.owner=team;
     current.selectedCell=null;
-    if(current.roundsCompleted>=letterCellSettings(current).rounds||current.cells.every(item=>item.owner)) {
-      current.phase='ended';
-      current.winner=letterCellWinner(current);
-    }
+    current.winner=letterCellConnectedTeam(current,team)?team:null;
+    if(current.winner)letterCellCompleteRound(current,team);
+    else if(current.cells.every(item=>item.owner||item.skipped))letterCellCompleteRound(current,null);
     return current;
   }).then(result=>{
     if(!result.committed)return;
     return db.ref(`rooms/${code}/buzzer`).update({locked:true,winner:null,pressedAt:null,presses:{},cellId:null});
   }).catch(error=>{
-    console.error('Could not finish a Letter Cell round:',error);
-    alert('تعذر تسجيل نتيجة الجولة. تحقق من الاتصال وحاول مرة أخرى.');
+    console.error('Could not award a Letter Cell:',error);
+    alert('تعذر احتساب الخلية. تحقق من الاتصال وحاول مرة أخرى.');
+  });
+};
+
+window.letterCellSkipCell=function(code){
+  db.ref(`rooms/${code}/letterCell`).transaction(current=>{
+    if(!current||current.phase!=='playing'||current.roundComplete||!current.selectedCell)return;
+    const cell=current.cells?.find(item=>item.id===current.selectedCell);
+    if(!cell||cell.owner||cell.skipped)return;
+    cell.skipped=true;
+    current.selectedCell=null;
+    if(current.cells.every(item=>item.owner||item.skipped))letterCellCompleteRound(current,null);
+    return current;
+  }).then(result=>{
+    if(!result.committed)return;
+    return db.ref(`rooms/${code}/buzzer`).update({locked:true,winner:null,pressedAt:null,presses:{},cellId:null});
+  }).catch(error=>{
+    console.error('Could not skip a Letter Cell question:',error);
+    alert('تعذر تجاوز السؤال. تحقق من الاتصال وحاول مرة أخرى.');
+  });
+};
+
+window.letterCellNextRound=function(code){
+  const nextBoard=letterCellMakeBoard(letterCellSettings(lastHostRoom?.letterCell).cellCount);
+  db.ref(`rooms/${code}/letterCell`).transaction(current=>{
+    if(!current||current.phase!=='playing'||!current.roundComplete)return;
+    current.cells=nextBoard.map(cell=>({...cell}));
+    current.selectedCell=null;
+    current.roundComplete=false;
+    current.roundWinner=null;
+    current.winner=null;
+    if(current.tieBreak)current.tieBreakStarted=true;
+    return current;
+  }).then(result=>{
+    if(!result.committed)return;
+    return db.ref(`rooms/${code}/buzzer`).update({locked:true,winner:null,pressedAt:null,presses:{},cellId:null});
+  }).catch(error=>{
+    console.error('Could not start the next Letter Cell round:',error);
+    alert('تعذر بدء الجولة التالية. تحقق من الاتصال وحاول مرة أخرى.');
   });
 };
 

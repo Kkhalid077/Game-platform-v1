@@ -335,6 +335,8 @@ window.resetToLobby = async function(code){
   stopDrawBoardHost?.();
   try{
     await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, qatara:null, xo:null, letterCell:null, buzzer:null, drawingBoards:null });
+    hostDetailGameId = null;
+    hostDashboardTab = 'games';
   }catch(error){
     console.error('Could not leave the active room tool:',error);
     alert('تعذر الخروج من الأداة. تحقق من الاتصال وحاول مرة أخرى.');
@@ -343,8 +345,8 @@ window.resetToLobby = async function(code){
 
 function activityExitControlsHtml(code,gameId){
   return `<div class="activity-exit-controls">
-    ${gameId === 'xo' ? '' : `<button type="button" class="btn btn-danger" onclick="resetToLobby('${code}')">خروج</button>`}
-    <button type="button" class="btn activity-return-detail" onclick="returnToGameDetail('${code}','${gameId}')">إنهاء اللعبة</button>
+    ${gameId === 'xo' ? '' : `<button type="button" class="btn btn-danger" onclick="window.resetToLobby('${escapeHtml(code)}')">خروج</button>`}
+    <button type="button" class="btn activity-return-detail" onclick="window.returnToGameDetail('${escapeHtml(code)}','${escapeHtml(gameId)}')">إنهاء اللعبة</button>
   </div>`;
 }
 
