@@ -327,13 +327,15 @@ function renderLetterCellHost(code,room){
       <div class="letter-cell-host-layout">
         <div class="letter-cell-primary-column">
           <section class="letter-cell-panel letter-cell-host-question" aria-label="أداة الأسئلة">
-            <div class="letter-cell-host-question-heading"><div><span class="host-section-kicker">أداة الأسئلة</span></div><span class="letter-cell-question-letter" data-question-letter hidden></span></div>
-            <p class="letter-cell-question-empty" data-question-placeholder>اختر خلية لعرض سؤالها هنا. لن يظهر السؤال على شاشة العرض.</p>
-            <p class="letter-cell-question-text" data-question-text hidden></p>
-            <details class="letter-cell-answer" data-question-answer hidden><summary>عرض الإجابة</summary><strong data-answer-text></strong></details>
-            <small class="letter-cell-question-credit" data-question-contributor hidden></small>
+            <div class="letter-cell-host-question-heading"><div><span class="host-section-kicker">أداة الأسئلة</span></div><span class="letter-cell-question-letter" data-question-letter title=""><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span></div>
+            <div class="letter-cell-question-content">
+              <p class="letter-cell-question-empty" data-question-placeholder>اختر خلية لعرض سؤالها هنا. لن يظهر السؤال على شاشة العرض.</p>
+              <p class="letter-cell-question-text" data-question-text hidden></p>
+              <strong class="letter-cell-answer-text" data-answer-text hidden></strong>
+            </div>
             <div class="letter-cell-question-actions">
-              <button class="btn btn-ghost letter-cell-replace-question" data-replace-question type="button" hidden>استبدال السؤال</button>
+              <button class="btn btn-ghost letter-cell-action-btn letter-cell-show-answer" data-show-answer type="button" hidden>عرض الإجابة</button>
+              <button class="btn btn-ghost letter-cell-action-btn letter-cell-replace-question" data-replace-question type="button" hidden>استبدال السؤال</button>
             </div>
           </section>
           <section class="letter-cell-panel letter-cell-board-panel">
@@ -365,9 +367,24 @@ function renderLetterCellHost(code,room){
           </section>
         </div>
         <aside class="letter-cell-sidebar">
+          <section class="letter-cell-panel letter-cell-display-link letter-cell-host-broadcast">
+            <span class="host-section-kicker">دعوة اللاعبون</span>
+            <div class="letter-cell-broadcast-split">
+              <div class="letter-cell-broadcast-invite" data-invite-url="${escapeHtml(inviteUrl)}" id="letterCellInvite">
+                <div class="invite-qr" id="letterCellInviteQr" role="img" aria-label="رمز QR للانضمام"></div>
+                <div class="invite-actions">
+                  <button type="button" class="btn" data-copy>نسخ الرابط</button>
+                  ${navigator.share ? `<button type="button" class="btn btn-ghost" data-share>مشاركة</button>` : ''}
+                </div>
+              </div>
+              <div class="letter-cell-broadcast-display">
+                <a href="${escapeHtml(letterCellDisplayUrl(code))}" target="_blank" rel="noopener" class="btn">فتح شاشة العرض</a>
+                <button class="btn btn-ghost" data-copy-display type="button">نسخ رابط العرض</button>
+              </div>
+            </div>
+          </section>
           <section class="letter-cell-panel letter-cell-host-invite">
             <span class="host-section-kicker">أداة الجرس</span>
-            ${joinCardHtml('letterCellInvite',inviteUrl)}
             <p class="letter-cell-player-count" data-player-count></p>
             <div class="letter-cell-connected-players" aria-label="اللاعبون المتصلون">
               <h3>اللاعبون المتصلون</h3>
@@ -388,13 +405,6 @@ function renderLetterCellHost(code,room){
               </div>
             </div>
           </section>
-          <section class="letter-cell-panel letter-cell-display-link letter-cell-host-broadcast">
-            <span class="host-section-kicker">بث صفحة اللوحة</span><h2>عرض مستقل</h2>
-            <a href="${escapeHtml(letterCellDisplayUrl(code))}" target="_blank" rel="noopener">فتح شاشة العرض</a>
-            <div class="letter-cell-broadcast-url" dir="ltr">${escapeHtml(letterCellDisplayUrl(code))}</div>
-            <button class="btn btn-ghost" data-copy-display type="button">نسخ رابط العرض</button>
-            <small>افتح الرابط في متصفح التلفاز عبر Wi‑Fi أو اعرضه على شاشة HDMI.</small>
-          </section>
         </aside>
       </div>
     </main>
@@ -410,6 +420,7 @@ function renderLetterCellHost(code,room){
     letterCellRunExitAction(event.currentTarget,()=>window.letterCellReturnToSetup(code));
   });
   app.querySelector('[data-replace-question]')?.addEventListener('click',()=>letterCellReplaceQuestion(code,root?.dataset.selectedCell||''));
+  app.querySelector('[data-show-answer]')?.addEventListener('click',()=>letterCellToggleAnswer(code));
   app.querySelector('[data-toggle-buzzer]')?.addEventListener('click',()=>letterCellToggleBuzzer(code));
   app.querySelector('[data-copy-display]')?.addEventListener('click',async event=>{
     const button=event.currentTarget;
@@ -516,9 +527,6 @@ window.updateLetterCellHostView=function(code,room){
   });
 
   letterCellSetText(root.querySelector('[data-question-heading]'),selected?`سؤال حرف ${selected.letter}`:'السؤال الحالي');
-  const letter=root.querySelector('[data-question-letter]');
-  letterCellSetHidden(letter,!selected);
-  letterCellSetText(letter,selected?.letter||'');
   const questionText=root.querySelector('[data-question-text]');
   letterCellSetHidden(questionText,!question);
   letterCellSetText(questionText,question?.question||'');
@@ -527,20 +535,23 @@ window.updateLetterCellHostView=function(code,room){
   letterCellSetText(placeholder,selected
     ? question?'':'لا يوجد سؤال متاح لهذا الحرف.'
     : 'اختر خلية لعرض سؤالها هنا. لن يظهر السؤال على شاشة العرض.');
-  const answer=root.querySelector('[data-question-answer]');
-  letterCellSetHidden(answer,!question);
+  const answerText=root.querySelector('[data-answer-text]');
+  const showAnswerBtn=root.querySelector('[data-show-answer]');
   const questionKey=selected?`${selected.id}:${question?.question||''}:${question?.answer||''}`:'';
-  const questionChanged=root.dataset.questionKey!==questionKey;
   if(question){
-    letterCellSetText(root.querySelector('[data-answer-text]'),question.answer);
-    if(questionChanged)answer.open=false;
+    letterCellSetText(answerText,question.answer);
+    letterCellSetHidden(answerText,true);
+    if(showAnswerBtn)showAnswerBtn.textContent='عرض الإجابة';
+  }else{
+    letterCellSetHidden(answerText,true);
   }
   if(root.dataset.questionKey!==questionKey)root.dataset.questionKey=questionKey;
-  const contributor=root.querySelector('[data-question-contributor]');
-  letterCellSetHidden(contributor,!question?.contributor);
-  letterCellSetText(contributor,question?.contributor?`المساهم: ${question.contributor}`:'');
+  const letterEl=root.querySelector('[data-question-letter]');
+  if(letterEl)letterEl.title=question?.contributor?'المساهم: '+question.contributor:'';
   const replace=root.querySelector('[data-replace-question]');
+  const showAnswer=root.querySelector('[data-show-answer]');
   letterCellSetHidden(replace,!selected);
+  letterCellSetHidden(showAnswer,!selected);
   const awardControls=root.querySelector('[data-award-controls]');
   awardControls.querySelectorAll('[data-award-team]').forEach(button=>{
     const team=button.dataset.awardTeam;
@@ -834,6 +845,22 @@ window.letterCellReplaceQuestion=function(code,cellId){
       console.error('Could not reopen the Letter Cell buzzer:',error);
       alert('تعذر فتح الجرس. تحقق من الاتصال وحاول مرة أخرى.');
     });
+};
+
+window.letterCellToggleAnswer=function(code){
+  const root=document.querySelector('#app');
+  if(!root)return;
+  const answerText=root.querySelector('[data-answer-text]');
+  const showAnswerBtn=root.querySelector('[data-show-answer]');
+  if(!answerText||!showAnswerBtn)return;
+  const isHidden=answerText.hidden;
+  if(isHidden){
+    answerText.hidden=false;
+    showAnswerBtn.textContent='إخفاء الإجابة';
+  }else{
+    answerText.hidden=true;
+    showAnswerBtn.textContent='عرض الإجابة';
+  }
 };
 
 window.letterCellPressBuzzer=function(code,playerId){
