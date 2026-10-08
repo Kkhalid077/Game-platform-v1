@@ -385,7 +385,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       ${isHost && letterCellGame ? '<p class="muted">يمكنك بدء اللعبة أولًا، ثم دعوة اللاعبين من شاشة اللعبة.</p>' : ''}
       ${xoGame ? '' : inviteHtml}
       ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
-      ${hostControlledTrivia || hostControlledXo ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${hostControlledTrivia || hostControlledXo || (isHost && letterCellGame) ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost && !xoGame
           ? `<button class="btn" ${!hostControlledTrivia && !letterCellGame && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`

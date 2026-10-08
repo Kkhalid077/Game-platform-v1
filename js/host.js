@@ -93,6 +93,12 @@ function dispatchHostRender(code, room){
     lastHostRoom = room;
     return;
   }
+  if (previousRoom?.status === 'in_game' && previousRoom.activeGame === 'letter-cell' &&
+      room.status === 'in_game' && room.activeGame === 'letter-cell' &&
+      window.updateLetterCellHostView?.(code, room)) {
+    lastHostRoom = room;
+    return;
+  }
   lastHostRoom = room;
   stopHostTimerWatch();
   if (!(room.status === 'in_game' && room.activeGame === 'silentdraw')) stopMirrorCanvases();
@@ -240,6 +246,11 @@ function accountInfoHtml(){
 function renderHostLobby(code, room){
   if (typeof setVersionFooterVisibility === 'function') setVersionFooterVisibility(!hostDetailGameId, !hostDetailGameId);
   const selectedGame = hostDetailGameId ? GAMES_LIST.find(g => g.id === hostDetailGameId) : null;
+  let hostStage = document.getElementById('stage');
+  if (!hostStage) {
+    app.innerHTML = '<div class="stage" id="stage"></div>';
+    hostStage = document.getElementById('stage');
+  }
   const selectedInviteUrl = selectedGame?.id === 'trivia' || selectedGame?.id === 'letter-cell' ? null : selectedGame ? joinGameUrl(code, selectedGame.id) : null;
   const selectedInviteId = selectedGame?.id === 'xo' ? 'xoNetworkInviteCard' : 'gameInvite';
   const selectedInvite = selectedInviteUrl && selectedGame.minPlayers > 1 ? joinCardHtml(selectedInviteId, selectedInviteUrl) : '';
@@ -282,7 +293,7 @@ function renderHostLobby(code, room){
         </section>`
       : `<section class="host-games-section" aria-label="الألعاب المتاحة"><div class="host-games-header"><span class="host-section-kicker">الألعاب المتاحة</span></div><div class="games-grid host-games-grid">${cardsHtml}</div></section>`;
 
-  document.getElementById('stage').innerHTML = `
+  hostStage.innerHTML = `
     <div class="host-shell">
       <header class="host-topbar">
         ${platformBrandHtml('host-brand')}
@@ -333,27 +344,37 @@ window.startBuzzerTool = function(code){
 
 window.resetToLobby = async function(code){
   stopDrawBoardHost?.();
+  hostDetailGameId = null;
+  hostDashboardTab = 'games';
   try{
     await db.ref('rooms/'+code).update({ status:'voting', activeGame:null, activeTool:null, buzzerTransport:null, buzzerSession:null, buzzerRtc:null, buzzerFallback:null, selectedGame:null, votes:{}, mafia:null, silentdraw:null, trivia:null, qatara:null, xo:null, letterCell:null, buzzer:null, drawingBoards:null });
-    hostDetailGameId = null;
-    hostDashboardTab = 'games';
+    const snapshot=await db.ref('rooms/'+code).once('value');
+    const room=snapshot.val();
+    if(room){
+      lastHostRoom=room;
+      lastHostViewKey='voting:dashboard:games';
+      transitionAppView(()=>renderHostLobby(code,room));
+    }
+    return true;
   }catch(error){
     console.error('Could not leave the active room tool:',error);
     alert('تعذر الخروج من الأداة. تحقق من الاتصال وحاول مرة أخرى.');
+    return false;
   }
 };
 
 function activityExitControlsHtml(code,gameId){
+  const letterCell=gameId==='letter-cell';
   return `<div class="activity-exit-controls">
-    ${gameId === 'xo' ? '' : `<button type="button" class="btn btn-danger" onclick="window.resetToLobby('${escapeHtml(code)}')">خروج</button>`}
-    <button type="button" class="btn activity-return-detail" onclick="window.returnToGameDetail('${escapeHtml(code)}','${escapeHtml(gameId)}')">إنهاء اللعبة</button>
+    ${gameId === 'xo' ? '' : `<button type="button" class="btn btn-danger" ${letterCell?'data-letter-cell-exit="lobby"':`onclick="window.resetToLobby('${escapeHtml(code)}')"`}>خروج</button>`}
+    <button type="button" class="btn activity-return-detail" ${letterCell?'data-letter-cell-exit="details"':`onclick="window.returnToGameDetail('${escapeHtml(code)}','${escapeHtml(gameId)}')"`}>إنهاء اللعبة</button>
   </div>`;
 }
 
 window.returnToGameDetail = async function(code,gameId){
   if(!GAMES_LIST.some(game=>game.id===gameId)){
     console.error('Cannot return to an unknown game detail page:',gameId);
-    return;
+    return false;
   }
   hostDetailGameId = gameId;
   try{
@@ -362,10 +383,12 @@ window.returnToGameDetail = async function(code,gameId){
       buzzerSession:null,buzzerRtc:null,buzzerFallback:null,selectedGame:gameId,
       votes:{},mafia:null,silentdraw:null,trivia:null,qatara:null,xo:null,letterCell:null,buzzer:null
     });
+    return true;
   }catch(error){
     hostDetailGameId = null;
     console.error('Could not return to game details:',error);
     alert('تعذر إنهاء اللعبة والعودة إلى تفاصيلها. تحقق من الاتصال وحاول مرة أخرى.');
+    return false;
   }
 };
 
