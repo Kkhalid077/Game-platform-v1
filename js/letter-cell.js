@@ -248,8 +248,12 @@ function letterCellBoardHtml(game,interactive){
         const style=color?`--letter-team-color:${color}`:'';
         const content=`<span class="letter-cell-tile-face">${escapeHtml(cell.letter)}</span>`;
         if(!interactive)return `<div class="${classes}" data-cell-id="${escapeHtml(cell.id)}" data-letter="${escapeHtml(cell.letter)}" style="${style}" aria-label="خلية حرف ${escapeHtml(cell.letter)}${selected?'، مختارة':''}">${content}</div>`;
-        const disabled=game.phase!=='playing'||game.roundComplete||!!game.selectedCell||!!owner||!!cell.skipped;
-        return `<button type="button" class="${classes}" data-cell-id="${escapeHtml(cell.id)}" data-letter="${escapeHtml(cell.letter)}" style="${style}" ${disabled?'disabled':''} onclick="letterCellSelectCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')" aria-label="اختيار الخلية ${escapeHtml(cell.letter)}">${content}</button>`;
+        const isSelected=game.selectedCell===cell.id;
+        const isOwned=!!owner;
+        const disabled=game.phase!=='playing'||game.roundComplete||!!cell.skipped;
+        const onclick=isOwned?`letterCellUnawardCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')`:`letterCellSelectCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')`;
+        const ariaLabel=isOwned?`إلغاء احتساب الخلية ${escapeHtml(cell.letter)} (فريق ${escapeHtml(settings.teamNames[owner])})`:`اختيار الخلية ${escapeHtml(cell.letter)}`;
+        return `<button type="button" class="${classes}" data-cell-id="${escapeHtml(cell.id)}" data-letter="${escapeHtml(cell.letter)}" style="${style}" ${disabled?'disabled':''} onclick="${onclick}" aria-label="${ariaLabel}">${content}</button>`;
       }).join('')}</div>`).join('')}</div>
   </div>`;
 }
@@ -318,12 +322,12 @@ function renderLetterCellHost(code,room){
     ${activityExitControlsHtml(code,'letter-cell')}
     <main class="letter-cell-host">
       <header class="letter-cell-heading">
-        <div><span class="host-section-kicker">لعبة جماعية</span><h1>خلية الحروف</h1></div>
+        <div><span class="host-section-kicker">خلية الحروف</span></div>
       </header>
       <div class="letter-cell-host-layout">
         <div class="letter-cell-primary-column">
-          <section class="letter-cell-panel letter-cell-host-question" aria-label="السؤال الحالي للمنظّم">
-            <div class="letter-cell-host-question-heading"><div><span class="host-section-kicker">السؤال الحالي — خاص بالمنظّم</span><h2 data-question-heading>السؤال</h2></div><span class="letter-cell-question-letter" data-question-letter hidden></span></div>
+          <section class="letter-cell-panel letter-cell-host-question" aria-label="أداة الأسئلة">
+            <div class="letter-cell-host-question-heading"><div><span class="host-section-kicker">أداة الأسئلة</span></div><span class="letter-cell-question-letter" data-question-letter hidden></span></div>
             <p class="letter-cell-question-empty" data-question-placeholder>اختر خلية لعرض سؤالها هنا. لن يظهر السؤال على شاشة العرض.</p>
             <p class="letter-cell-question-text" data-question-text hidden></p>
             <details class="letter-cell-answer" data-question-answer hidden><summary>عرض الإجابة</summary><strong data-answer-text></strong></details>
@@ -334,7 +338,7 @@ function renderLetterCellHost(code,room){
           </section>
           <section class="letter-cell-panel letter-cell-board-panel">
             <div class="letter-cell-board-setup" data-settings-edit ${game.phase==='setup'?'':'hidden'}>
-              <span class="host-section-kicker">الإعدادات</span><h2>لوحة الخلية</h2>
+              <span class="host-section-kicker">الإعدادات</span><h2>لوحة اللعب</h2>
               ${letterCellSettingsForm({...game,phase:'setup'},code)}
               <button class="btn letter-cell-start-button" type="button" onclick="letterCellStartPlay('${escapeHtml(code)}')">بدء اللعبة</button>
             </div>
@@ -343,7 +347,7 @@ function renderLetterCellHost(code,room){
               <h2 class="letter-cell-round-title" data-board-round>${escapeHtml(letterCellRoundTitle(game))}</h2>
               <div class="letter-cell-board-content">
                 <div class="letter-cell-board-mount" data-board-mount>${letterCellBoardHtml(game,true)}</div>
-                <div class="letter-cell-award-controls" data-award-controls hidden>
+                <div class="letter-cell-award-controls" data-award-controls>
                   ${['A','B'].map(team=>`<button class="letter-cell-award-button" data-award-team="${team}" style="--letter-team-color:${settings.teamColors[team]}" type="button" aria-label="احتساب النقطة لـ ${escapeHtml(settings.teamNames[team])}" onclick="letterCellAwardCell('${escapeHtml(code)}','${team}')">
                     <span class="letter-cell-award-check" aria-hidden="true">✓</span>
                     <span class="letter-cell-award-team" data-award-team-name>${escapeHtml(settings.teamNames[team])}</span>
@@ -362,7 +366,7 @@ function renderLetterCellHost(code,room){
         </div>
         <aside class="letter-cell-sidebar">
           <section class="letter-cell-panel letter-cell-host-invite">
-            <span class="host-section-kicker">مشاركة اللعبة</span>
+            <span class="host-section-kicker">أداة الجرس</span>
             ${joinCardHtml('letterCellInvite',inviteUrl)}
             <p class="letter-cell-player-count" data-player-count></p>
             <div class="letter-cell-connected-players" aria-label="اللاعبون المتصلون">
@@ -439,13 +443,17 @@ function letterCellRunExitAction(button,action){
 function letterCellUpdateCellDom(tile,cell,game,settings){
   const owner=cell.owner==='A'||cell.owner==='B'?cell.owner:null;
   const selected=game.selectedCell===cell.id;
+  const isOwned=!!owner;
   tile.classList.toggle('is-selected',selected);
-  tile.classList.toggle('is-owned',!!owner);
+  tile.classList.toggle('is-owned',isOwned);
   tile.classList.toggle('is-skipped',!!cell.skipped);
-  const disabled=game.phase!=='playing'||game.roundComplete||!!game.selectedCell||!!owner||!!cell.skipped;
+  const isSelected=game.selectedCell===cell.id;
+  const disabled=game.phase!=='playing'||game.roundComplete||!!cell.skipped;
   if(tile.disabled!==disabled)tile.disabled=disabled;
-  const label=`اختيار الخلية ${cell.letter}${selected?'، مختارة':''}`;
-  if(tile.getAttribute('aria-label')!==label)tile.setAttribute('aria-label',label);
+  const onclick=isOwned?`letterCellUnawardCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')`:`letterCellSelectCell('${escapeHtml(ACTIVE_HOST_CODE)}','${escapeHtml(cell.id)}')`;
+  const ariaLabel=isOwned?`إلغاء احتساب الخلية ${cell.letter} (فريق ${escapeHtml(settings.teamNames[owner])})`:`اختيار الخلية ${cell.letter}${selected?'، مختارة':''}`;
+  tile.setAttribute('onclick',onclick);
+  if(tile.getAttribute('aria-label')!==ariaLabel)tile.setAttribute('aria-label',ariaLabel);
   if(owner)letterCellSetColor(tile,settings.teamColors[owner]);
   else if(tile.style.getPropertyValue('--letter-team-color'))tile.style.removeProperty('--letter-team-color');
 }
@@ -534,7 +542,6 @@ window.updateLetterCellHostView=function(code,room){
   const replace=root.querySelector('[data-replace-question]');
   letterCellSetHidden(replace,!selected);
   const awardControls=root.querySelector('[data-award-controls]');
-  letterCellSetHidden(awardControls,!(selected&&game.phase==='playing'&&!game.roundComplete));
   awardControls.querySelectorAll('[data-award-team]').forEach(button=>{
     const team=button.dataset.awardTeam;
     letterCellSetText(button.querySelector('[data-award-team-name]'),settings.teamNames[team]);
@@ -770,16 +777,31 @@ window.letterCellStartPlay=function(code){
 
 window.letterCellSelectCell=function(code,cellId){
   return db.ref(`rooms/${code}/letterCell`).transaction(game=>{
-    if(!game||game.phase!=='playing'||game.selectedCell||game.roundsCompleted>=letterCellSettings(game).rounds)return;
+    if(!game||game.phase!=='playing'||game.roundsCompleted>=letterCellSettings(game).rounds)return;
     const cell=game.cells?.find(item=>item.id===cellId);
     if(!cell||cell.owner)return;
-    game.selectedCell=cellId;
+    // Allow deselection (clicking same cell) or switching to different cell
+    if(game.selectedCell===cellId){
+      game.selectedCell=null; // deselect
+    }else{
+      game.selectedCell=cellId; // select or switch
+    }
     return game;
   }).then(async result=>{
     if(!result.committed)return;
     const selectedGame=result.snapshot?.val();
     const cell=selectedGame?.cells?.find(item=>String(item.id)===String(cellId));
     if(!cell)throw new Error('تعذر استعادة الخلية التي تم اختيارها.');
+    
+    // If deselected, clear the question and buzzer
+    if(selectedGame.selectedCell!==cellId){
+      await db.ref(`rooms/${code}/buzzer`).update({
+        locked:true,winner:null,pressedAt:null,presses:{},cellId:null
+      });
+      letterCellRefreshHost(code,selectedGame);
+      return;
+    }
+    
     await letterCellLoadQuestions();
     const question=letterCellPickQuestion(cell.letter);
     if(question)letterCellStoreHostQuestion(code,cellId,question);
@@ -865,6 +887,33 @@ window.letterCellAwardCell=function(code,team){
   }).catch(error=>{
     console.error('Could not award a Letter Cell:',error);
     alert('تعذر احتساب الخلية. تحقق من الاتصال وحاول مرة أخرى.');
+  });
+};
+
+window.letterCellUnawardCell=function(code,cellId){
+  db.ref(`rooms/${code}/letterCell`).transaction(current=>{
+    if(!current||current.phase!=='playing')return;
+    const cell=current.cells?.find(item=>item.id===cellId);
+    if(!cell||!cell.owner)return;
+    cell.owner=null;
+    // If this cell was the selected one, clear selection
+    if(current.selectedCell===cellId)current.selectedCell=null;
+    // Check if round should be un-completed
+    if(current.roundComplete){
+      const teamAConnected=letterCellConnectedTeam(current,'A');
+      const teamBConnected=letterCellConnectedTeam(current,'B');
+      if(!teamAConnected && !teamBConnected){
+        current.roundComplete=false;
+        current.roundWinner=null;
+      }
+    }
+    return current;
+  }).then(result=>{
+    if(!result.committed)return;
+    return db.ref(`rooms/${code}/buzzer`).update({locked:true,winner:null,pressedAt:null,presses:{},cellId:null});
+  }).catch(error=>{
+    console.error('Could not unaward a Letter Cell:',error);
+    alert('تعذر إلغاء احتساب الخلية. تحقق من الاتصال وحاول مرة أخرى.');
   });
 };
 
