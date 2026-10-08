@@ -239,7 +239,7 @@ function letterCellBoardHtml(game,interactive){
     <span class="letter-cell-edge letter-cell-edge-bottom" style="--edge-team-color:${settings.teamColors.B}" aria-hidden="true"></span>
     <span class="letter-cell-edge letter-cell-edge-left" style="--edge-team-color:${settings.teamColors.A}" aria-label="حد ${escapeHtml(settings.teamNames.A)}"></span>
     <span class="letter-cell-edge letter-cell-edge-right" style="--edge-team-color:${settings.teamColors.A}" aria-hidden="true"></span>
-    <div class="letter-cell-board" style="--letter-cell-columns:${dimension}" role="group" aria-label="لوحة خلية الحروف">${rows.map((row,rowIndex)=>`
+    <div class="letter-cell-board is-size-${dimension}" style="--letter-cell-columns:${dimension}" role="group" aria-label="لوحة خلية الحروف">${rows.map((row,rowIndex)=>`
       <div class="letter-cell-board-row ${rowIndex%2?'is-offset':''}">${row.map(cell=>{
         const owner=cell.owner==='A'||cell.owner==='B'?cell.owner:null;
         const color=owner?settings.teamColors[owner]:'';
@@ -330,9 +330,6 @@ function renderLetterCellHost(code,room){
             <small class="letter-cell-question-credit" data-question-contributor hidden></small>
             <div class="letter-cell-question-actions">
               <button class="btn btn-ghost letter-cell-replace-question" data-replace-question type="button" hidden>استبدال السؤال</button>
-              <div class="letter-cell-award-controls" data-award-controls hidden><span>احتساب الخلية للفريق</span>
-                ${['A','B'].map(team=>`<button class="btn letter-cell-award-button" data-award-team="${team}" style="--letter-team-color:${settings.teamColors[team]}" type="button" onclick="letterCellAwardCell('${escapeHtml(code)}','${team}')">${escapeHtml(settings.teamNames[team])}</button>`).join('')}
-              </div>
             </div>
           </section>
           <section class="letter-cell-panel letter-cell-board-panel">
@@ -342,17 +339,18 @@ function renderLetterCellHost(code,room){
               <button class="btn letter-cell-start-button" type="button" onclick="letterCellStartPlay('${escapeHtml(code)}')">بدء اللعبة</button>
             </div>
             <div class="letter-cell-board-play" data-board-view ${game.phase==='setup'?'hidden':''}>
-              <div class="letter-cell-board-heading"><div><span class="host-section-kicker">لوحة اللعب</span><h2>خلية الحروف</h2></div>
-                <span class="letter-cell-round-count" data-board-round></span>
+              <div class="letter-cell-board-heading"><span class="host-section-kicker">لوحة اللعب</span></div>
+              <h2 class="letter-cell-round-title" data-board-round>${escapeHtml(letterCellRoundTitle(game))}</h2>
+              <div class="letter-cell-board-content">
+                <div class="letter-cell-board-mount" data-board-mount>${letterCellBoardHtml(game,true)}</div>
+                <div class="letter-cell-award-controls" data-award-controls hidden>
+                  ${['A','B'].map(team=>`<button class="letter-cell-award-button" data-award-team="${team}" style="--letter-team-color:${settings.teamColors[team]}" type="button" aria-label="احتساب النقطة لـ ${escapeHtml(settings.teamNames[team])}" onclick="letterCellAwardCell('${escapeHtml(code)}','${team}')">
+                    <span class="letter-cell-award-check" aria-hidden="true">✓</span>
+                    <span class="letter-cell-award-team" data-award-team-name>${escapeHtml(settings.teamNames[team])}</span>
+                    <small>احتساب النقطة</small>
+                  </button>`).join('')}
+                </div>
               </div>
-              <div class="letter-cell-settings-summary" data-settings-summary>
-                <span class="host-section-kicker">الإعدادات المحفوظة</span>
-                <p>الجولات: <strong data-settings-rounds>${settings.rounds}</strong></p>
-                <p>حجم اللوحة: <strong data-settings-cell-count>${letterCellGridLabel(settings.cellCount)}</strong></p>
-                <p data-settings-team-names>${escapeHtml(settings.teamNames.A)} — ${escapeHtml(settings.teamNames.B)}</p>
-              </div>
-              <p class="letter-cell-hint" data-board-hint></p>
-              <div data-board-mount>${letterCellBoardHtml(game,true)}</div>
               <div class="letter-cell-round-controls" data-round-controls hidden>
                 <button class="btn letter-cell-start-button" data-next-round type="button" onclick="letterCellNextRound('${escapeHtml(code)}')"></button>
               </div>
@@ -539,7 +537,8 @@ window.updateLetterCellHostView=function(code,room){
   letterCellSetHidden(awardControls,!(selected&&game.phase==='playing'&&!game.roundComplete));
   awardControls.querySelectorAll('[data-award-team]').forEach(button=>{
     const team=button.dataset.awardTeam;
-    letterCellSetText(button,settings.teamNames[team]);
+    letterCellSetText(button.querySelector('[data-award-team-name]'),settings.teamNames[team]);
+    button.setAttribute('aria-label',`احتساب النقطة لـ ${settings.teamNames[team]}`);
     letterCellSetColor(button,settings.teamColors[team]);
   });
 
