@@ -88,7 +88,7 @@ function renderPlayer(code, invitedGameId){
         lastRenderedRoom = room;
         return;
       }
-      if (isPlayerTeamOnlyChange(lastRenderedRoom, room)) {
+      if (room.activeGame !== 'letter-cell' && isPlayerTeamOnlyChange(lastRenderedRoom, room)) {
         lastRenderedRoom = room;
         updatePlayerTeamSelector(code, id, room, invitedGameId);
         return;
@@ -234,6 +234,7 @@ function dispatchPlayerRender(code, myId, name, room, invitedGameId){
     else if (room.status === 'in_tool' && room.activeTool === 'buzzer') renderBuzzerPlayer(code, myId, name, room);
     else if (room.status === 'in_game' && room.activeGame === 'qatara') renderQataraPlayer(code, myId, name, room);
     else if (room.status === 'in_game' && room.activeGame === 'xo') renderXoPlayer(code, myId, name, room);
+    else if (room.status === 'in_game' && room.activeGame === 'letter-cell') renderLetterCellPlayer(code, myId, name, room);
     else if (room.status === 'in_game' || room.status === 'trivia_setup' || room.status === 'in_tool') renderPlayerGameNotice(code, myId, name, room);
     else renderPlayerVoting(code, myId, name, room);
   };
@@ -272,6 +273,7 @@ function renderInvitedGame(code, myId, name, room, gameId){
     if (gameId === 'trivia') return renderTriviaPlayer(code, myId, name, room);
     if (gameId === 'qatara') return renderQataraPlayer(code, myId, name, room);
     if (gameId === 'xo') return renderXoPlayer(code, myId, name, room);
+    if (gameId === 'letter-cell') return renderLetterCellPlayer(code, myId, name, room);
   }
   app.innerHTML = `<div class="player-join-screen">${gameDetailHtml(game, room, code, myId, false)}<p class="muted" style="text-align:center;">بانتظار المنظّم لبدء ${escapeHtml(game.title)}.</p></div>`;
 }
@@ -649,6 +651,10 @@ firebase.auth().onAuthStateChanged(user => {
   const params = new URLSearchParams(location.search);
   const sessionParam = params.get('session');
   const gameParam = params.get('game');
+  if (sessionParam && params.get('screen') === 'tv' && gameParam === 'letter-cell') {
+    renderLetterCellDisplay(sessionParam.trim());
+    return;
+  }
   if (sessionParam && gameParam) renderPlayer(sessionParam.trim(), gameParam.trim());
   else if (!user) { if (localStorage.getItem('adminGuestName')) renderHost(); else renderGoogleSignIn(); }
   else renderHost();

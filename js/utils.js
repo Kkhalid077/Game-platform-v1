@@ -363,6 +363,7 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
   const triviaGame = game.id === 'trivia';
   const hostControlledTrivia = isHost && triviaGame;
   const xoGame = game.id === 'xo';
+  const letterCellGame = game.id === 'letter-cell';
   const hostControlledXo = isHost && xoGame;
   const hostXoModes = xoGame && isHost
     ? `<div class="xo-mode-picker" aria-label="اختر طريقة اللعب">
@@ -380,13 +381,14 @@ function gameDetailHtml(game, room, code, myId, isHost, inviteHtml=''){
       <h2 style="font-family:'Cairo'; text-align:center;">${game.title}</h2>
       <p class="narrator">${game.desc}</p>
       <ol class="rules-list">${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
-      ${triviaGame || xoGame ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
+      ${triviaGame || xoGame || (isHost && letterCellGame) ? '' : `<p class="muted">الحد الأدنى للاعبين: ${game.minPlayers}</p>`}
+      ${isHost && letterCellGame ? '<p class="muted">يمكنك بدء اللعبة أولًا، ثم دعوة اللاعبين من شاشة اللعبة.</p>' : ''}
       ${xoGame ? '' : inviteHtml}
       ${triviaGame ? '' : teamSelectorHtml(game, room, code, myId, isHost)}
-      ${hostControlledTrivia || hostControlledXo ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
+      ${hostControlledTrivia || hostControlledXo || (isHost && letterCellGame) ? '' : isHost ? `<div class="players-box lobby-players-box"><h3>اللاعبون (${totalPlayers})</h3><div class="lobby-player-grid">${playerCards || '<span class="muted">بانتظار اللاعبين</span>'}</div></div>` : `<p class="muted" style="text-align:center;">عند بدء اللعبة، يعرضها المنظّم ويتحكم بها من شاشته.</p>`}
       <div style="text-align:center; margin-top:10px;">
         ${isHost && !xoGame
-          ? `<button class="btn" ${!hostControlledTrivia && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`
+          ? `<button class="btn" ${!hostControlledTrivia && !letterCellGame && totalPlayers < game.minPlayers ? 'disabled' : ''} onclick="startGame('${game.id}','${code}')">${hostControlledTrivia ? 'إعداد الفريقين' : 'ابدأ اللعبة'}</button>`
           : ''}
       </div>
       ${hostXoModes}
@@ -418,7 +420,7 @@ function roomForGame(room, gameId){
 function setActivityBackdrop(activityId){
   const appRoot = document.getElementById('app');
   if (!appRoot) return;
-  if (['mafia','silentdraw','trivia','qatara','buzzer','drawboard'].includes(activityId)) {
+  if (['mafia','silentdraw','trivia','qatara','buzzer','drawboard','letter-cell'].includes(activityId)) {
     appRoot.dataset.activity = activityId;
   } else {
     delete appRoot.dataset.activity;
