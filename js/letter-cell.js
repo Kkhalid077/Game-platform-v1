@@ -12,6 +12,36 @@ let letterCellQuestionLoad = null;
 const letterCellCurrentQuestions = new Map();
 const letterCellUsedQuestionIds = new Set();
 let letterCellDisplayRef = null;
+let letterCellCurrentBoardWrap = null;
+let letterCellResizeObserver = null;
+const letterCellObservedBoards = new Set();
+
+function letterCellUpdateHexSize(boardWrap, dimension) {
+  if (!boardWrap || dimension <= 0) return;
+  // Calculate hex size based on both width AND height to fill the container
+  const w = boardWrap.clientWidth;
+  const h = boardWrap.clientHeight;
+  // For a hex grid with offset rows: total width ≈ dimension * hexSize, total height ≈ dimension * hexSize * 0.86
+  const hexByWidth = w / dimension;
+  const hexByHeight = h / (dimension * 0.75);
+  const hexSize = Math.min(hexByWidth, hexByHeight);
+  boardWrap.style.setProperty('--hex-size', `${hexSize}px`);
+  boardWrap.style.setProperty('--hex-font-size', `${hexSize * 0.35}px`);
+}
+
+function letterCellUpdateBoardSize() {
+  if (letterCellCurrentBoardWrap) {
+    const boardEl = letterCellCurrentBoardWrap.querySelector('.letter-cell-board');
+    if (!boardEl) return;
+    const dimension = parseFloat(getComputedStyle(boardEl).getPropertyValue('--letter-cell-columns')) || 0;
+    if (dimension > 0) {
+      letterCellUpdateHexSize(letterCellCurrentBoardWrap, dimension);
+    }
+  }
+}
+window.addEventListener('resize', () => {
+  requestAnimationFrame(letterCellUpdateBoardSize);
+});
 
 function letterCellNormalizeLetter(value){
   return normalizeAr(value).replace(/\u0640/g,'').charAt(0);
@@ -235,18 +265,15 @@ function letterCellBoardHtml(game,interactive){
   const rows=[];
   for(let index=0;index<cells.length;index+=dimension)rows.push(cells.slice(index,index+dimension));
   return `<div class="letter-cell-board-wrap">
-    <span class="letter-cell-edge letter-cell-edge-top" style="--edge-team-color:${settings.teamColors.B}" aria-label="حد ${escapeHtml(settings.teamNames.B)}"></span>
-    <span class="letter-cell-edge letter-cell-edge-bottom" style="--edge-team-color:${settings.teamColors.B}" aria-hidden="true"></span>
-    <span class="letter-cell-edge letter-cell-edge-left" style="--edge-team-color:${settings.teamColors.A}" aria-label="حد ${escapeHtml(settings.teamNames.A)}"></span>
-    <span class="letter-cell-edge letter-cell-edge-right" style="--edge-team-color:${settings.teamColors.A}" aria-hidden="true"></span>
+    
     <div class="letter-cell-board is-size-${dimension}" style="--letter-cell-columns:${dimension}" role="group" aria-label="لوحة خلية الحروف">${rows.map((row,rowIndex)=>`
       <div class="letter-cell-board-row ${rowIndex%2?'is-offset':''}">${row.map(cell=>{
         const owner=cell.owner==='A'||cell.owner==='B'?cell.owner:null;
         const color=owner?settings.teamColors[owner]:'';
         const selected=game.selectedCell===cell.id;
-        const classes=`letter-cell-tile ${selected?'is-selected':''} ${owner?'is-owned':''} ${cell.skipped?'is-skipped':''}`;
+        const classes=`letter-cell-tile ${selected?'is-selected':''} ${owner?'is-owned':''} ${owner?`owner-${owner}`:''} ${cell.skipped?'is-skipped':''}`;
         const style=color?`--letter-team-color:${color}`:'';
-        const content=`<span class="letter-cell-tile-face">${escapeHtml(cell.letter)}</span>`;
+        const showLetter=!owner;const content=showLetter?`<span class="letter-cell-tile-face">${escapeHtml(cell.letter)}</span>`:'';
         if(!interactive)return `<div class="${classes}" data-cell-id="${escapeHtml(cell.id)}" data-letter="${escapeHtml(cell.letter)}" style="${style}" aria-label="خلية حرف ${escapeHtml(cell.letter)}${selected?'، مختارة':''}">${content}</div>`;
         const isSelected=game.selectedCell===cell.id;
         const isOwned=!!owner;
@@ -340,22 +367,36 @@ function renderLetterCellHost(code,room){
           </section>
           <section class="letter-cell-panel letter-cell-board-panel">
             <div class="letter-cell-board-setup" data-settings-edit ${game.phase==='setup'?'':'hidden'}>
+              <span class="letter-cell-hex-deco"></span>
+              <span class="letter-cell-hex-deco"></span>
+              <span class="letter-cell-hex-deco"></span>
+              <span class="letter-cell-hex-deco"></span>
+              <span class="letter-cell-hex-deco"></span>
               <span class="host-section-kicker">الإعدادات</span><h2>لوحة اللعب</h2>
               ${letterCellSettingsForm({...game,phase:'setup'},code)}
               <button class="btn letter-cell-start-button" type="button" onclick="letterCellStartPlay('${escapeHtml(code)}')">بدء اللعبة</button>
             </div>
             <div class="letter-cell-board-play" data-board-view ${game.phase==='setup'?'hidden':''}>
               <div class="letter-cell-board-heading"><span class="host-section-kicker">لوحة اللعب</span></div>
-              <h2 class="letter-cell-round-title" data-board-round>${escapeHtml(letterCellRoundTitle(game))}</h2>
               <div class="letter-cell-board-content">
-                <div class="letter-cell-board-mount" data-board-mount>${letterCellBoardHtml(game,true)}</div>
-                <div class="letter-cell-award-controls" data-award-controls>
-                  ${['A','B'].map(team=>`<button class="letter-cell-award-button" data-award-team="${team}" style="--letter-team-color:${settings.teamColors[team]}" type="button" aria-label="احتساب النقطة لـ ${escapeHtml(settings.teamNames[team])}" onclick="letterCellAwardCell('${escapeHtml(code)}','${team}')">
-                    <span class="letter-cell-award-check" aria-hidden="true">✓</span>
-                    <span class="letter-cell-award-team" data-award-team-name>${escapeHtml(settings.teamNames[team])}</span>
-                    <small>احتساب النقطة</small>
-                  </button>`).join('')}
-                </div>
+                <section class="letter-cell-letters-area" data-letters-area>
+                  <div class="letter-cell-board-mount" data-board-mount>${letterCellBoardHtml(game,true)}</div>
+                </section>
+                <aside class="letter-cell-teams-area" data-teams-area>
+                  <div class="letter-cell-round-title-sidebar" data-board-round-sidebar-wrap>
+                    <span class="round-line1" data-board-round-line1>الجولة</span>
+                    <span class="round-line2" data-board-round-line2>${escapeHtml(letterCellRoundTitle(game)).replace('الجولة','').trim()||'الأولى'}</span>
+                  </div>
+                  <div class="letter-cell-teams-cards" data-teams-cards>
+                    ${['A','B'].map(team=>`
+                      <button class="letter-cell-team-card" data-team="${team}" type="button" onclick="window.letterCellAwardCell && window.letterCellAwardCell('${escapeHtml(ACTIVE_HOST_CODE)}','${team}')">
+                        <span class="letter-cell-team-check" aria-hidden="true">✓</span>
+                        <span class="letter-cell-team-name">${escapeHtml(settings.teamNames[team])}</span>
+                        <span class="letter-cell-team-score" data-team-score="${team}">0</span>
+                      </button>
+                    `).join('')}
+                  </div>
+                </aside>
               </div>
               <div class="letter-cell-round-controls" data-round-controls hidden>
                 <button class="btn letter-cell-start-button" data-next-round type="button" onclick="letterCellNextRound('${escapeHtml(code)}')"></button>
@@ -458,6 +499,8 @@ function letterCellUpdateCellDom(tile,cell,game,settings){
   tile.classList.toggle('is-selected',selected);
   tile.classList.toggle('is-owned',isOwned);
   tile.classList.toggle('is-skipped',!!cell.skipped);
+  tile.classList.toggle('owner-A',owner==='A');
+  tile.classList.toggle('owner-B',owner==='B');
   const isSelected=game.selectedCell===cell.id;
   const disabled=game.phase!=='playing'||game.roundComplete||!!cell.skipped;
   if(tile.disabled!==disabled)tile.disabled=disabled;
@@ -553,30 +596,61 @@ window.updateLetterCellHostView=function(code,room){
   letterCellSetHidden(replace,!selected);
   letterCellSetHidden(showAnswer,!selected);
   const awardControls=root.querySelector('[data-award-controls]');
-  awardControls.querySelectorAll('[data-award-team]').forEach(button=>{
-    const team=button.dataset.awardTeam;
-    letterCellSetText(button.querySelector('[data-award-team-name]'),settings.teamNames[team]);
-    button.setAttribute('aria-label',`احتساب النقطة لـ ${settings.teamNames[team]}`);
-    letterCellSetColor(button,settings.teamColors[team]);
+  if(awardControls){
+    awardControls.querySelectorAll('[data-award-team]').forEach(button=>{
+      const team=button.dataset.awardTeam;
+      letterCellSetText(button.querySelector('[data-award-team-name]'),settings.teamNames[team]);
+      button.setAttribute('aria-label',`احتساب النقطة لـ ${settings.teamNames[team]}`);
+      letterCellSetColor(button,settings.teamColors[team]);
+    });
+  }
+
+  // Sync team scores in sidebar
+  root.querySelectorAll('[data-team-score]').forEach(el=>{
+    const team=el.dataset.teamScore;
+    const score=game.roundWins?.[team]||0;
+    letterCellSetText(el,score);
   });
 
+  // Sync sidebar round title (two lines)
+  const roundTitle=letterCellRoundTitle(game);
+  const line1=root.querySelector('[data-board-round-line1]');
+  const line2=root.querySelector('[data-board-round-line2]');
+  if(line1)letterCellSetText(line1,'الجولة');
+  if(line2)letterCellSetText(line2,roundTitle.replace('الجولة','').trim()||'الأولى');
+
   const boardMount=root.querySelector('[data-board-mount]');
-  const boardTiles=[...boardMount.querySelectorAll('[data-cell-id]')];
+  const boardWrap = boardMount.querySelector('.letter-cell-board-wrap') ?? boardMount;
+  letterCellCurrentBoardWrap = boardWrap;
+  const dimension = letterCellBoardDimension(game);
+  letterCellUpdateHexSize(boardWrap, dimension);
+
+  // Update cells without full rebuild - only rebuild if structure changed
   const cells=Array.isArray(game.cells)?game.cells:[];
-  const boardMatches=boardTiles.length===cells.length&&boardTiles.every((tile,index)=>
-    tile.dataset.cellId===String(cells[index].id)&&tile.dataset.letter===cells[index].letter);
-  if(!boardMatches)boardMount.innerHTML=letterCellBoardHtml(game,true);
+  const existingTiles = [...boardMount.querySelectorAll('[data-cell-id]')];
+  const needsRebuild = existingTiles.length !== cells.length;
+
+  if (needsRebuild) {
+    boardMount.innerHTML = letterCellBoardHtml(game, true);
+    const newWrap = boardMount.querySelector('.letter-cell-board-wrap') ?? boardMount;
+    letterCellCurrentBoardWrap = newWrap;
+    letterCellUpdateHexSize(newWrap, dimension);
+  } else {
+    // Update existing tiles in place
+    existingTiles.forEach(tile => {
+      const cell = cells.find(item => String(item.id) === tile.dataset.cellId);
+      if (cell) letterCellUpdateCellDom(tile, cell, game, settings);
+    });
+  }
+
   const edgeColors={'.letter-cell-edge-top':settings.teamColors.B,'.letter-cell-edge-bottom':settings.teamColors.B,
     '.letter-cell-edge-left':settings.teamColors.A,'.letter-cell-edge-right':settings.teamColors.A};
   Object.entries(edgeColors).forEach(([selector,color])=>{
     const edge=boardMount.querySelector(selector);
     if(edge&&edge.style.getPropertyValue('--edge-team-color')!==color)edge.style.setProperty('--edge-team-color',color);
   });
-  boardMount.querySelectorAll('[data-cell-id]').forEach(tile=>{
-    const cell=cells.find(item=>String(item.id)===tile.dataset.cellId);
-    if(cell)letterCellUpdateCellDom(tile,cell,game,settings);
-  });
 
+  // Update round title
   const boardRound=root.querySelector('[data-board-round]');
   letterCellSetText(boardRound,letterCellRoundTitle(game));
   const boardHint=root.querySelector('[data-board-hint]');
