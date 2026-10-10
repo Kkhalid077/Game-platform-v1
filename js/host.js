@@ -7,7 +7,19 @@ let hostDetailGameId = null;
 let hostRoomRef = null;
 let hostDashboardTab = 'games';
 let lastHostViewKey = null;
+let hostRenderFrame = null;
+let pendingHostRender = null;
 function detachHostRoom(){ if (hostRoomRef){ hostRoomRef.off('value'); hostRoomRef = null; } }
+function scheduleHostRender(code, room){
+  pendingHostRender = {code, room};
+  if (hostRenderFrame) return;
+  hostRenderFrame = requestAnimationFrame(() => {
+    const next = pendingHostRender;
+    pendingHostRender = null;
+    hostRenderFrame = null;
+    if (next) dispatchHostRender(next.code, next.room);
+  });
+}
 function allocateRoomCode(attempt = 0){
   const code = makeRoomCode();
   return db.ref('rooms/' + code).once('value').then(s => (s.exists() && attempt < 20) ? allocateRoomCode(attempt + 1) : code);
@@ -41,7 +53,7 @@ function initHostRoom(code, isNew){
 
   detachHostRoom();
   hostRoomRef = roomRef;
-  roomRef.on('value', snap => dispatchHostRender(code, snap.val()));
+  roomRef.on('value', snap => scheduleHostRender(code, snap.val()));
 }
 
 function dispatchHostRender(code, room){

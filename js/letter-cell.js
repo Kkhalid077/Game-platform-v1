@@ -2,11 +2,27 @@ const LETTER_CELL_ALPHABET = Array.from('ابتثجحخدذرزسشصضطظعغ�
 const LETTER_CELL_DEFAULT_SETTINGS = {
   rounds:2,
   cellCount:25,
+  contestName:'مسابقة خلية الحروف',
+  autoWin:true,
   teamNames:{A:'الفريق الأخضر',B:'الفريق البرتقالي'},
   teamColors:{A:'#35b51d',B:'#ff783b'}
 };
 const LETTER_CELL_ROUND_OPTIONS=[1,2,3];
 const LETTER_CELL_SIZE_OPTIONS=[16,25,36];
+const LETTER_CELL_COLOR_THEMES=[
+  {name:'أخضر وبرتقالي',colors:{A:'#35b51d',B:'#ff783b'}},
+  {name:'أزرق ووردي',colors:{A:'#2196f3',B:'#e91e63'}},
+  {name:'بنفسجي وذهبي',colors:{A:'#8e44ad',B:'#f1c40f'}},
+  {name:'أحمر وأزرق',colors:{A:'#e53935',B:'#1e88e5'}},
+  {name:'تركوازي وأرجواني',colors:{A:'#00bcd4',B:'#9c27b0'}},
+  {name:'ليموني وكحلي',colors:{A:'#c0ca33',B:'#283593'}},
+  {name:'نعناعي ومرجاني',colors:{A:'#00b894',B:'#ff7675'}},
+  {name:'سماوي وبرتقالي',colors:{A:'#03a9f4',B:'#ff9800'}},
+  {name:'وردي وأخضر',colors:{A:'#ec407a',B:'#43a047'}},
+  {name:'ذهبي وأزرق',colors:{A:'#ffb300',B:'#3949ab'}},
+  {name:'أحمر وفيروزي',colors:{A:'#f44336',B:'#009688'}},
+  {name:'أبيض ورمادي',colors:{A:'#eeeeee',B:'#607d8b'}}
+];
 let LETTER_CELL_QUESTIONS = null;
 let letterCellQuestionLoad = null;
 const letterCellCurrentQuestions = new Map();
@@ -142,7 +158,7 @@ function letterCellGridLabel(cellCount){
 
 function letterCellInitialState(){
   return {
-    phase:'setup',
+    phase:'home',
     settings:JSON.parse(JSON.stringify(LETTER_CELL_DEFAULT_SETTINGS)),
     cells:letterCellMakeBoard(LETTER_CELL_DEFAULT_SETTINGS.cellCount),
     roundsCompleted:0,
@@ -161,6 +177,8 @@ function letterCellSettings(game){
   return {
     rounds:LETTER_CELL_ROUND_OPTIONS.includes(requestedRounds)?requestedRounds:LETTER_CELL_DEFAULT_SETTINGS.rounds,
     cellCount:LETTER_CELL_SIZE_OPTIONS.includes(requestedCellCount)?requestedCellCount:LETTER_CELL_DEFAULT_SETTINGS.cellCount,
+    contestName:String(settings.contestName||LETTER_CELL_DEFAULT_SETTINGS.contestName),
+    autoWin:settings.autoWin!==false,
     teamNames:{
       A:String(settings.teamNames?.A||LETTER_CELL_DEFAULT_SETTINGS.teamNames.A),
       B:String(settings.teamNames?.B||LETTER_CELL_DEFAULT_SETTINGS.teamNames.B)
@@ -287,22 +305,25 @@ function letterCellBoardHtml(game,interactive){
 
 function letterCellSettingsForm(game,code){
   const settings=letterCellSettings(game);
-  if(game.phase!=='setup'){
-    return `<div class="letter-cell-settings-summary">
-      <p>الجولات: <strong>${settings.rounds}</strong></p>
-      <p>حجم اللوحة: <strong>${letterCellGridLabel(settings.cellCount)}</strong></p>
-      <p>${escapeHtml(settings.teamNames.A)} — ${escapeHtml(settings.teamNames.B)}</p>
-    </div>`;
-  }
-  return `<form class="letter-cell-settings-form" onsubmit="event.preventDefault();saveLetterCellSettings('${escapeHtml(code)}')">
-    <label>عدد الجولات<select id="letterCellRounds" required>${LETTER_CELL_ROUND_OPTIONS.map(rounds=>`<option value="${rounds}" ${settings.rounds===rounds?'selected':''}>${rounds===1?'جولة واحدة':rounds===2?'جولتان':'3 جولات'}</option>`).join('')}</select></label>
-    <label>حجم اللوحة<select id="letterCellCount" required>${LETTER_CELL_SIZE_OPTIONS.map(count=>`<option value="${count}" ${settings.cellCount===count?'selected':''}>${letterCellGridLabel(count)}</option>`).join('')}</select></label>
-    ${['A','B'].map(team=>`<fieldset class="letter-cell-team-settings" style="--letter-team-color:${settings.teamColors[team]}">
-      <legend>${team==='A'?'الفريق الأول':'الفريق الثاني'}</legend>
-      <label>اسم الفريق<input id="letterCellTeamName${team}" type="text" maxlength="24" value="${escapeHtml(settings.teamNames[team])}" required></label>
-      <label>اللون<input id="letterCellTeamColor${team}" type="color" value="${settings.teamColors[team]}" aria-label="لون ${escapeHtml(settings.teamNames[team])}"></label>
-    </fieldset>`).join('')}
-    <button class="btn btn-ghost" type="submit">حفظ الإعدادات</button>
+  const roundOptions=[{value:3,label:'ثلاث جولات'},{value:2,label:'جولتين'},{value:1,label:'جولة'}];
+  const sizeOptions=[{value:16,label:'أربعة'},{value:25,label:'خمسة'},{value:36,label:'ستة'}];
+  const theme=LETTER_CELL_COLOR_THEMES.find(item=>item.colors.A.toLowerCase()===settings.teamColors.A.toLowerCase()&&item.colors.B.toLowerCase()===settings.teamColors.B.toLowerCase());
+  return `<form id="letterCellSettingsForm" class="letter-cell-settings-form" onsubmit="event.preventDefault();saveLetterCellSettings('${escapeHtml(code)}')">
+    <label class="letter-cell-field-label" for="letterCellContestName">اسم المسابقة</label>
+    <input class="letter-cell-contest-input" id="letterCellContestName" type="text" maxlength="40" value="${escapeHtml(settings.contestName)}" required>
+    <span class="letter-cell-field-label">أسماء المتسابقين</span>
+    <div class="letter-cell-contestants">${['A','B'].map((team,index)=>`<label class="letter-cell-contestant" style="--letter-team-color:${settings.teamColors[team]}">
+      <span class="letter-cell-hex" aria-hidden="true"></span>
+      <input id="letterCellTeamName${team}" type="text" maxlength="24" value="${escapeHtml(settings.teamNames[team])}" aria-label="اسم المتسابق ${index+1}" required>
+    </label>`).join('')}</div>
+    <fieldset class="letter-cell-choice-group"><legend>عدد جولات الفوز</legend><div class="letter-cell-choice-row">${roundOptions.map(option=>`<button type="button" class="letter-cell-choice ${settings.rounds===option.value?'is-active':''}" data-round-option="${option.value}" aria-pressed="${settings.rounds===option.value}" onclick="letterCellChooseSetting('rounds',${option.value})">${option.label}</button>`).join('')}</div></fieldset>
+    <fieldset class="letter-cell-choice-group"><legend>عدد الخلايا</legend><div class="letter-cell-choice-row">${sizeOptions.map(option=>`<button type="button" class="letter-cell-choice ${settings.cellCount===option.value?'is-active':''}" data-size-option="${option.value}" aria-pressed="${settings.cellCount===option.value}" onclick="letterCellChooseSetting('cellCount',${option.value})">${option.label}</button>`).join('')}</div></fieldset>
+    <fieldset class="letter-cell-choice-group"><legend>حساب الفوز تلقائياً</legend><div class="letter-cell-choice-row letter-cell-choice-row-compact">
+      <button type="button" class="letter-cell-choice ${!settings.autoWin?'is-active':''}" data-auto-win="false" aria-pressed="${!settings.autoWin}" onclick="letterCellChooseSetting('autoWin',false)">معطل</button>
+      <button type="button" class="letter-cell-choice ${settings.autoWin?'is-active':''}" data-auto-win="true" aria-pressed="${settings.autoWin}" onclick="letterCellChooseSetting('autoWin',true)">مفعل</button>
+    </div></fieldset>
+    <fieldset class="letter-cell-choice-group"><legend>لون الخلايا</legend><div class="letter-cell-color-grid">${LETTER_CELL_COLOR_THEMES.map((item,index)=>`<button type="button" class="letter-cell-color-theme ${theme===item?'is-active':''}" style="--theme-a:${item.colors.A};--theme-b:${item.colors.B}" data-color-theme="${index}" aria-label="${escapeHtml(item.name)}" aria-pressed="${theme===item}" onclick="letterCellChooseSetting('theme',${index})"><span class="letter-cell-theme-swatch"></span></button>`).join('')}</div></fieldset>
+    <button type="submit" class="letter-cell-settings-save">حفظ ورجوع</button>
   </form>`;
 }
 
@@ -345,15 +366,24 @@ function renderLetterCellHost(code,room){
   }
   const inviteUrl=joinGameUrl(code,'letter-cell');
   const settings=letterCellSettings(game);
-  app.innerHTML=`<div class="stage letter-cell-host-stage">
+  setVersionFooterVisibility(false);
+  app.innerHTML=`<div class="stage letter-cell-host-stage" data-phase="${escapeHtml(game.phase||'home')}">
     ${activityExitControlsHtml(code,'letter-cell')}
     <main class="letter-cell-host">
-      <header class="letter-cell-heading">
-        <div><span class="host-section-kicker">خلية الحروف</span></div>
-      </header>
       <div class="letter-cell-host-layout">
         <div class="letter-cell-primary-column">
-          <section class="letter-cell-panel letter-cell-host-question" aria-label="أداة الأسئلة">
+          <section class="letter-cell-home" data-home-view ${game.phase==='home'?'':'hidden'}>
+            <h1 data-contest-title>${escapeHtml(settings.contestName)}</h1>
+            <button class="letter-cell-home-start" type="button" onclick="letterCellStartPlay('${escapeHtml(code)}')">بدء اللعبة</button>
+            <button class="letter-cell-home-settings" type="button" onclick="letterCellOpenSettings('${escapeHtml(code)}')">الإعدادات</button>
+          </section>
+          <section class="letter-cell-settings-screen" data-settings-screen ${game.phase==='setup'?'':'hidden'}>
+            <button class="letter-cell-settings-save" type="submit" form="letterCellSettingsForm">حفظ ورجوع</button>
+            <section class="letter-cell-settings-card" aria-label="إعدادات المسابقة">
+              ${letterCellSettingsForm({...game,phase:'setup'},code)}
+            </section>
+          </section>
+          <section class="letter-cell-panel letter-cell-host-question" data-playing-view aria-label="أداة الأسئلة" ${game.phase==='playing'||game.phase==='ended'?'':'hidden'}>
             <div class="letter-cell-host-question-heading"><div><span class="host-section-kicker">أداة الأسئلة</span></div><span class="letter-cell-question-letter" data-question-letter title=""><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span></div>
             <div class="letter-cell-question-content">
               <p class="letter-cell-question-empty" data-question-placeholder>اختر خلية لعرض سؤالها هنا. لن يظهر السؤال على شاشة العرض.</p>
@@ -365,18 +395,8 @@ function renderLetterCellHost(code,room){
               <button class="btn btn-ghost letter-cell-action-btn letter-cell-replace-question" data-replace-question type="button" hidden>استبدال السؤال</button>
             </div>
           </section>
-          <section class="letter-cell-panel letter-cell-board-panel">
-            <div class="letter-cell-board-setup" data-settings-edit ${game.phase==='setup'?'':'hidden'}>
-              <span class="letter-cell-hex-deco"></span>
-              <span class="letter-cell-hex-deco"></span>
-              <span class="letter-cell-hex-deco"></span>
-              <span class="letter-cell-hex-deco"></span>
-              <span class="letter-cell-hex-deco"></span>
-              <span class="host-section-kicker">الإعدادات</span><h2>لوحة اللعب</h2>
-              ${letterCellSettingsForm({...game,phase:'setup'},code)}
-              <button class="btn letter-cell-start-button" type="button" onclick="letterCellStartPlay('${escapeHtml(code)}')">بدء اللعبة</button>
-            </div>
-            <div class="letter-cell-board-play" data-board-view ${game.phase==='setup'?'hidden':''}>
+          <section class="letter-cell-panel letter-cell-board-panel" data-playing-view ${game.phase==='playing'||game.phase==='ended'?'':'hidden'}>
+            <div class="letter-cell-board-play" data-board-view>
               <div class="letter-cell-board-heading"><span class="host-section-kicker">لوحة اللعب</span></div>
               <div class="letter-cell-board-content">
                 <section class="letter-cell-letters-area" data-letters-area>
@@ -401,13 +421,18 @@ function renderLetterCellHost(code,room){
               <div class="letter-cell-round-controls" data-round-controls hidden>
                 <button class="btn letter-cell-start-button" data-next-round type="button" onclick="letterCellNextRound('${escapeHtml(code)}')"></button>
               </div>
+              <div class="letter-cell-manual-round" data-manual-round hidden>
+                <span>احتساب الفوز يدويًا</span>
+                ${['A','B'].map(team=>`<button type="button" data-round-winner="${team}" style="--letter-team-color:${settings.teamColors[team]}" onclick="letterCellManuallyCompleteRound('${escapeHtml(code)}','${team}')">${escapeHtml(settings.teamNames[team])} فاز</button>`).join('')}
+                <button type="button" onclick="letterCellManuallyCompleteRound('${escapeHtml(code)}',null)">تعادل</button>
+              </div>
               <div class="letter-cell-result" data-game-result hidden><strong data-game-result-text></strong>
                 <button class="btn" type="button" onclick="letterCellRestart('${escapeHtml(code)}')">لعبة جديدة بالإعدادات نفسها</button>
               </div>
             </div>
           </section>
         </div>
-        <aside class="letter-cell-sidebar">
+        <aside class="letter-cell-sidebar" data-playing-view ${game.phase==='playing'||game.phase==='ended'?'':'hidden'}>
           <section class="letter-cell-panel letter-cell-display-link letter-cell-host-broadcast">
             <span class="host-section-kicker">دعوة اللاعبون</span>
             <div class="letter-cell-broadcast-split">
@@ -451,7 +476,10 @@ function renderLetterCellHost(code,room){
     </main>
   </div>`;
   const root=app.querySelector('.letter-cell-host-stage');
-  if(root)root.dataset.roomCode=code;
+  if(root){
+    root.dataset.roomCode=code;
+    root.querySelector('#letterCellSettingsForm')?.addEventListener('input',()=>{root.dataset.settingsDraft='true';});
+  }
   app.querySelector('[data-letter-cell-exit="lobby"]')?.addEventListener('click',event=>{
     event.preventDefault();
     letterCellRunExitAction(event.currentTarget,()=>window.resetToLobby(code));
@@ -524,7 +552,18 @@ function letterCellSetText(element,value){
 }
 
 function letterCellSetHidden(element,hidden){
-  if(element&&element.hidden!==hidden)element.hidden=hidden;
+  if(element){
+    element.hidden=hidden;
+    element.style.display=hidden?'none':'';
+  }
+}
+
+function letterCellShowPhase(root,phase){
+  if(!root)return;
+  root.dataset.phase=phase;
+  letterCellSetHidden(root.querySelector('[data-home-view]'),phase!=='home');
+  letterCellSetHidden(root.querySelector('[data-settings-screen]'),phase!=='setup');
+  root.querySelectorAll('[data-playing-view]').forEach(view=>letterCellSetHidden(view,phase!=='playing'&&phase!=='ended'));
 }
 
 function letterCellSetColor(element,color){
@@ -541,33 +580,47 @@ window.updateLetterCellHostView=function(code,room){
   const selected=Array.isArray(game.cells)?game.cells.find(cell=>cell.id===game.selectedCell):null;
   const question=selected?letterCellGetHostQuestion(code,selected.id):null;
   const finished=game.phase==='ended';
-  if(root.dataset.phase!==game.phase)root.dataset.phase=game.phase;
+  if(root.dataset.phase!==game.phase){
+    delete root.dataset.settingsDraft;
+    root.dataset.phase=game.phase;
+  }
   if(root.dataset.selectedCell!==(selected?.id||''))root.dataset.selectedCell=selected?.id||'';
 
-  const editable=root.querySelector('[data-settings-edit]');
-  const boardView=root.querySelector('[data-board-view]');
-  letterCellSetHidden(editable,game.phase!=='setup');
-  letterCellSetHidden(boardView,game.phase==='setup');
-  letterCellSetText(root.querySelector('[data-settings-rounds]'),settings.rounds);
-  letterCellSetText(root.querySelector('[data-settings-cell-count]'),letterCellGridLabel(settings.cellCount));
-  letterCellSetText(root.querySelector('[data-settings-team-names]'),`${settings.teamNames.A} — ${settings.teamNames.B}`);
-  root.querySelectorAll('.letter-cell-team-settings').forEach((fieldset,index)=>{
-    const team=index===0?'A':'B';
-    letterCellSetColor(fieldset,settings.teamColors[team]);
-    letterCellSetText(fieldset.querySelector('legend'),team==='A'?'الفريق الأول':'الفريق الثاني');
-  });
-  const settingsValues={
-    letterCellRounds:String(settings.rounds),
-    letterCellCount:String(settings.cellCount),
-    letterCellTeamNameA:settings.teamNames.A,
-    letterCellTeamNameB:settings.teamNames.B,
-    letterCellTeamColorA:settings.teamColors.A,
-    letterCellTeamColorB:settings.teamColors.B
-  };
-  Object.entries(settingsValues).forEach(([id,value])=>{
-    const input=root.querySelector(`#${id}`);
-    if(input&&document.activeElement!==input&&input.value!==value)input.value=value;
-  });
+  letterCellShowPhase(root,game.phase);
+  letterCellSetText(root.querySelector('[data-contest-title]'),settings.contestName);
+  if(game.phase!=='setup'||!root.dataset.settingsDraft){
+    const settingsValues={
+      letterCellContestName:settings.contestName,
+      letterCellTeamNameA:settings.teamNames.A,
+      letterCellTeamNameB:settings.teamNames.B
+    };
+    Object.entries(settingsValues).forEach(([id,value])=>{
+      const input=root.querySelector(`#${id}`);
+      if(input&&document.activeElement!==input&&input.value!==value)input.value=value;
+    });
+    root.querySelectorAll('.letter-cell-contestant').forEach((field,index)=>letterCellSetColor(field,settings.teamColors[index===0?'A':'B']));
+    const activeTheme=LETTER_CELL_COLOR_THEMES.findIndex(item=>item.colors.A.toLowerCase()===settings.teamColors.A.toLowerCase()&&item.colors.B.toLowerCase()===settings.teamColors.B.toLowerCase());
+    root.querySelectorAll('[data-color-theme]').forEach(button=>{
+      const active=Number(button.dataset.colorTheme)===activeTheme;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    root.querySelectorAll('[data-round-option]').forEach(button=>{
+      const active=Number(button.dataset.roundOption)===settings.rounds;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    root.querySelectorAll('[data-size-option]').forEach(button=>{
+      const active=Number(button.dataset.sizeOption)===settings.cellCount;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    root.querySelectorAll('[data-auto-win]').forEach(button=>{
+      const active=(button.dataset.autoWin==='true')===settings.autoWin;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+  }
 
   letterCellSetText(root.querySelector('[data-question-heading]'),selected?`سؤال حرف ${selected.letter}`:'السؤال الحالي');
   const questionText=root.querySelector('[data-question-text]');
@@ -610,6 +663,16 @@ window.updateLetterCellHostView=function(code,room){
     const team=el.dataset.teamScore;
     const score=game.roundWins?.[team]||0;
     letterCellSetText(el,score);
+  });
+  root.querySelectorAll('.letter-cell-team-card[data-team]').forEach(card=>{
+    const team=card.dataset.team;
+    letterCellSetText(card.querySelector('.letter-cell-team-name'),settings.teamNames[team]);
+    letterCellSetColor(card,settings.teamColors[team]);
+  });
+  root.querySelectorAll('[data-round-winner]').forEach(button=>{
+    const team=button.dataset.roundWinner;
+    button.style.setProperty('--letter-team-color',settings.teamColors[team]);
+    letterCellSetText(button,`${settings.teamNames[team]} فاز`);
   });
 
   // Sync sidebar round title (two lines)
@@ -662,6 +725,7 @@ window.updateLetterCellHostView=function(code,room){
           :'اختر خلية لإظهار سؤالها والتحكم في احتسابها.');
   const roundControls=root.querySelector('[data-round-controls]');
   letterCellSetHidden(roundControls,!(game.roundComplete&&game.phase==='playing'));
+  letterCellSetHidden(root.querySelector('[data-manual-round]'),settings.autoWin||game.phase!=='playing'||game.roundComplete);
   letterCellSetText(root.querySelector('[data-next-round]'),game.tieBreak
     ?game.tieBreakStarted?'إعادة الجولة الفاصلة':'بدء الجولة الفاصلة'
     :'بدء الجولة التالية');
@@ -761,7 +825,7 @@ function letterCellDisplayUrl(code){
 }
 
 window.startLetterCellGame=function(code){
-  letterCellLoadQuestions().then(()=>db.ref(`rooms/${code}`).once('value')).then(snapshot=>{
+  db.ref(`rooms/${code}`).once('value').then(snapshot=>{
     if(!snapshot.exists())throw new Error('لم يتم العثور على الجلسة.');
     letterCellClearHostQuestions(code);
     return db.ref(`rooms/${code}`).update({
@@ -776,6 +840,42 @@ window.startLetterCellGame=function(code){
     console.error('Could not start Letter Cell:',error);
     alert(error.message||'تعذر بدء خلية الحروف. تحقق من الاتصال وحاول مرة أخرى.');
   });
+};
+
+window.letterCellOpenSettings=function(code){
+  db.ref(`rooms/${code}/letterCell`).transaction(game=>{
+    if(!game||game.phase!=='home')return;
+    game.phase='setup';
+    return game;
+  }).then(result=>{
+    if(result.committed)letterCellShowPhase(app.querySelector('.letter-cell-host-stage'), 'setup');
+    else letterCellShowPhase(app.querySelector('.letter-cell-host-stage'),lastHostRoom?.letterCell?.phase||'home');
+  }).catch(error=>{
+    console.error('Could not open Letter Cell settings:',error);
+    alert('تعذر فتح الإعدادات. تحقق من الاتصال وحاول مرة أخرى.');
+  });
+};
+
+window.letterCellChooseSetting=function(kind,value){
+  const root=app.querySelector('.letter-cell-host-stage');
+  if(!root)return;
+  root.dataset.settingsDraft='true';
+  const selector=kind==='rounds'?'[data-round-option]':kind==='cellCount'?'[data-size-option]':kind==='autoWin'?'[data-auto-win]':kind==='theme'?'[data-color-theme]':null;
+  if(!selector)return;
+  const expected=String(value);
+  root.querySelectorAll(selector).forEach(button=>{
+    const actual=kind==='rounds'?button.dataset.roundOption:
+      kind==='cellCount'?button.dataset.sizeOption:
+        kind==='autoWin'?button.dataset.autoWin:button.dataset.colorTheme;
+    const active=actual===expected;
+    button.classList.toggle('is-active',active);
+    button.setAttribute('aria-pressed',String(active));
+  });
+  if(kind==='theme'){
+    const theme=LETTER_CELL_COLOR_THEMES[value];
+    if(theme)root.querySelectorAll('.letter-cell-contestant').forEach((field,index)=>
+      letterCellSetColor(field,theme.colors[index===0?'A':'B']));
+  }
 };
 
 function letterCellLoadQuestions(){
@@ -803,16 +903,21 @@ function letterCellLoadQuestions(){
 }
 
 function letterCellReadSettingsForm(){
-  const rounds=Number(document.getElementById('letterCellRounds')?.value);
-  const cellCount=Number(document.getElementById('letterCellCount')?.value);
+  const root=app.querySelector('.letter-cell-host-stage');
+  const rounds=Number(root?.querySelector('[data-round-option].is-active')?.dataset.roundOption);
+  const cellCount=Number(root?.querySelector('[data-size-option].is-active')?.dataset.sizeOption);
+  const autoWin=root?.querySelector('[data-auto-win].is-active')?.dataset.autoWin==='true';
+  const themeIndex=Number(root?.querySelector('[data-color-theme].is-active')?.dataset.colorTheme);
+  const selectedTheme=LETTER_CELL_COLOR_THEMES[themeIndex];
+  const contestName=document.getElementById('letterCellContestName')?.value.trim();
   const teamNames={A:document.getElementById('letterCellTeamNameA')?.value.trim(),B:document.getElementById('letterCellTeamNameB')?.value.trim()};
-  const teamColors={A:document.getElementById('letterCellTeamColorA')?.value,B:document.getElementById('letterCellTeamColorB')?.value};
+  const teamColors=selectedTheme?.colors;
   if(!LETTER_CELL_ROUND_OPTIONS.includes(rounds)||!LETTER_CELL_SIZE_OPTIONS.includes(cellCount)||
-     !teamNames.A||!teamNames.B||!/^#[0-9a-f]{6}$/i.test(teamColors.A||'')||!/^#[0-9a-f]{6}$/i.test(teamColors.B||'')){
-    alert('تحقق من عدد الجولات وحجم اللوحة وأسماء الفريقين وألوانهما.');
+     !contestName||!teamNames.A||!teamNames.B||!teamColors){
+    alert('تحقق من اسم المسابقة وأسماء المتسابقين والخيارات المحددة.');
     return null;
   }
-  return {rounds,cellCount,teamNames,teamColors};
+  return {rounds,cellCount,contestName,autoWin,teamNames,teamColors};
 }
 
 function letterCellSaveSettingsTransaction(code,settings){
@@ -821,7 +926,14 @@ function letterCellSaveSettingsTransaction(code,settings){
     game.settings=settings;
     game.cells=letterCellMakeBoard(settings.cellCount);
     game.roundsCompleted=0;
+    game.roundWins={A:0,B:0};
     game.selectedCell=null;
+    game.roundComplete=false;
+    game.tieBreak=false;
+    game.tieBreakStarted=false;
+    game.roundWinner=null;
+    game.winner=null;
+    game.phase='home';
     return game;
   });
 }
@@ -830,7 +942,8 @@ window.saveLetterCellSettings=function(code){
   const settings=letterCellReadSettingsForm();
   if(!settings)return;
   letterCellSaveSettingsTransaction(code,settings).then(result=>{
-    if(!result.committed)alert('لا يمكن تغيير الإعدادات بعد بدء اللعب.');
+    if(result.committed)letterCellShowPhase(app.querySelector('.letter-cell-host-stage'),'home');
+    else alert('تعذر حفظ الإعدادات. ارجع إلى الشاشة الرئيسية ثم حاول مجددًا.');
   }).catch(error=>{
     console.error('Could not save Letter Cell settings:',error);
     alert('تعذر حفظ الإعدادات. تحقق من الاتصال وحاول مرة أخرى.');
@@ -838,11 +951,12 @@ window.saveLetterCellSettings=function(code){
 };
 
 window.letterCellStartPlay=function(code){
-  const settings=document.getElementById('letterCellRounds')?letterCellReadSettingsForm():null;
-  if(document.getElementById('letterCellRounds')&&!settings)return;
+  const setupOpen=app.querySelector('.letter-cell-host-stage')?.dataset.phase==='setup';
+  const settings=setupOpen?letterCellReadSettingsForm():null;
+  if(setupOpen&&!settings)return;
   const gameRef=db.ref(`rooms/${code}/letterCell`);
-  const begin=()=>gameRef.transaction(game=>{
-    if(!game||game.phase!=='setup')return;
+  letterCellLoadQuestions().then(()=>gameRef.transaction(game=>{
+    if(!game||(game.phase!=='home'&&game.phase!=='setup'))return;
     if(settings){
       game.settings=settings;
       game.cells=letterCellMakeBoard(settings.cellCount);
@@ -851,9 +965,11 @@ window.letterCellStartPlay=function(code){
     }
     game.phase='playing';
     return game;
-  });
-  begin().then(result=>{
-    if(result.committed)return db.ref(`rooms/${code}/buzzer`).update({locked:true,winner:null,pressedAt:null,presses:{},round:0});
+  })).then(result=>{
+    if(result.committed){
+      letterCellShowPhase(app.querySelector('.letter-cell-host-stage'),'playing');
+      return db.ref(`rooms/${code}/buzzer`).update({locked:true,winner:null,pressedAt:null,presses:{},round:0});
+    }
   }).catch(error=>{
     console.error('Could not begin Letter Cell rounds:',error);
     alert('تعذر بدء اللعب. تحقق من الاتصال وحاول مرة أخرى.');
@@ -978,9 +1094,9 @@ window.letterCellAwardCell=function(code,team){
     if(!cell||cell.owner||cell.skipped)return;
     cell.owner=team;
     current.selectedCell=null;
-    current.winner=letterCellConnectedTeam(current,team)?team:null;
+    current.winner=letterCellSettings(current).autoWin&&letterCellConnectedTeam(current,team)?team:null;
     if(current.winner)letterCellCompleteRound(current,team);
-    else if(current.cells.every(item=>item.owner||item.skipped))letterCellCompleteRound(current,null);
+    else if(letterCellSettings(current).autoWin&&current.cells.every(item=>item.owner||item.skipped))letterCellCompleteRound(current,null);
     return current;
   }).then(result=>{
     if(!result.committed)return;
@@ -988,6 +1104,18 @@ window.letterCellAwardCell=function(code,team){
   }).catch(error=>{
     console.error('Could not award a Letter Cell:',error);
     alert('تعذر احتساب الخلية. تحقق من الاتصال وحاول مرة أخرى.');
+  });
+};
+
+window.letterCellManuallyCompleteRound=function(code,team){
+  if(team!==null&&team!=='A'&&team!=='B')return;
+  db.ref(`rooms/${code}/letterCell`).transaction(current=>{
+    if(!current||current.phase!=='playing'||current.roundComplete||letterCellSettings(current).autoWin)return;
+    letterCellCompleteRound(current,team);
+    return current;
+  }).catch(error=>{
+    console.error('Could not manually complete a Letter Cell round:',error);
+    alert('تعذر احتساب نتيجة الجولة. تحقق من الاتصال وحاول مرة أخرى.');
   });
 };
 
